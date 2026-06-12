@@ -16,19 +16,20 @@ If you find this useful, feel free to leave a ⭐ to help others find it!
 
 ## Features
 
-**30+** commands across **7** categories:
+**34+** commands across **7** categories:
 
 - 🎉 **Fun:** `8ball`, `dare`, `truth`, `gayrate`, `poll`
 - ℹ️ **Info:** `avatar`, `server-avatar`, `server-info`, `ping`, `uptime`, `help`, `commands`, `weather`, `github`
 - ⏫ **Leveling:** `leaderboard`, `level`, `toggleleveling`
 - 🎵 **Music:** `play`, `skip`, `pause`, `resume`, `stop`, `queue`, `nowplaying`, `loop`, `volume`
 - 🔧 **Utility:** `purge`, `shorten`, `afk`, `slowmode`
-- 🛡️ **Moderation:** `setlog`, `unsetlog`
+- 🛡️ **Moderation:** `setlog`, `unsetlog`, `setwelcome`, `unsetwelcome`, `setfarewell`, `unsetfarewell`
 - 🎮 **Minigames:** `gamble`
 
 Other highlights:
 
-- Server event logger — logs message deletes/edits, joins, leaves, kicks, bans, nickname changes, role updates, and voice activity to a configurable channel
+- Server event logger that logs message deletes/edits, joins, leaves, kicks, bans, nickname changes, role updates, and voice activity to a configurable channel
+- Welcome/farewell messages, configurable per-server with custom messages supporting `{user}` and `{server}` placeholders
 - Persistent XP leveling per server with atomic writes
 - AFK system with return detection and mention notifications
 - Docker support with Lavalink and MongoDB services included
@@ -115,10 +116,14 @@ Other highlights:
 ### 🛡️ Moderation
 
 
-| Command      | Description                                                   |
-| ------------ | ------------------------------------------------------------- |
-| `/setlog`    | Set the channel where server events will be logged (Manage Server) |
-| `/unsetlog`  | Disable event logging for this server (Manage Server)         |
+| Command          | Description                                                                        |
+| ---------------- | ---------------------------------------------------------------------------------- |
+| `/setlog`        | Set the channel where server events will be logged (Manage Server)                 |
+| `/unsetlog`      | Disable event logging for this server (Manage Server)                              |
+| `/setwelcome`    | Set the channel and optional message for member join announcements (Manage Server) |
+| `/unsetwelcome`  | Disable welcome messages for this server (Manage Server)                           |
+| `/setfarewell`   | Set the channel and optional message for member leave announcements (Manage Server)|
+| `/unsetfarewell` | Disable farewell messages for this server (Manage Server)                          |
 
 
 ### ⚙️ Settings
@@ -138,7 +143,7 @@ Other highlights:
 
 1. **Clone the repository**
   ```bash
-   git clone https://github.com/your-username/discord-bot.git
+   git clone https://github.com/ckagias/Discord-Bot.git
    cd discord-bot
   ```
 2. **Create a `.env` file**
@@ -162,7 +167,7 @@ Other highlights:
 
 1. **Clone and install dependencies**
   ```bash
-   git clone https://github.com/your-username/discord-bot.git
+   git clone https://github.com/ckagias/Discord-Bot.git
    cd discord-bot
    npm install
   ```
