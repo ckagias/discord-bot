@@ -1,4 +1,4 @@
-Discord Bot   
+# Discord Bot
 
 ### A Discord bot built with [discord.js](https://github.com/discordjs/discord.js), Lavalink, and MongoDB
 
@@ -16,17 +16,19 @@ If you find this useful, feel free to leave a ⭐ to help others find it!
 
 ## Features
 
-**30+** commands across **6** categories:
+**30+** commands across **7** categories:
 
 - 🎉 **Fun:** `8ball`, `dare`, `truth`, `gayrate`, `poll`
 - ℹ️ **Info:** `avatar`, `server-avatar`, `server-info`, `ping`, `uptime`, `help`, `commands`, `weather`, `github`
 - ⏫ **Leveling:** `leaderboard`, `level`, `toggleleveling`
 - 🎵 **Music:** `play`, `skip`, `pause`, `resume`, `stop`, `queue`, `nowplaying`, `loop`, `volume`
 - 🔧 **Utility:** `purge`, `shorten`, `afk`, `slowmode`
+- 🛡️ **Moderation:** `setlog`, `unsetlog`
 - 🎮 **Minigames:** `gamble`
 
 Other highlights:
 
+- Server event logger — logs message deletes/edits, joins, leaves, kicks, bans, nickname changes, role updates, and voice activity to a configurable channel
 - Persistent XP leveling per server with atomic writes
 - AFK system with return detection and mention notifications
 - Docker support with Lavalink and MongoDB services included
@@ -108,6 +110,15 @@ Other highlights:
 | Command   | Description                         |
 | --------- | ----------------------------------- |
 | `/gamble` | Bet your credits on a high-low roll |
+
+
+### 🛡️ Moderation
+
+
+| Command      | Description                                                   |
+| ------------ | ------------------------------------------------------------- |
+| `/setlog`    | Set the channel where server events will be logged (Manage Server) |
+| `/unsetlog`  | Disable event logging for this server (Manage Server)         |
 
 
 ### ⚙️ Settings

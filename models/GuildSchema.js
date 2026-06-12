@@ -2,8 +2,8 @@ const { model, Schema } = require('mongoose');
 
 const guildSchema = new Schema({
     guildId: { type: String, required: true, unique: true },
-    // Off by default until an admin enables it
     levelingEnabled: { type: Boolean, default: false },
+    logChannelId: { type: String, default: null },
 });
 
 module.exports = model('Guild', guildSchema);
