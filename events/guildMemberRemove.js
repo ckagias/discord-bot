@@ -1,10 +1,20 @@
 const { EmbedBuilder, AuditLogEvent } = require('discord.js');
 const { getLogChannel } = require('../utils/logger');
+const { getFarewellConfig, formatMessage } = require('../utils/welcome');
 
 module.exports = {
     name: 'guildMemberRemove',
     async execute(member) {
-        const logChannel = await getLogChannel(member.guild).catch(() => null);
+        const [logChannel, farewellConfig] = await Promise.all([
+            getLogChannel(member.guild).catch(() => null),
+            getFarewellConfig(member.guild).catch(() => null),
+        ]);
+
+        if (farewellConfig) {
+            const text = formatMessage(farewellConfig.message, member, { mention: false });
+            await farewellConfig.channel.send({ content: text }).catch(() => {});
+        }
+
         if (!logChannel) return;
 
         const roles = member.roles.cache

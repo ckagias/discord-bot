@@ -1,10 +1,19 @@
 const { EmbedBuilder } = require('discord.js');
 const { getLogChannel } = require('../utils/logger');
+const { getWelcomeConfig, formatMessage } = require('../utils/welcome');
 
 module.exports = {
     name: 'guildMemberAdd',
     async execute(member) {
-        const logChannel = await getLogChannel(member.guild).catch(() => null);
+        const [logChannel, welcomeConfig] = await Promise.all([
+            getLogChannel(member.guild).catch(() => null),
+            getWelcomeConfig(member.guild).catch(() => null),
+        ]);
+
+        if (welcomeConfig) {
+            await welcomeConfig.channel.send({ content: formatMessage(welcomeConfig.message, member) }).catch(() => {});
+        }
+
         if (!logChannel) return;
 
         const accountAge = Math.floor((Date.now() - member.user.createdTimestamp) / 86_400_000);
