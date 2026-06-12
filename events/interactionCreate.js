@@ -15,9 +15,13 @@ module.exports = {
             // Run the command's execute function, passing the interaction and client
             await command.execute(interaction, client);
         } catch (error) {
-            // If something goes wrong while running the command, log the error and send an ephemeral error message (only visible to the user who ran the command)
             console.error(error);
-            await interaction.reply({ content: '❌ Error executing command', ephemeral: true });
+            const payload = { content: '❌ Error executing command', ephemeral: true };
+            if (interaction.deferred || interaction.replied) {
+                await interaction.editReply(payload).catch(() => {});
+            } else {
+                await interaction.reply(payload).catch(() => {});
+            }
         }
     }
 };

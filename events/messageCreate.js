@@ -73,12 +73,11 @@ module.exports = {
         // saving us a separate "create on first use" step.
         const guildData = await GuildSchema.findOneAndUpdate(
             { guildId: guild.id },
-            { $setOnInsert: { guildId: guild.id } }, // only set guildId when inserting
-            { upsert: true, returnDocument: true }
+            { $setOnInsert: { guildId: guild.id } },
+            { upsert: true, new: true }
         );
 
-        // If the server admin hasn't turned on leveling, stop here — no XP is awarded
-        if (!guildData.levelingEnabled) return;
+        if (!guildData?.levelingEnabled) return;
 
         // --- 2. Fetch user data (or create on first message) ---
         let userData = await LevelSchema.findOneAndUpdate(
