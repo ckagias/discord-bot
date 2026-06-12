@@ -8,6 +8,8 @@ events/clientReady.js
 # Ignore entire folders
 node_modules/
 temp/
+lavalink/logs/
+lavalink/plugins/
 
 # Ignore all files with a specific extension
 *.log

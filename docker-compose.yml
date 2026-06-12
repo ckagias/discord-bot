@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  lavalink:
+    image: ghcr.io/lavalink-devs/lavalink:4
+    container_name: lavalink
+    restart: unless-stopped
+    volumes:
+      - ./lavalink/application.yml:/opt/Lavalink/application.yml:ro
+      - ./lavalink/plugins:/opt/Lavalink/plugins
+    networks:
+      - bot-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider --header='Authorization: youshallnotpass' http://localhost:2333/version || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - bot-network
+
+  bot:
+    build: .
+    container_name: discord-bot
+    restart: unless-stopped
+    depends_on:
+      lavalink:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+    env_file: .env
+    environment:
+      # When running in Docker, use service names instead of localhost
+      LAVALINK_HOST: lavalink
+      LAVALINK_PORT: 2333
+      LAVALINK_PASSWORD: youshallnotpass
+      MONGODB_URL: mongodb://mongodb:27017/discordbot
+    networks:
+      - bot-network
+
+networks:
+  bot-network:
+    driver: bridge
+
+volumes:
+  mongo_data:
