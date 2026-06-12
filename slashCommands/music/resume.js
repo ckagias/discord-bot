@@ -9,19 +9,24 @@ module.exports = {
         const player = client.lavalink.getPlayer(interaction.guild.id);
 
         if (!player) {
-            return interaction.reply({ content: '❌ Nothing is playing right now.'});
+            return interaction.reply({ content: '❌ Nothing is playing right now.' });
         }
 
         if (!player.paused) {
-            return interaction.reply({ content: '▶️ The player is not paused.'});
+            return interaction.reply({ content: '▶️ The player is not paused.' });
         }
 
-        await player.resume();
+        try {
+            await player.resume();
 
-        const embed = new EmbedBuilder()
-            .setColor(Math.floor(Math.random() * 0xFFFFFF))
-            .setDescription('▶️ Resumed.');
+            const embed = new EmbedBuilder()
+                .setColor(Math.floor(Math.random() * 0xFFFFFF))
+                .setDescription('▶️ Resumed.');
 
-        await interaction.reply({ embeds: [embed] });
+            await interaction.reply({ embeds: [embed] });
+        } catch (error) {
+            console.error('[resume] Lavalink error:', error);
+            await interaction.reply({ content: '❌ Failed to resume. Please try again.' }).catch(() => {});
+        }
     },
 };

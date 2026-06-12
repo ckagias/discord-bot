@@ -9,16 +9,21 @@ module.exports = {
         const player = client.lavalink.getPlayer(interaction.guild.id);
 
         if (!player || !player.playing) {
-            return interaction.reply({ content: '❌ Nothing is playing right now.'});
+            return interaction.reply({ content: '❌ Nothing is playing right now.' });
         }
 
-        const skipped = player.queue.current;
-        await player.skip();
+        try {
+            const skipped = player.queue.current;
+            await player.skip();
 
-        const embed = new EmbedBuilder()
-            .setColor(Math.floor(Math.random() * 0xFFFFFF))
-            .setDescription(`⏭️ Skipped **${skipped?.info.title ?? 'current track'}**.`);
+            const embed = new EmbedBuilder()
+                .setColor(Math.floor(Math.random() * 0xFFFFFF))
+                .setDescription(`⏭️ Skipped **${skipped?.info.title ?? 'current track'}**.`);
 
-        await interaction.reply({ embeds: [embed] });
+            await interaction.reply({ embeds: [embed] });
+        } catch (error) {
+            console.error('[skip] Lavalink error:', error);
+            await interaction.reply({ content: '❌ Failed to skip track. Please try again.' }).catch(() => {});
+        }
     },
 };
