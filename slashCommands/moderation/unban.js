@@ -26,6 +26,6 @@ module.exports = {
         }
 
         await interaction.guild.members.unban(userId, reason);
-        return interaction.reply({ content: `Unbanned **${ban.user.tag}** for ${reason}` });
+        return interaction.reply({ content: `Unbanned **${ban.user.tag}** for \`${reason}\`` });
     },
 };

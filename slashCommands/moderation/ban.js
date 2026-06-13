@@ -38,6 +38,6 @@ module.exports = {
         }
 
         await target.ban({ reason, deleteMessageSeconds: deleteDays * 86400 });
-        return interaction.reply({ content: `Banned **${target.user.tag}** for ${reason}` });
+        return interaction.reply({ content: `Banned **${target.user.tag}** for \`${reason}\`` });
     },
 };

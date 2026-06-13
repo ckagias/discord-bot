@@ -41,7 +41,13 @@ module.exports = {
             return interaction.editReply({ content: 'That user is not muted.' });
         }
 
+        const channels = interaction.guild.channels.cache.filter(c => c.isTextBased() || c.isVoiceBased());
+
+        await Promise.allSettled(
+            channels.map(c => c.permissionOverwrites.delete(muteRole))
+        );
+
         await target.roles.remove(muteRole, reason);
-        return interaction.editReply({ content: `Unmuted **${target.user.tag}** for ${reason}` });
+        return interaction.editReply({ content: `Unmuted **${target.user.tag}** for \`${reason}\`` });
     },
 };

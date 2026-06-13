@@ -31,6 +31,6 @@ module.exports = {
         }
 
         await target.kick(reason);
-        return interaction.reply({ content: `Kicked **${target.user.tag}** for ${reason}` });
+        return interaction.reply({ content: `Kicked **${target.user.tag}** for \`${reason}\`` });
     },
 };

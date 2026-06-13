@@ -45,7 +45,22 @@ module.exports = {
             return interaction.editReply({ content: 'That user is already muted.' });
         }
 
+        const textChannels = interaction.guild.channels.cache.filter(c => c.isTextBased());
+        const voiceChannels = interaction.guild.channels.cache.filter(c => c.isVoiceBased());
+
+        await Promise.allSettled([
+            ...textChannels.map(c => c.permissionOverwrites.edit(muteRole, {
+                SendMessages: false,
+                SendMessagesInThreads: false,
+                AddReactions: false,
+            })),
+            ...voiceChannels.map(c => c.permissionOverwrites.edit(muteRole, {
+                Speak: false,
+                Connect: false,
+            })),
+        ]);
+
         await target.roles.add(muteRole, reason);
-        return interaction.editReply({ content: `Muted **${target.user.tag}** for ${reason}` });
+        return interaction.editReply({ content: `Muted **${target.user.tag}** for \`${reason}\`` });
     },
 };

@@ -44,6 +44,6 @@ module.exports = {
         }
 
         await target.timeout(duration * 1000, reason);
-        return interaction.reply({ content: `Timed out **${target.user.tag}** until <t:${Math.floor((Date.now() + duration * 1000) / 1000)}:R> for ${reason}` });
+        return interaction.reply({ content: `Timed out **${target.user.tag}** until <t:${Math.floor((Date.now() + duration * 1000) / 1000)}:R> for \`${reason}\`` });
     },
 };
