@@ -16,10 +16,10 @@ If you find this useful, feel free to leave a ⭐ to help others find it!
 
 ## Features
 
-**56+** commands across **8** categories:
+**58+** commands across **8** categories:
 
 - 🎉 **Fun:** `8ball`, `dare`, `truth`, `gayrate`, `poll`
-- ℹ️ **Info:** `avatar`, `help`, `commands`, `weather`, `github` and **5** more.
+- ℹ️ **Info:** `avatar`, `help`, `commands`, `weather`, `github`and **7** more.
 - ⏫ **Leveling:** `leaderboard`, `level`, `toggleleveling`
 - 🎵 **Music:** `play`, `skip`, `pause`, `resume`, `stop` and **4** more.
 - 🔧 **Utility:** `purge`, `shorten`, `afk`, `slowmode`
@@ -61,19 +61,21 @@ Other highlights:
 ### ℹ️ Info
 
 
-| Command          | Description                                                           |
-| ---------------- | --------------------------------------------------------------------- |
-| `/avatar`        | Show a user's global avatar                                           |
-| `/server-avatar` | Show a user's server avatar                                           |
-| `/server-info`   | Display detailed server information                                   |
-| `/userinfo`      | Display detailed user information                                     |
-| `/ping`          | Show the bot's latency and API ping                                   |
-| `/uptime`        | Show how long the bot has been online                                 |
-| `/help`          | Show bot info and system stats                                        |
-| `/commands`      | List all available commands by category                               |
-| `/weather`       | Show the current weather for a city                                   |
+| Command          | Description                                                                                         |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
+| `/avatar`        | Show a user's global avatar                                                                         |
+| `/server-avatar` | Show a user's server avatar                                                                         |
+| `/server-info`   | Display detailed server information                                                                 |
+| `/userinfo`      | Display detailed user information                                                                   |
+| `/ping`          | Show the bot's latency and API ping                                                                 |
+| `/uptime`        | Show how long the bot has been online                                                               |
+| `/help`          | Show bot info and system stats                                                                      |
+| `/commands`      | List all available commands by category                                                             |
+| `/weather`       | Show the current weather for a city                                                                 |
 | `/github`        | Show GitHub profile, repository stats, yearly contribution count, and contribution chart for a user |
-| `/botstats`      | Show bot performance stats, feature overview, and total command count |
+| `/invite`        | Generate a 7-day invite link for the current server                                                 |
+| `/link`          | Generate an invite link to add the bot to another server                                            |
+| `/botstats`      | Show bot performance stats, feature overview, and total command count                               |
 
 
 ### ⏫ Leveling
@@ -263,16 +265,16 @@ Other highlights:
 ## Dependencies
 
 
-| Package                                                          | Purpose                                 |
-| ---------------------------------------------------------------- | --------------------------------------- |
-| [discord.js](https://discord.js.org/)                            | Core Discord library                    |
-| [lavalink-client](https://github.com/Tomato6966/lavalink-client) | Lavalink v4 client for music            |
-| [mongoose](https://mongoosejs.com/)                              | MongoDB object modeling                 |
-| [axios](https://axios-http.com/)                                 | HTTP requests (weather, GitHub APIs)    |
-| [@resvg/resvg-js](https://github.com/yisibl/resvg-js)           | SVG to PNG conversion for GitHub contribution chart |
-| [moment](https://momentjs.com/)                                  | Date/time formatting                    |
-| [outdent](https://www.npmjs.com/package/outdent)                 | Multi-line string formatting            |
-| [dotenv](https://www.npmjs.com/package/dotenv)                   | Loads environment variables from `.env` |
+| Package                                                          | Purpose                                             |
+| ---------------------------------------------------------------- | --------------------------------------------------- |
+| [discord.js](https://discord.js.org/)                            | Core Discord library                                |
+| [lavalink-client](https://github.com/Tomato6966/lavalink-client) | Lavalink v4 client for music                        |
+| [mongoose](https://mongoosejs.com/)                              | MongoDB object modeling                             |
+| [axios](https://axios-http.com/)                                 | HTTP requests (weather, GitHub APIs)                |
+| [@resvg/resvg-js](https://github.com/yisibl/resvg-js)            | SVG to PNG conversion for GitHub contribution chart |
+| [moment](https://momentjs.com/)                                  | Date/time formatting                                |
+| [outdent](https://www.npmjs.com/package/outdent)                 | Multi-line string formatting                        |
+| [dotenv](https://www.npmjs.com/package/dotenv)                   | Loads environment variables from `.env`             |
 
 
 ---
