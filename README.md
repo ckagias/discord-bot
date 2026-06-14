@@ -72,7 +72,7 @@ Other highlights:
 | `/help`          | Show bot info and system stats                                        |
 | `/commands`      | List all available commands by category                               |
 | `/weather`       | Show the current weather for a city                                   |
-| `/github`        | Show GitHub profile and repository stats for a user                   |
+| `/github`        | Show GitHub profile, repository stats, yearly contribution count, and contribution chart for a user |
 | `/botstats`      | Show bot performance stats, feature overview, and total command count |
 
 
@@ -269,6 +269,7 @@ Other highlights:
 | [lavalink-client](https://github.com/Tomato6966/lavalink-client) | Lavalink v4 client for music            |
 | [mongoose](https://mongoosejs.com/)                              | MongoDB object modeling                 |
 | [axios](https://axios-http.com/)                                 | HTTP requests (weather, GitHub APIs)    |
+| [@resvg/resvg-js](https://github.com/yisibl/resvg-js)           | SVG to PNG conversion for GitHub contribution chart |
 | [moment](https://momentjs.com/)                                  | Date/time formatting                    |
 | [outdent](https://www.npmjs.com/package/outdent)                 | Multi-line string formatting            |
 | [dotenv](https://www.npmjs.com/package/dotenv)                   | Loads environment variables from `.env` |

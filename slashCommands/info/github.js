@@ -1,5 +1,6 @@
 const axios = require('axios');
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { Resvg } = require('@resvg/resvg-js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -21,13 +22,31 @@ module.exports = {
                 ...(process.env.GITHUB_TOKEN && { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }),
             };
 
-            const [userRes, reposRes] = await Promise.all([
+            const now = new Date();
+            const fromDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString();
+
+            const graphqlQuery = {
+                query: `query($login: String!, $from: DateTime!) {
+                    user(login: $login) {
+                        contributionsCollection(from: $from) {
+                            contributionCalendar { totalContributions }
+                        }
+                    }
+                }`,
+                variables: { login: username, from: fromDate },
+            };
+
+            const [userRes, reposRes, contribRes] = await Promise.all([
                 axios.get(`https://api.github.com/users/${encodeURIComponent(username)}`, { headers }),
                 axios.get(`https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=100&sort=updated`, { headers }),
+                process.env.GITHUB_TOKEN
+                    ? axios.post('https://api.github.com/graphql', graphqlQuery, { headers, timeout: 5000 }).catch(() => null)
+                    : Promise.resolve(null),
             ]);
 
             const user = userRes.data;
             const repos = reposRes.data;
+            const totalContributions = contribRes?.data?.data?.user?.contributionsCollection?.contributionCalendar?.totalContributions ?? null;
             const totalStars = repos.reduce((sum, repo) => sum + repo.stargazers_count, 0);
             const topRepo = repos.sort((a, b) => b.stargazers_count - a.stargazers_count)[0];
             const createdAt = new Date(user.created_at).toLocaleDateString('en-US', {
@@ -37,8 +56,8 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setTitle(user.login)
                 .setURL(user.html_url)
-                .setThumbnail(user.avatar_url)
-                .setColor(0x24292e)
+                .setThumbnail(`${user.avatar_url}?v=4`)
+                .setColor(Math.floor(Math.random() * 0xFFFFFF))
                 .setDescription(user.bio ? `*${user.bio}*` : null);
 
             embed.addFields(
@@ -75,12 +94,40 @@ module.exports = {
                 embed.addFields({ name: '📌 Details', value: optionalLines.join('\n'), inline: false });
             }
 
+            const sinceAndContribs = [
+                { name: '📅 Member Since', value: createdAt, inline: true },
+                ...(totalContributions !== null ? [{ name: '📝 Contributions (1y)', value: `${totalContributions.toLocaleString()} contributions last year`, inline: true }] : []),
+            ];
+            embed.addFields(...sinceAndContribs);
+
             embed
-                .addFields({ name: '📅 Member Since', value: createdAt, inline: false })
                 .setFooter({ text: `Requested by ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL({ dynamic: true }) })
                 .setTimestamp();
 
-            await interaction.editReply({ embeds: [embed] });
+            let files = [];
+            try {
+                const svgRes = await axios.get(`https://ghchart.rshah.org/${encodeURIComponent(username)}`, { responseType: 'text' });
+                const colorMap = {
+                    '#ebedf0': '#161b22',
+                    '#eeeeee': '#161b22',
+                    '#c6e48b': '#0e4429',
+                    '#7bc96f': '#006d32',
+                    '#239a3b': '#26a641',
+                    '#196127': '#39d353',
+                };
+                let svg = svgRes.data
+                    .replace(/fill:([^;]+)/g, (_, c) => `fill:${colorMap[c.trim()] ?? c}`)
+                    .replace(/x="(\d+)"/g, (_, n) => `x="${parseInt(n) - 25}"`)
+                    .replace(/width="663"/, 'width="638"');
+
+                const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: 800 } });
+                const pngBuffer = resvg.render().asPng();
+                const attachment = new AttachmentBuilder(pngBuffer, { name: 'contributions.png' });
+                embed.setImage('attachment://contributions.png');
+                files = [attachment];
+            } catch (e) { console.error('[github] chart error:', e.message); }
+
+            await interaction.editReply({ embeds: [embed], files });
 
         } catch (err) {
             if (err.response?.status === 404) {
