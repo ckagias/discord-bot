@@ -16,13 +16,13 @@ If you find this useful, feel free to leave a ⭐ to help others find it!
 
 ## Features
 
-**64+** commands across **8** categories:
+**60+** commands across **8** categories:
 
 - 🎉 **Fun:** `8ball`, `dare`, `truth`, `gayrate`, `poll`
 - ℹ️ **Info:** `avatar`, `help`, `commands`, `weather`, `github` and **9** more.
 - ⏫ **Leveling:** `leaderboard`, `level`, `toggleleveling`
 - 🎵 **Music:** `play`, `skip`, `pause`, `resume`, `stop` and **4** more.
-- 🔧 **Utility:** `purge`, `shorten`, `afk`, `slowmode`, `snipe` and **1** more.
+- 🔧 **Utility:** `purge`, `shorten`, `afk`, `slowmode`, `snipe` and **3** more.
 - 🛡️ **Moderation:** `kick`, `ban`, `timeout`, `mute`, `warn` and **14** more.
 - 🎮 **Minigames:** `gamble`, `coinflip`, `rps`
 - 🎫 **Tickets:** `ticket setup`, `ticket panel`, `ticket close`, `ticket stats`, `ticket reset`
@@ -39,6 +39,9 @@ Other highlights:
 - AFK system with return detection and mention notifications
 - Ticket system with private channels, support role pinging, auto-cleanup of stale tickets, and per-server stats
 - Reaction roles with support for unicode and custom/animated emojis, bound per message and stored in MongoDB
+- Giveaway system with button-based entry, live entrant count, configurable winner count, and MongoDB persistence so active giveaways survive bot restarts
+- Temporary voice channels with optional locking, user limit, and invite-only access
+- Custom embed builder with a two-step modal flow. Main fields (title, description, color, footer, image) then optional inline or full-width fields, plus an in-Discord formatting reference
 - Docker support with Lavalink and MongoDB services included
 - Graceful shutdown handling for clean Docker restarts
 
@@ -115,10 +118,16 @@ Other highlights:
 | `/purge`         | Delete a number of messages (requires Manage Messages)                             |
 | `/shorten`       | Shorten a URL using is.gd                                                          |
 | `/slowmode`      | Set the slowmode delay for a channel (requires Manage Channels)                    |
-| `/tempvc create` | Create a temporary voice channel in your current category; auto-deletes when empty |
-| `/tempvc invite` | Invite a user to your locked temp VC (owner only)                                  |
-| `/snipe delete`  | Show the last deleted message in the current channel                               |
-| `/snipe edit`    | Show the last edited message (before/after) in this channel                        |
+| `/tempvc create`   | Create a temporary voice channel in your current category; auto-deletes when empty |
+| `/tempvc invite`   | Invite a user to your locked temp VC (owner only)                                  |
+| `/snipe delete`    | Show the last deleted message in the current channel                               |
+| `/snipe edit`      | Show the last edited message (before/after) in this channel                        |
+| `/giveaway start`  | Start a timed giveaway with a prize, duration, and optional winner count (Manage Server) |
+| `/giveaway end`    | End an active giveaway early and pick winners immediately (Manage Server)          |
+| `/giveaway reroll` | Reroll winners for an ended giveaway (Manage Server)                               |
+| `/embed create`    | Build and post a custom embed via a two-step modal (main fields + optional fields) (Manage Messages) |
+| `/embed edit`      | Edit an existing embed posted by the bot, pre-filled with current values (Manage Messages) |
+| `/embed help`      | Show an in-Discord formatting reference for markdown, links, mentions, and timestamps |
 
 
 ### 🎮 Minigames

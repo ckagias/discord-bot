@@ -30,6 +30,21 @@ module.exports = {
             return;
         }
 
+        if (interaction.isModalSubmit() && interaction.customId.startsWith('embed_create:')) {
+            await handleEmbedMainModal(interaction);
+            return;
+        }
+
+        if (interaction.isModalSubmit() && interaction.customId.startsWith('embed_edit:')) {
+            await handleEmbedMainModal(interaction);
+            return;
+        }
+
+        if (interaction.isModalSubmit() && interaction.customId.startsWith('embed_fields:')) {
+            await handleEmbedFieldsModal(interaction);
+            return;
+        }
+
         if (interaction.isButton()) {
             if (interaction.customId === 'ticket_open') {
                 await handleTicketOpen(interaction);
@@ -37,6 +52,10 @@ module.exports = {
                 await handleTicketCloseButton(interaction);
             } else if (interaction.customId === 'giveaway_enter') {
                 await handleGiveawayEnter(interaction);
+            } else if (interaction.customId.startsWith('embed_fields:')) {
+                await handleEmbedFieldsButton(interaction);
+            } else if (interaction.customId === 'embed_post_now') {
+                await handleEmbedPostNow(interaction);
             }
         }
     }
@@ -164,6 +183,166 @@ async function handleTicketCloseButton(interaction) {
     await TicketSchema.findOneAndUpdate({ channelId: interaction.channel.id }, { status: 'closed' });
 
     setTimeout(() => interaction.channel.delete().catch(() => {}), 5000);
+}
+
+async function handleEmbedMainModal(interaction) {
+    const { parseMainFields } = require('../slashCommands/utility/embed');
+    const { ActionRowBuilder: ARB, ButtonBuilder: BB, ButtonStyle: BS } = require('discord.js');
+
+    const isEdit = interaction.customId.startsWith('embed_edit:');
+    const parts  = interaction.customId.split(':');
+
+    const result = parseMainFields(interaction);
+    if (result.error) return interaction.reply({ content: result.error, ephemeral: true });
+
+    if (!interaction.client.embedDrafts) interaction.client.embedDrafts = new Map();
+
+    const draftKey = interaction.user.id;
+    interaction.client.embedDrafts.set(draftKey, { result, originalId: interaction.customId });
+    setTimeout(() => interaction.client.embedDrafts.delete(draftKey), 600_000);
+
+    const fieldsCustomId = isEdit
+        ? `embed_fields:edit:${parts[1]}:${parts[2]}`
+        : `embed_fields:create:${parts[1]}`;
+
+    const row = new ARB().addComponents(
+        new BB()
+            .setCustomId(fieldsCustomId)
+            .setLabel('Add Fields (optional)')
+            .setStyle(BS.Secondary)
+            .setEmoji('📋'),
+        new BB()
+            .setCustomId('embed_post_now')
+            .setLabel('Post Without Fields')
+            .setStyle(BS.Primary)
+            .setEmoji('✅'),
+    );
+
+    return interaction.reply({
+        content: '**Step 2 — Fields (optional)**\nClick **Add Fields** to add up to 5 inline or full-width fields, or **Post Without Fields** to send the embed now.',
+        components: [row],
+        ephemeral: true,
+    });
+}
+
+async function getExistingFields(interaction, parts) {
+    try {
+        const channelId = parts[1];
+        const messageId = parts[2];
+        const channel = await interaction.guild.channels.fetch(channelId).catch(() => null);
+        if (!channel) return [];
+        const message = await channel.messages.fetch(messageId).catch(() => null);
+        return message?.embeds[0]?.fields ?? [];
+    } catch {
+        return [];
+    }
+}
+
+async function handleEmbedFieldsModal(interaction) {
+    await interaction.deferReply({ ephemeral: true });
+
+    const { parseFieldLines, buildEmbed } = require('../slashCommands/utility/embed');
+
+    const draftKey = interaction.user.id;
+    const draft = interaction.client.embedDrafts?.get(draftKey);
+    if (!draft) return interaction.editReply({ content: 'Your embed draft expired. Please run `/embed create` again.' });
+
+    interaction.client.embedDrafts.delete(draftKey);
+
+    const fields = parseFieldLines(interaction);
+    const embed  = buildEmbed(draft.result, fields);
+
+    const parts  = interaction.customId.split(':');
+    const isEdit = parts[1] === 'edit';
+
+    if (isEdit) {
+        const channelId = parts[2];
+        const messageId = parts[3];
+        const channel = await interaction.guild.channels.fetch(channelId).catch(() => null);
+        if (!channel) return interaction.editReply({ content: 'Could not find the channel.' });
+        const message = await channel.messages.fetch(messageId).catch(() => null);
+        if (!message) return interaction.editReply({ content: 'Could not find the message.' });
+
+        await message.edit({ embeds: [embed] });
+        return interaction.editReply({ content: 'Embed updated.' });
+    } else {
+        const channelId = parts[2];
+        const channel = await interaction.guild.channels.fetch(channelId).catch(() => null);
+        if (!channel) return interaction.editReply({ content: 'Could not find the target channel.' });
+
+        const sent = await channel.send({ embeds: [embed] });
+        return interaction.editReply({ content: `Embed posted in ${channel}. Message ID: \`${sent.id}\`` });
+    }
+}
+
+async function handleEmbedFieldsButton(interaction) {
+    const { buildFieldsModal } = require('../slashCommands/utility/embed');
+
+    const parts  = interaction.customId.split(':');
+    const isEdit = parts[1] === 'edit';
+    const existingFields = isEdit ? await getExistingFields(interaction, [null, parts[2], parts[3]]) : [];
+
+    return interaction.showModal(buildFieldsModal(interaction.customId, existingFields));
+}
+
+async function handleEmbedPostNow(interaction) {
+    await interaction.deferUpdate();
+
+    const { buildEmbed } = require('../slashCommands/utility/embed');
+
+    const draft = interaction.client.embedDrafts?.get(interaction.user.id);
+    if (!draft) return interaction.editReply({ content: 'Your embed draft expired. Please run `/embed create` again.', components: [] });
+
+    interaction.client.embedDrafts.delete(interaction.user.id);
+
+    const embed = buildEmbed(draft.result, []);
+
+    const parts  = draft.originalId.split(':');
+    const isEdit = draft.originalId.startsWith('embed_edit:');
+
+    if (isEdit) {
+        const channel = await interaction.guild.channels.fetch(parts[1]).catch(() => null);
+        const message = await channel?.messages.fetch(parts[2]).catch(() => null);
+        if (!message) return interaction.editReply({ content: 'Could not find the original message.', components: [] });
+        await message.edit({ embeds: [embed] });
+        return interaction.editReply({ content: 'Embed updated.', components: [] });
+    } else {
+        const channel = await interaction.guild.channels.fetch(parts[1]).catch(() => null);
+        if (!channel) return interaction.editReply({ content: 'Could not find the target channel.', components: [] });
+        const sent = await channel.send({ embeds: [embed] });
+        return interaction.editReply({ content: `Embed posted in ${channel}. Message ID: \`${sent.id}\``, components: [] });
+    }
+}
+
+async function handleEmbedFieldsModal(interaction) {
+    await interaction.deferUpdate();
+
+    const { parseFieldLines, buildEmbed } = require('../slashCommands/utility/embed');
+
+    const draftKey = interaction.user.id;
+    const draft = interaction.client.embedDrafts?.get(draftKey);
+    if (!draft) return interaction.editReply({ content: 'Your embed draft expired. Please run `/embed create` again.', components: [] });
+
+    interaction.client.embedDrafts.delete(draftKey);
+
+    const fields = parseFieldLines(interaction);
+    const embed  = buildEmbed(draft.result, fields);
+
+    const parts  = interaction.customId.split(':');
+    const isEdit = parts[1] === 'edit';
+
+    if (isEdit) {
+        const channel = await interaction.guild.channels.fetch(parts[2]).catch(() => null);
+        const message = await channel?.messages.fetch(parts[3]).catch(() => null);
+        if (!message) return interaction.editReply({ content: 'Could not find the original message.', components: [] });
+        await message.edit({ embeds: [embed] });
+        return interaction.editReply({ content: 'Embed updated.', components: [] });
+    } else {
+        const channel = await interaction.guild.channels.fetch(parts[2]).catch(() => null);
+        if (!channel) return interaction.editReply({ content: 'Could not find the target channel.', components: [] });
+        const sent = await channel.send({ embeds: [embed] });
+        return interaction.editReply({ content: `Embed posted in ${channel}. Message ID: \`${sent.id}\``, components: [] });
+    }
 }
 
 async function handleGiveawayEnter(interaction) {
