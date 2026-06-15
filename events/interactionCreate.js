@@ -2,6 +2,7 @@ const { PermissionFlagsBits, ChannelType, EmbedBuilder, ActionRowBuilder, Button
 const { isValidUrl } = require('../utils/validate');
 const GuildSchema = require('../models/GuildSchema');
 const TicketSchema = require('../models/TicketSchema');
+const GiveawaySchema = require('../models/GiveawaySchema');
 
 module.exports = {
     name: 'interactionCreate',
@@ -34,6 +35,8 @@ module.exports = {
                 await handleTicketOpen(interaction);
             } else if (interaction.customId === 'ticket_close_btn') {
                 await handleTicketCloseButton(interaction);
+            } else if (interaction.customId === 'giveaway_enter') {
+                await handleGiveawayEnter(interaction);
             }
         }
     }
@@ -161,4 +164,29 @@ async function handleTicketCloseButton(interaction) {
     await TicketSchema.findOneAndUpdate({ channelId: interaction.channel.id }, { status: 'closed' });
 
     setTimeout(() => interaction.channel.delete().catch(() => {}), 5000);
+}
+
+async function handleGiveawayEnter(interaction) {
+    const giveaway = await GiveawaySchema.findOne({ messageId: interaction.message.id, ended: false });
+
+    if (!giveaway)
+        return interaction.reply({ content: 'This giveaway has already ended.', ephemeral: true });
+
+    const userId = interaction.user.id;
+    const already = giveaway.entrants.includes(userId);
+
+    if (already) {
+        giveaway.entrants = giveaway.entrants.filter(id => id !== userId);
+        await giveaway.save();
+        await interaction.reply({ content: 'You have withdrawn from the giveaway.', ephemeral: true });
+    } else {
+        giveaway.entrants.push(userId);
+        await giveaway.save();
+        await interaction.reply({ content: 'You have entered the giveaway! Click again to withdraw.', ephemeral: true });
+    }
+
+    const { EmbedBuilder: EB } = require('discord.js');
+    const currentEmbed = interaction.message.embeds[0];
+    const updated = EB.from(currentEmbed).spliceFields(3, 1, { name: 'Entries', value: `${giveaway.entrants.length}`, inline: true });
+    await interaction.message.edit({ embeds: [updated] }).catch(() => {});
 }
