@@ -11,10 +11,9 @@ module.exports = {
                 .setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
 
-    async execute(interaction) {
-        if (!interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers))
-            return interaction.reply({ content: 'You do not have permission to view warnings.', flags: MessageFlags.Ephemeral });
+    permissions: PermissionFlagsBits.ModerateMembers,
 
+    async execute(interaction) {
         await interaction.deferReply();
 
         const target = interaction.options.getUser('user');

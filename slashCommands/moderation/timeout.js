@@ -61,10 +61,9 @@ module.exports = {
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
 
-    async execute(interaction) {
-        if (!interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers))
-            return interaction.reply({ content: 'You do not have permission to manage timeouts.', flags: MessageFlags.Ephemeral });
+    permissions: PermissionFlagsBits.ModerateMembers,
 
+    async execute(interaction) {
         const sub = interaction.options.getSubcommand();
         const target = interaction.options.getMember('user');
         const reason = interaction.options.getString('reason') ?? 'No reason provided';

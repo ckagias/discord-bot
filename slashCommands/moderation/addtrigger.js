@@ -15,10 +15,9 @@ module.exports = {
                 .setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
 
-    async execute(interaction) {
-        if (!interaction.member.permissions.has(PermissionFlagsBits.ManageMessages))
-            return interaction.reply({ content: 'You do not have permission to manage triggers.', flags: MessageFlags.Ephemeral });
+    permissions: PermissionFlagsBits.ManageMessages,
 
+    async execute(interaction) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const trigger = interaction.options.getString('trigger').toLowerCase();

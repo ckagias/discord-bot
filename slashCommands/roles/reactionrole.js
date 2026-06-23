@@ -28,10 +28,9 @@ module.exports = {
                 .setDescription('Post a custom reaction role embed in this channel.')
         ),
 
-    async execute(interaction) {
-        if (!interaction.member.permissions.has(PermissionFlagsBits.ManageRoles))
-            return interaction.reply({ content: 'You need the **Manage Roles** permission.', flags: MessageFlags.Ephemeral });
+    permissions: PermissionFlagsBits.ManageRoles,
 
+    async execute(interaction) {
         const sub = interaction.options.getSubcommand();
 
         if (sub === 'add') {

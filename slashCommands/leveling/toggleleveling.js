@@ -7,6 +7,8 @@ module.exports = {
         .setDescription('Enable or disable the XP leveling system for this server.')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
+    permissions: PermissionFlagsBits.Administrator,
+
     async execute(interaction) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 

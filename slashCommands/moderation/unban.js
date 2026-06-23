@@ -14,10 +14,9 @@ module.exports = {
                 .setRequired(false))
         .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
 
-    async execute(interaction) {
-        if (!interaction.member.permissions.has(PermissionFlagsBits.BanMembers))
-            return interaction.reply({ content: 'You do not have permission to ban members.', flags: MessageFlags.Ephemeral });
+    permissions: PermissionFlagsBits.BanMembers,
 
+    async execute(interaction) {
         const userId = interaction.options.getString('user_id');
         const reason = interaction.options.getString('reason') ?? 'No reason provided';
 

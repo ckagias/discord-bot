@@ -9,13 +9,12 @@ module.exports = {
                 .setDescription('Number of messages to delete (1-100)')
                 .setRequired(true)
                 .setMinValue(1)
-                .setMaxValue(100)),
+                .setMaxValue(100))
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
+
+    permissions: PermissionFlagsBits.ManageMessages,
 
     async execute(interaction) {
-        if (!interaction.member.permissions.has(PermissionFlagsBits.ManageMessages)) {
-            return interaction.reply({ content: 'You do not have permission to delete messages!', flags: MessageFlags.Ephemeral });
-        }
-
         const amount = interaction.options.getInteger('amount');
 
         try {

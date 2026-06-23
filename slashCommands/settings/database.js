@@ -7,6 +7,8 @@ module.exports = {
         .setDescription('Shows the current size and statistics of the MongoDB database.')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
+    permissions: PermissionFlagsBits.Administrator,
+
     async execute(interaction) {
         await interaction.deferReply();
 

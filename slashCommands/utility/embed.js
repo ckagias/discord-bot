@@ -28,6 +28,8 @@ module.exports = {
                 .setDescription('Show all formatting options you can use in embed descriptions.')
         ),
 
+    permissions: PermissionFlagsBits.ManageMessages,
+
     async execute(interaction) {
         const sub = interaction.options.getSubcommand();
 

@@ -14,10 +14,9 @@ module.exports = {
                 .setRequired(false))
         .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
 
-    async execute(interaction) {
-        if (!interaction.member.permissions.has(PermissionFlagsBits.KickMembers))
-            return interaction.reply({ content: 'You do not have permission to kick members.', flags: MessageFlags.Ephemeral });
+    permissions: PermissionFlagsBits.KickMembers,
 
+    async execute(interaction) {
         const target = interaction.options.getMember('user');
         const reason = interaction.options.getString('reason') ?? 'No reason provided';
 

@@ -96,6 +96,8 @@ module.exports = {
                 .setDescription('Reroll winners for an ended giveaway.')
                 .addStringOption(o => o.setName('message_id').setDescription('Message ID of the giveaway').setRequired(true))),
 
+    permissions: PermissionFlagsBits.ManageGuild,
+
     endGiveaway,
 
     async execute(interaction, client) {

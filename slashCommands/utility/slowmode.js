@@ -9,13 +9,12 @@ module.exports = {
                 .setDescription('Slowmode delay in seconds (0 to disable, max 21600)')
                 .setRequired(true)
                 .setMinValue(0)
-                .setMaxValue(21600)),
+                .setMaxValue(21600))
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+
+    permissions: PermissionFlagsBits.ManageChannels,
 
     async execute(interaction) {
-        if (!interaction.member.permissions.has(PermissionFlagsBits.ManageChannels)) {
-            return interaction.reply({ content: 'You need the **Manage Channels** permission to use this command.' });
-        }
-
         const seconds = interaction.options.getInteger('seconds');
 
         try {
