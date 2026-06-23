@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const axios = require('axios');
 
 module.exports = {
@@ -19,14 +19,14 @@ module.exports = {
         } catch {
             return interaction.reply({
                 content: 'That doesn\'t look like a valid URL. Make sure to include `http://` or `https://`.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
         }
 
         if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
             return interaction.reply({
                 content: 'Only `http` and `https` URLs are supported.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
         }
 

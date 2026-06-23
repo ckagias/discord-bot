@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -16,21 +16,21 @@ module.exports = {
 
     async execute(interaction) {
         if (!interaction.member.permissions.has(PermissionFlagsBits.KickMembers))
-            return interaction.reply({ content: 'You do not have permission to kick members.', ephemeral: true });
+            return interaction.reply({ content: 'You do not have permission to kick members.', flags: MessageFlags.Ephemeral });
 
         const target = interaction.options.getMember('user');
         const reason = interaction.options.getString('reason') ?? 'No reason provided';
 
         if (!target) {
-            return interaction.reply({ content: 'That user is not in this server.', ephemeral: true });
+            return interaction.reply({ content: 'That user is not in this server.', flags: MessageFlags.Ephemeral });
         }
 
         if (interaction.member.roles.highest.position <= target.roles.highest.position) {
-            return interaction.reply({ content: 'You cannot kick someone with an equal or higher role.', ephemeral: true });
+            return interaction.reply({ content: 'You cannot kick someone with an equal or higher role.', flags: MessageFlags.Ephemeral });
         }
 
         if (!target.kickable) {
-            return interaction.reply({ content: 'I cannot kick that user (check my role position).', ephemeral: true });
+            return interaction.reply({ content: 'I cannot kick that user (check my role position).', flags: MessageFlags.Ephemeral });
         }
 
         await target.kick(reason);

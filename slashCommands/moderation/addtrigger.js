@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const TriggerSchema = require('../../models/TriggerSchema');
 
 module.exports = {
@@ -17,9 +17,9 @@ module.exports = {
 
     async execute(interaction) {
         if (!interaction.member.permissions.has(PermissionFlagsBits.ManageMessages))
-            return interaction.reply({ content: 'You do not have permission to manage triggers.', ephemeral: true });
+            return interaction.reply({ content: 'You do not have permission to manage triggers.', flags: MessageFlags.Ephemeral });
 
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const trigger = interaction.options.getString('trigger').toLowerCase();
         const response = interaction.options.getString('response');

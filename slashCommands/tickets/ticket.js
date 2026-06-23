@@ -1,6 +1,6 @@
-const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const GuildSchema = require('../../models/GuildSchema');
+const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const TicketSchema = require('../../models/TicketSchema');
+const { getGuildConfig, updateGuildConfig } = require('../../utils/guildConfig');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -41,31 +41,27 @@ module.exports = {
 
         if (sub === 'setup') {
             if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild))
-                return interaction.reply({ content: 'You need the **Manage Server** permission.', ephemeral: true });
+                return interaction.reply({ content: 'You need the **Manage Server** permission.', flags: MessageFlags.Ephemeral });
 
             const category = interaction.options.getChannel('category');
             const supportRole = interaction.options.getRole('support-role');
 
-            await GuildSchema.findOneAndUpdate(
-                { guildId: interaction.guild.id },
-                { ticketCategoryId: category.id, ticketSupportRoleId: supportRole.id },
-                { upsert: true }
-            );
+            await updateGuildConfig(interaction.guild.id, { ticketCategoryId: category.id, ticketSupportRoleId: supportRole.id });
 
             return interaction.reply({
                 content: `Ticket system configured.\n**Category:** ${category.name}\n**Support Role:** ${supportRole}`,
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
         }
 
         if (sub === 'panel') {
             if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild))
-                return interaction.reply({ content: 'You need the **Manage Server** permission.', ephemeral: true });
+                return interaction.reply({ content: 'You need the **Manage Server** permission.', flags: MessageFlags.Ephemeral });
 
-            const config = await GuildSchema.findOne({ guildId: interaction.guild.id });
+            const config = await getGuildConfig(interaction.guild.id);
 
             if (!config?.ticketCategoryId || !config?.ticketSupportRoleId)
-                return interaction.reply({ content: 'Ticket system is not configured. Run `/ticket setup` first.', ephemeral: true });
+                return interaction.reply({ content: 'Ticket system is not configured. Run `/ticket setup` first.', flags: MessageFlags.Ephemeral });
 
             const embed = new EmbedBuilder()
                 .setTitle('Support Tickets')
@@ -81,20 +77,20 @@ module.exports = {
             );
 
             await interaction.channel.send({ embeds: [embed], components: [row] });
-            return interaction.reply({ content: 'Ticket panel posted.', ephemeral: true });
+            return interaction.reply({ content: 'Ticket panel posted.', flags: MessageFlags.Ephemeral });
         }
 
         if (sub === 'close') {
             const ticket = await TicketSchema.findOne({ channelId: interaction.channel.id, status: 'open' });
 
             if (!ticket)
-                return interaction.reply({ content: 'This command can only be used inside an open ticket channel.', ephemeral: true });
+                return interaction.reply({ content: 'This command can only be used inside an open ticket channel.', flags: MessageFlags.Ephemeral });
 
             const isSupport = interaction.member.permissions.has(PermissionFlagsBits.ManageChannels);
             const isOwner = ticket.userId === interaction.user.id;
 
             if (!isSupport && !isOwner)
-                return interaction.reply({ content: 'You do not have permission to close this ticket.', ephemeral: true });
+                return interaction.reply({ content: 'You do not have permission to close this ticket.', flags: MessageFlags.Ephemeral });
 
             await interaction.reply({ content: `Ticket closed by ${interaction.user}. This channel will be deleted in 5 seconds.` });
             await TicketSchema.findOneAndUpdate({ channelId: interaction.channel.id }, { status: 'closed' });
@@ -103,10 +99,10 @@ module.exports = {
 
         if (sub === 'stats') {
             if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild))
-                return interaction.reply({ content: 'You need the **Manage Server** permission.', ephemeral: true });
+                return interaction.reply({ content: 'You need the **Manage Server** permission.', flags: MessageFlags.Ephemeral });
 
             const [config, open, closed] = await Promise.all([
-                GuildSchema.findOne({ guildId: interaction.guild.id }),
+                getGuildConfig(interaction.guild.id),
                 TicketSchema.countDocuments({ guildId: interaction.guild.id, status: 'open' }),
                 TicketSchema.countDocuments({ guildId: interaction.guild.id, status: 'closed' }),
             ]);
@@ -121,19 +117,19 @@ module.exports = {
                 .setColor(Math.floor(Math.random() * 0xFFFFFF))
                 .setTimestamp();
 
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
 
         if (sub === 'reset') {
             if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator))
-                return interaction.reply({ content: 'You need the **Administrator** permission.', ephemeral: true });
+                return interaction.reply({ content: 'You need the **Administrator** permission.', flags: MessageFlags.Ephemeral });
 
             await Promise.all([
-                GuildSchema.findOneAndUpdate({ guildId: interaction.guild.id }, { ticketCount: 0 }),
+                updateGuildConfig(interaction.guild.id, { ticketCount: 0 }),
                 TicketSchema.deleteMany({ guildId: interaction.guild.id }),
             ]);
 
-            return interaction.reply({ content: 'Ticket counter reset. The next ticket will be `#0001`.', ephemeral: true });
+            return interaction.reply({ content: 'Ticket counter reset. The next ticket will be `#0001`.', flags: MessageFlags.Ephemeral });
         }
     },
 };

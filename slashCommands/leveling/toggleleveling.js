@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const GuildSchema = require('../../models/GuildSchema');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
+const { ensureGuildConfig } = require('../../utils/guildConfig');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -8,15 +8,11 @@ module.exports = {
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async execute(interaction) {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const { guild } = interaction;
 
-        const guildData = await GuildSchema.findOneAndUpdate(
-            { guildId: guild.id },
-            { $setOnInsert: { guildId: guild.id } },
-            { upsert: true, returnDocument: true }
-        );
+        const guildData = await ensureGuildConfig(guild.id);
 
         guildData.levelingEnabled = !guildData.levelingEnabled;
         await guildData.save();

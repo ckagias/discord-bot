@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
-const GuildSchema = require('../../models/GuildSchema');
+const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } = require('discord.js');
+const { updateGuildConfig } = require('../../utils/guildConfig');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -26,23 +26,19 @@ module.exports = {
 
     async execute(interaction) {
         if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild))
-            return interaction.reply({ content: 'You do not have permission to manage server settings.', ephemeral: true });
+            return interaction.reply({ content: 'You do not have permission to manage server settings.', flags: MessageFlags.Ephemeral });
 
         const sub = interaction.options.getSubcommand();
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         if (sub === 'set') {
             const channel = interaction.options.getChannel('channel');
             const message = interaction.options.getString('message');
 
-            const update = { $set: { welcomeChannelId: channel.id }, $setOnInsert: { guildId: interaction.guild.id } };
-            if (message) update.$set.welcomeMessage = message;
+            const fields = { welcomeChannelId: channel.id };
+            if (message) fields.welcomeMessage = message;
 
-            await GuildSchema.findOneAndUpdate(
-                { guildId: interaction.guild.id },
-                update,
-                { upsert: true }
-            );
+            await updateGuildConfig(interaction.guild.id, fields);
 
             const preview = message ?? 'Welcome to **{server}**, {user}!';
             return interaction.editReply({
@@ -51,11 +47,7 @@ module.exports = {
         }
 
         if (sub === 'unset') {
-            await GuildSchema.findOneAndUpdate(
-                { guildId: interaction.guild.id },
-                { $set: { welcomeChannelId: null, welcomeMessage: null }, $setOnInsert: { guildId: interaction.guild.id } },
-                { upsert: true }
-            );
+            await updateGuildConfig(interaction.guild.id, { welcomeChannelId: null, welcomeMessage: null });
 
             return interaction.editReply({ content: 'Welcome messages have been disabled.' });
         }

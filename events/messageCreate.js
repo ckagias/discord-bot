@@ -1,8 +1,8 @@
 const LevelSchema = require('../models/LevelSchema');
-const GuildSchema = require('../models/GuildSchema');
 const AfkSchema = require('../models/AfkSchema');
 const TriggerSchema = require('../models/TriggerSchema');
 const { runAutoMod } = require('../utils/automod');
+const { ensureGuildConfig } = require('../utils/guildConfig');
 
 const xp_cooldown_ms = 60_000;
 
@@ -17,11 +17,7 @@ module.exports = {
 
         let guildData;
         try {
-            guildData = await GuildSchema.findOneAndUpdate(
-                { guildId: guild.id },
-                { $setOnInsert: { guildId: guild.id } },
-                { upsert: true, new: true }
-            );
+            guildData = await ensureGuildConfig(guild.id);
         } catch (error) {
             console.error('[messageCreate] Failed to load guild settings:', error);
         }
@@ -110,7 +106,7 @@ module.exports = {
                     $set: { lastXpAt: new Date() },
                     $setOnInsert: { userId: author.id, guildId: guild.id },
                 },
-                { upsert: true, new: true }
+                { upsert: true, returnDocument: 'after' }
             );
 
             // When the cooldown filter doesn't match, upsert inserts a bare doc with a fresh lastXpAt.
@@ -125,7 +121,7 @@ module.exports = {
                 const levelled = await LevelSchema.findOneAndUpdate(
                     { userId: author.id, guildId: guild.id, xp: { $gte: xpNeeded } },
                     { $inc: { xp: -xpNeeded, level: 1 } },
-                    { new: true }
+                    { returnDocument: 'after' }
                 );
                 if (levelled) {
                     await channel.send(

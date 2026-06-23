@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
-const GuildSchema = require('../../models/GuildSchema');
+const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } = require('discord.js');
+const { updateGuildConfig } = require('../../utils/guildConfig');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -26,23 +26,19 @@ module.exports = {
 
     async execute(interaction) {
         if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild))
-            return interaction.reply({ content: 'You do not have permission to manage server settings.', ephemeral: true });
+            return interaction.reply({ content: 'You do not have permission to manage server settings.', flags: MessageFlags.Ephemeral });
 
         const sub = interaction.options.getSubcommand();
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         if (sub === 'set') {
             const channel = interaction.options.getChannel('channel');
             const message = interaction.options.getString('message');
 
-            const update = { $set: { farewellChannelId: channel.id }, $setOnInsert: { guildId: interaction.guild.id } };
-            if (message) update.$set.farewellMessage = message;
+            const fields = { farewellChannelId: channel.id };
+            if (message) fields.farewellMessage = message;
 
-            await GuildSchema.findOneAndUpdate(
-                { guildId: interaction.guild.id },
-                update,
-                { upsert: true }
-            );
+            await updateGuildConfig(interaction.guild.id, fields);
 
             const preview = message ?? '**{user}** has left **{server}**.';
             return interaction.editReply({
@@ -51,11 +47,7 @@ module.exports = {
         }
 
         if (sub === 'unset') {
-            await GuildSchema.findOneAndUpdate(
-                { guildId: interaction.guild.id },
-                { $set: { farewellChannelId: null, farewellMessage: null }, $setOnInsert: { guildId: interaction.guild.id } },
-                { upsert: true }
-            );
+            await updateGuildConfig(interaction.guild.id, { farewellChannelId: null, farewellMessage: null });
 
             return interaction.editReply({ content: 'Farewell messages have been disabled.' });
         }

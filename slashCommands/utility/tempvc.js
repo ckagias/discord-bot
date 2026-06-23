@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -36,7 +36,7 @@ module.exports = {
         if (sub === 'create') {
             const voiceChannel = member.voice.channel;
             if (!voiceChannel) {
-                return interaction.reply({ content: 'You must be in a voice channel to create a temp VC.', ephemeral: true });
+                return interaction.reply({ content: 'You must be in a voice channel to create a temp VC.', flags: MessageFlags.Ephemeral });
             }
 
             const name = interaction.options.getString('name');
@@ -69,7 +69,7 @@ module.exports = {
                 });
             } catch (error) {
                 console.error('[tempvc] Channel creation error:', error);
-                return interaction.reply({ content: 'Failed to create the voice channel. Make sure I have the **Manage Channels** permission.', ephemeral: true });
+                return interaction.reply({ content: 'Failed to create the voice channel. Make sure I have the **Manage Channels** permission.', flags: MessageFlags.Ephemeral });
             }
 
             if (!interaction.client.tempVCs) interaction.client.tempVCs = new Map();
@@ -83,28 +83,28 @@ module.exports = {
             const lockedText = locked ? 'locked' : 'open';
             return interaction.reply({
                 content: `Created **${name}** (${lockedText}, ${limitText} slots).`,
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
         }
 
         if (sub === 'invite') {
             const voiceChannel = member.voice.channel;
             if (!voiceChannel) {
-                return interaction.reply({ content: 'You must be in your temp VC to invite someone.', ephemeral: true });
+                return interaction.reply({ content: 'You must be in your temp VC to invite someone.', flags: MessageFlags.Ephemeral });
             }
 
             const tempVCs = interaction.client.tempVCs;
             if (!tempVCs?.has(voiceChannel.id)) {
-                return interaction.reply({ content: 'You are not in a temp VC.', ephemeral: true });
+                return interaction.reply({ content: 'You are not in a temp VC.', flags: MessageFlags.Ephemeral });
             }
 
             if (tempVCs.get(voiceChannel.id) !== member.id) {
-                return interaction.reply({ content: 'Only the creator of the temp VC can invite users.', ephemeral: true });
+                return interaction.reply({ content: 'Only the creator of the temp VC can invite users.', flags: MessageFlags.Ephemeral });
             }
 
             const target = interaction.options.getUser('user');
             if (target.id === member.id) {
-                return interaction.reply({ content: 'You cannot invite yourself.', ephemeral: true });
+                return interaction.reply({ content: 'You cannot invite yourself.', flags: MessageFlags.Ephemeral });
             }
 
             try {
@@ -117,10 +117,10 @@ module.exports = {
                     `**${member.user.username}** invited you to join **${voiceChannel.name}** in **${interaction.guild.name}**.`
                 ).catch(() => {});
 
-                return interaction.reply({ content: `**${target.username}** has been invited to join **${voiceChannel.name}**.`, ephemeral: true });
+                return interaction.reply({ content: `**${target.username}** has been invited to join **${voiceChannel.name}**.`, flags: MessageFlags.Ephemeral });
             } catch (error) {
                 console.error('[tempvc] Invite error:', error);
-                return interaction.reply({ content: 'Failed to invite the user.', ephemeral: true });
+                return interaction.reply({ content: 'Failed to invite the user.', flags: MessageFlags.Ephemeral });
             }
         }
     },

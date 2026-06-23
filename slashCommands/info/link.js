@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, OAuth2Scopes, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, OAuth2Scopes, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -21,6 +21,6 @@ module.exports = {
             .setThumbnail(interaction.client.user.displayAvatarURL())
             .setTimestamp();
 
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     },
 };

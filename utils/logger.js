@@ -1,7 +1,7 @@
-const GuildSchema = require('../models/GuildSchema');
+const { getGuildConfig } = require('./guildConfig');
 
 async function getLogChannel(guild) {
-    const guildData = await GuildSchema.findOne({ guildId: guild.id });
+    const guildData = await getGuildConfig(guild.id);
     if (!guildData?.logChannelId) return null;
     return guild.channels.cache.get(guildData.logChannelId) ?? null;
 }

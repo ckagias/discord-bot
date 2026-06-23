@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const WarnSchema = require('../../models/WarnSchema');
 
 module.exports = {
@@ -13,7 +13,7 @@ module.exports = {
 
     async execute(interaction) {
         if (!interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers))
-            return interaction.reply({ content: 'You do not have permission to clear warnings.', ephemeral: true });
+            return interaction.reply({ content: 'You do not have permission to clear warnings.', flags: MessageFlags.Ephemeral });
 
         await interaction.deferReply();
 

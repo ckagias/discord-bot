@@ -1,6 +1,7 @@
-const { PermissionFlagsBits, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { PermissionFlagsBits, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const { isValidUrl } = require('../utils/validate');
 const { parseHexColor } = require('../utils/embeds');
+const { getGuildConfig } = require('../utils/guildConfig');
 const GuildSchema = require('../models/GuildSchema');
 const TicketSchema = require('../models/TicketSchema');
 const GiveawaySchema = require('../models/GiveawaySchema');
@@ -16,7 +17,7 @@ module.exports = {
                 await command.execute(interaction, client);
             } catch (error) {
                 console.error(error);
-                const payload = { content: 'Error executing command', ephemeral: true };
+                const payload = { content: 'Error executing command', flags: MessageFlags.Ephemeral };
                 if (interaction.deferred || interaction.replied) {
                     await interaction.editReply(payload).catch(() => {});
                 } else {
@@ -63,7 +64,7 @@ module.exports = {
 };
 
 async function handleReactionRoleSetup(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const channelId = interaction.customId.split(':')[1];
     const channel = await interaction.guild.channels.fetch(channelId).catch(() => null);
@@ -98,9 +99,9 @@ async function handleReactionRoleSetup(interaction) {
 }
 
 async function handleTicketOpen(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-    const config = await GuildSchema.findOne({ guildId: interaction.guild.id });
+    const config = await getGuildConfig(interaction.guild.id);
     if (!config?.ticketCategoryId || !config?.ticketSupportRoleId)
         return interaction.editReply({ content: 'The ticket system is not configured. Contact an administrator.' });
 
@@ -121,7 +122,7 @@ async function handleTicketOpen(interaction) {
     const updated = await GuildSchema.findOneAndUpdate(
         { guildId: interaction.guild.id },
         { $inc: { ticketCount: 1 } },
-        { new: true }
+        { returnDocument: 'after' }
     );
     const ticketNumber = updated.ticketCount;
 
@@ -167,13 +168,13 @@ async function handleTicketCloseButton(interaction) {
     const ticket = await TicketSchema.findOne({ channelId: interaction.channel.id, status: 'open' });
 
     if (!ticket)
-        return interaction.reply({ content: 'This ticket is already closed.', ephemeral: true });
+        return interaction.reply({ content: 'This ticket is already closed.', flags: MessageFlags.Ephemeral });
 
     const isSupport = interaction.member.permissions.has(PermissionFlagsBits.ManageChannels);
     const isOwner = ticket.userId === interaction.user.id;
 
     if (!isSupport && !isOwner)
-        return interaction.reply({ content: 'You do not have permission to close this ticket.', ephemeral: true });
+        return interaction.reply({ content: 'You do not have permission to close this ticket.', flags: MessageFlags.Ephemeral });
 
     await interaction.reply({ content: `Ticket closed by ${interaction.user}. This channel will be deleted in 5 seconds.` });
 
@@ -190,7 +191,7 @@ async function handleEmbedMainModal(interaction) {
     const parts  = interaction.customId.split(':');
 
     const result = parseMainFields(interaction);
-    if (result.error) return interaction.reply({ content: result.error, ephemeral: true });
+    if (result.error) return interaction.reply({ content: result.error, flags: MessageFlags.Ephemeral });
 
     if (!interaction.client.embedDrafts) interaction.client.embedDrafts = new Map();
 
@@ -218,7 +219,7 @@ async function handleEmbedMainModal(interaction) {
     return interaction.reply({
         content: '**Step 2 — Fields (optional)**\nClick **Add Fields** to add up to 5 inline or full-width fields, or **Post Without Fields** to send the embed now.',
         components: [row],
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
     });
 }
 
@@ -309,7 +310,7 @@ async function handleGiveawayEnter(interaction) {
     const giveaway = await GiveawaySchema.findOne({ messageId: interaction.message.id, ended: false });
 
     if (!giveaway)
-        return interaction.reply({ content: 'This giveaway has already ended.', ephemeral: true });
+        return interaction.reply({ content: 'This giveaway has already ended.', flags: MessageFlags.Ephemeral });
 
     const userId = interaction.user.id;
     const already = giveaway.entrants.includes(userId);
@@ -317,11 +318,11 @@ async function handleGiveawayEnter(interaction) {
     if (already) {
         giveaway.entrants = giveaway.entrants.filter(id => id !== userId);
         await giveaway.save();
-        await interaction.reply({ content: 'You have withdrawn from the giveaway.', ephemeral: true });
+        await interaction.reply({ content: 'You have withdrawn from the giveaway.', flags: MessageFlags.Ephemeral });
     } else {
         giveaway.entrants.push(userId);
         await giveaway.save();
-        await interaction.reply({ content: 'You have entered the giveaway! Click again to withdraw.', ephemeral: true });
+        await interaction.reply({ content: 'You have entered the giveaway! Click again to withdraw.', flags: MessageFlags.Ephemeral });
     }
 
     const { EmbedBuilder: EB } = require('discord.js');

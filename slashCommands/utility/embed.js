@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const { isValidUrl } = require('../../utils/validate');
 const { parseHexColor } = require('../../utils/embeds');
 
@@ -35,11 +35,11 @@ module.exports = {
             const channel = interaction.options.getChannel('channel') ?? interaction.channel;
 
             if (!channel.isTextBased())
-                return interaction.reply({ content: 'That channel is not a text channel.', ephemeral: true });
+                return interaction.reply({ content: 'That channel is not a text channel.', flags: MessageFlags.Ephemeral });
 
             const botMember = interaction.guild.members.me;
             if (!channel.permissionsFor(botMember).has(PermissionFlagsBits.SendMessages))
-                return interaction.reply({ content: `I don't have permission to send messages in ${channel}.`, ephemeral: true });
+                return interaction.reply({ content: `I don't have permission to send messages in ${channel}.`, flags: MessageFlags.Ephemeral });
 
             return interaction.showModal(buildMainModal(`embed_create:${channel.id}`));
         }
@@ -49,11 +49,11 @@ module.exports = {
             const message = await interaction.channel.messages.fetch(messageId).catch(() => null);
 
             if (!message)
-                return interaction.reply({ content: 'Could not find that message in this channel.', ephemeral: true });
+                return interaction.reply({ content: 'Could not find that message in this channel.', flags: MessageFlags.Ephemeral });
             if (message.author.id !== interaction.client.user.id)
-                return interaction.reply({ content: 'I can only edit messages that I posted.', ephemeral: true });
+                return interaction.reply({ content: 'I can only edit messages that I posted.', flags: MessageFlags.Ephemeral });
             if (!message.embeds.length)
-                return interaction.reply({ content: 'That message has no embed to edit.', ephemeral: true });
+                return interaction.reply({ content: 'That message has no embed to edit.', flags: MessageFlags.Ephemeral });
 
             const existing = message.embeds[0];
             return interaction.showModal(buildMainModal(`embed_edit:${interaction.channelId}:${messageId}`, existing));
@@ -147,7 +147,7 @@ module.exports = {
                 )
                 .setFooter({ text: 'Use /embed create to open the builder' });
 
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
     },
 };

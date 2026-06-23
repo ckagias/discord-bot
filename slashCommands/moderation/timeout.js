@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
 const DURATION_CHOICES = [
     { name: '60 seconds', value: 60 },
@@ -63,27 +63,27 @@ module.exports = {
 
     async execute(interaction) {
         if (!interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers))
-            return interaction.reply({ content: 'You do not have permission to manage timeouts.', ephemeral: true });
+            return interaction.reply({ content: 'You do not have permission to manage timeouts.', flags: MessageFlags.Ephemeral });
 
         const sub = interaction.options.getSubcommand();
         const target = interaction.options.getMember('user');
         const reason = interaction.options.getString('reason') ?? 'No reason provided';
 
         if (!target) {
-            return interaction.reply({ content: 'That user is not in this server.', ephemeral: true });
+            return interaction.reply({ content: 'That user is not in this server.', flags: MessageFlags.Ephemeral });
         }
 
         if (interaction.member.roles.highest.position <= target.roles.highest.position) {
-            return interaction.reply({ content: 'You cannot manage the timeout of someone with an equal or higher role.', ephemeral: true });
+            return interaction.reply({ content: 'You cannot manage the timeout of someone with an equal or higher role.', flags: MessageFlags.Ephemeral });
         }
 
         if (!target.moderatable) {
-            return interaction.reply({ content: 'I cannot manage that user\'s timeout (check my role position).', ephemeral: true });
+            return interaction.reply({ content: 'I cannot manage that user\'s timeout (check my role position).', flags: MessageFlags.Ephemeral });
         }
 
         if (sub === 'add' || sub === 'edit') {
             if (sub === 'edit' && !target.isCommunicationDisabled()) {
-                return interaction.reply({ content: 'That user does not have an active timeout. Use `/timeout add` instead.', ephemeral: true });
+                return interaction.reply({ content: 'That user does not have an active timeout. Use `/timeout add` instead.', flags: MessageFlags.Ephemeral });
             }
 
             const duration = interaction.options.getInteger('duration');
@@ -95,7 +95,7 @@ module.exports = {
 
         if (sub === 'remove') {
             if (!target.isCommunicationDisabled()) {
-                return interaction.reply({ content: 'That user does not have an active timeout.', ephemeral: true });
+                return interaction.reply({ content: 'That user does not have an active timeout.', flags: MessageFlags.Ephemeral });
             }
 
             await target.timeout(null, reason);

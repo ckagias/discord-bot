@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } = require('discord.js');
 const ReactionRoleSchema = require('../../models/ReactionRoleSchema');
 
 module.exports = {
@@ -30,7 +30,7 @@ module.exports = {
 
     async execute(interaction) {
         if (!interaction.member.permissions.has(PermissionFlagsBits.ManageRoles))
-            return interaction.reply({ content: 'You need the **Manage Roles** permission.', ephemeral: true });
+            return interaction.reply({ content: 'You need the **Manage Roles** permission.', flags: MessageFlags.Ephemeral });
 
         const sub = interaction.options.getSubcommand();
 
@@ -44,10 +44,10 @@ module.exports = {
             const emojiKey = customMatch ? customMatch[1] : emojiInput.trim();
 
             if (role.managed || role.id === interaction.guild.id)
-                return interaction.reply({ content: 'That role cannot be assigned.', ephemeral: true });
+                return interaction.reply({ content: 'That role cannot be assigned.', flags: MessageFlags.Ephemeral });
 
             if (interaction.guild.members.me.roles.highest.comparePositionTo(role) <= 0)
-                return interaction.reply({ content: `My highest role is below **${role.name}** — I can't assign it.`, ephemeral: true });
+                return interaction.reply({ content: `My highest role is below **${role.name}** — I can't assign it.`, flags: MessageFlags.Ephemeral });
 
             const existing = await ReactionRoleSchema.findOne({
                 guildId: interaction.guild.id,
@@ -56,7 +56,7 @@ module.exports = {
             });
 
             if (existing)
-                return interaction.reply({ content: 'That emoji is already bound to a role on that message.', ephemeral: true });
+                return interaction.reply({ content: 'That emoji is already bound to a role on that message.', flags: MessageFlags.Ephemeral });
 
             await ReactionRoleSchema.create({
                 guildId: interaction.guild.id,
@@ -70,7 +70,7 @@ module.exports = {
 
             return interaction.reply({
                 content: `Done. Reacting with ${emojiInput} on message \`${messageId}\` will assign **${role.name}**.`,
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
         }
 
@@ -88,9 +88,9 @@ module.exports = {
             });
 
             if (!deleted)
-                return interaction.reply({ content: 'No binding found for that emoji on that message.', ephemeral: true });
+                return interaction.reply({ content: 'No binding found for that emoji on that message.', flags: MessageFlags.Ephemeral });
 
-            return interaction.reply({ content: 'Binding removed.', ephemeral: true });
+            return interaction.reply({ content: 'Binding removed.', flags: MessageFlags.Ephemeral });
         }
 
         if (sub === 'setup') {
@@ -148,7 +148,7 @@ module.exports = {
             const mappings = await ReactionRoleSchema.find({ guildId: interaction.guild.id });
 
             if (!mappings.length)
-                return interaction.reply({ content: 'No reaction roles configured for this server.', ephemeral: true });
+                return interaction.reply({ content: 'No reaction roles configured for this server.', flags: MessageFlags.Ephemeral });
 
             const lines = mappings.map(m => {
                 const emojiDisplay = /^\d+$/.test(m.emoji)
@@ -162,7 +162,7 @@ module.exports = {
                 .setDescription(lines.join('\n'))
                 .setColor(Math.floor(Math.random() * 0xFFFFFF));
 
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
     },
 };

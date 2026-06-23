@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const GuildSchema = require('../../models/GuildSchema');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
+const { getGuildConfig } = require('../../utils/guildConfig');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -17,7 +17,7 @@ module.exports = {
 
     async execute(interaction) {
         if (!interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers))
-            return interaction.reply({ content: 'You do not have permission to unmute members.', ephemeral: true });
+            return interaction.reply({ content: 'You do not have permission to unmute members.', flags: MessageFlags.Ephemeral });
 
         await interaction.deferReply();
 
@@ -28,7 +28,7 @@ module.exports = {
             return interaction.editReply({ content: 'That user is not in this server.' });
         }
 
-        const guildData = await GuildSchema.findOne({ guildId: interaction.guild.id });
+        const guildData = await getGuildConfig(interaction.guild.id);
 
         if (!guildData?.muteRoleId) {
             return interaction.editReply({ content: 'No mute role set. Use `/setmuterole` first.' });

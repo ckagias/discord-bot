@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -17,7 +17,7 @@ module.exports = {
         if (sub === 'delete') {
             const cached = interaction.client.snipeCache?.get(interaction.channelId);
             if (!cached) {
-                return interaction.reply({ content: 'No recently deleted messages found in this channel.', ephemeral: true });
+                return interaction.reply({ content: 'No recently deleted messages found in this channel.', flags: MessageFlags.Ephemeral });
             }
 
             const embed = new EmbedBuilder()
@@ -35,7 +35,7 @@ module.exports = {
         if (sub === 'edit') {
             const cached = interaction.client.editSnipeCache?.get(interaction.channelId);
             if (!cached) {
-                return interaction.reply({ content: 'No recently edited messages found in this channel.', ephemeral: true });
+                return interaction.reply({ content: 'No recently edited messages found in this channel.', flags: MessageFlags.Ephemeral });
             }
 
             const embed = new EmbedBuilder()

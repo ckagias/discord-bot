@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const WarnSchema = require('../../models/WarnSchema');
 
 module.exports = {
@@ -17,17 +17,17 @@ module.exports = {
 
     async execute(interaction) {
         if (!interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers))
-            return interaction.reply({ content: 'You do not have permission to warn members.', ephemeral: true });
+            return interaction.reply({ content: 'You do not have permission to warn members.', flags: MessageFlags.Ephemeral });
 
         const target = interaction.options.getMember('user');
         const reason = interaction.options.getString('reason') ?? 'No reason provided';
 
         if (!target) {
-            return interaction.reply({ content: 'That user is not in this server.', ephemeral: true });
+            return interaction.reply({ content: 'That user is not in this server.', flags: MessageFlags.Ephemeral });
         }
 
         if (interaction.member.roles.highest.position <= target.roles.highest.position) {
-            return interaction.reply({ content: 'You cannot warn someone with an equal or higher role.', ephemeral: true });
+            return interaction.reply({ content: 'You cannot warn someone with an equal or higher role.', flags: MessageFlags.Ephemeral });
         }
 
         await WarnSchema.create({

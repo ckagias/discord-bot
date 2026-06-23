@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,7 +13,7 @@ module.exports = {
 
     async execute(interaction) {
         if (!interaction.member.permissions.has(PermissionFlagsBits.ManageMessages)) {
-            return interaction.reply({ content: 'You do not have permission to delete messages!', ephemeral: true });
+            return interaction.reply({ content: 'You do not have permission to delete messages!', flags: MessageFlags.Ephemeral });
         }
 
         const amount = interaction.options.getInteger('amount');

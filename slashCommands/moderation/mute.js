@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const GuildSchema = require('../../models/GuildSchema');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
+const { getGuildConfig } = require('../../utils/guildConfig');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -17,7 +17,7 @@ module.exports = {
 
     async execute(interaction) {
         if (!interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers))
-            return interaction.reply({ content: 'You do not have permission to mute members.', ephemeral: true });
+            return interaction.reply({ content: 'You do not have permission to mute members.', flags: MessageFlags.Ephemeral });
 
         await interaction.deferReply();
 
@@ -32,7 +32,7 @@ module.exports = {
             return interaction.editReply({ content: 'You cannot mute someone with an equal or higher role.' });
         }
 
-        const guildData = await GuildSchema.findOne({ guildId: interaction.guild.id });
+        const guildData = await getGuildConfig(interaction.guild.id);
 
         if (!guildData?.muteRoleId) {
             return interaction.editReply({ content: 'No mute role set. Use `/setmuterole` first.' });

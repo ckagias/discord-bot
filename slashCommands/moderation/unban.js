@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -16,7 +16,7 @@ module.exports = {
 
     async execute(interaction) {
         if (!interaction.member.permissions.has(PermissionFlagsBits.BanMembers))
-            return interaction.reply({ content: 'You do not have permission to ban members.', ephemeral: true });
+            return interaction.reply({ content: 'You do not have permission to ban members.', flags: MessageFlags.Ephemeral });
 
         const userId = interaction.options.getString('user_id');
         const reason = interaction.options.getString('reason') ?? 'No reason provided';
@@ -25,7 +25,7 @@ module.exports = {
         try {
             ban = await interaction.guild.bans.fetch(userId);
         } catch {
-            return interaction.reply({ content: 'That user is not banned.', ephemeral: true });
+            return interaction.reply({ content: 'That user is not banned.', flags: MessageFlags.Ephemeral });
         }
 
         await interaction.guild.members.unban(userId, reason);

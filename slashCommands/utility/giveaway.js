@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const GiveawaySchema = require('../../models/GiveawaySchema');
 
 function parseDuration(str) {
@@ -107,12 +107,12 @@ module.exports = {
             const winnerCount = interaction.options.getInteger('winners') ?? 1;
 
             const ms = parseDuration(durationStr);
-            if (!ms) return interaction.reply({ content: 'Invalid duration. Use formats like `10m`, `2h`, `1d`.', ephemeral: true });
-            if (ms < 10000) return interaction.reply({ content: 'Duration must be at least 10 seconds.', ephemeral: true });
+            if (!ms) return interaction.reply({ content: 'Invalid duration. Use formats like `10m`, `2h`, `1d`.', flags: MessageFlags.Ephemeral });
+            if (ms < 10000) return interaction.reply({ content: 'Duration must be at least 10 seconds.', flags: MessageFlags.Ephemeral });
 
             const endsAt = new Date(Date.now() + ms);
 
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
             const embed = giveawayEmbed(prize, interaction.user.id, endsAt, winnerCount, 0, false);
             const msg = await interaction.channel.send({ embeds: [embed], components: [entryRow(false)] });
@@ -136,10 +136,10 @@ module.exports = {
             const messageId = interaction.options.getString('message_id');
             const giveaway = await GiveawaySchema.findOne({ messageId, guildId: interaction.guild.id });
 
-            if (!giveaway) return interaction.reply({ content: 'No active giveaway found with that message ID.', ephemeral: true });
-            if (giveaway.ended) return interaction.reply({ content: 'That giveaway has already ended.', ephemeral: true });
+            if (!giveaway) return interaction.reply({ content: 'No active giveaway found with that message ID.', flags: MessageFlags.Ephemeral });
+            if (giveaway.ended) return interaction.reply({ content: 'That giveaway has already ended.', flags: MessageFlags.Ephemeral });
 
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             await endGiveaway(client, giveaway);
             return interaction.editReply({ content: 'Giveaway ended and winner(s) selected.' });
         }
@@ -148,10 +148,10 @@ module.exports = {
             const messageId = interaction.options.getString('message_id');
             const giveaway = await GiveawaySchema.findOne({ messageId, guildId: interaction.guild.id });
 
-            if (!giveaway) return interaction.reply({ content: 'No giveaway found with that message ID.', ephemeral: true });
-            if (!giveaway.ended) return interaction.reply({ content: 'That giveaway has not ended yet. Use `/giveaway end` first.', ephemeral: true });
+            if (!giveaway) return interaction.reply({ content: 'No giveaway found with that message ID.', flags: MessageFlags.Ephemeral });
+            if (!giveaway.ended) return interaction.reply({ content: 'That giveaway has not ended yet. Use `/giveaway end` first.', flags: MessageFlags.Ephemeral });
 
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
             const winners = pickWinners(giveaway.entrants, giveaway.hostId, giveaway.winnerCount);
             giveaway.winners = winners;

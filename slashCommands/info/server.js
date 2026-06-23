@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ChannelType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ChannelType, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -66,7 +66,7 @@ module.exports = {
 
         if (sub === 'icon') {
             const icon = guild.iconURL({ size: 4096, dynamic: true });
-            if (!icon) return interaction.reply({ content: 'This server has no icon.', ephemeral: true });
+            if (!icon) return interaction.reply({ content: 'This server has no icon.', flags: MessageFlags.Ephemeral });
 
             const embed = new EmbedBuilder()
                 .setColor(Math.floor(Math.random() * 0xFFFFFF))
@@ -81,7 +81,7 @@ module.exports = {
 
         if (sub === 'banner') {
             const banner = guild.bannerURL({ size: 4096, dynamic: true });
-            if (!banner) return interaction.reply({ content: 'This server has no banner. Banners require a boosted server (level 2+).', ephemeral: true });
+            if (!banner) return interaction.reply({ content: 'This server has no banner. Banners require a boosted server (level 2+).', flags: MessageFlags.Ephemeral });
 
             const embed = new EmbedBuilder()
                 .setColor(Math.floor(Math.random() * 0xFFFFFF))

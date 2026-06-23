@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const GuildSchema = require('../../models/GuildSchema');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
+const { updateGuildConfig } = require('../../utils/guildConfig');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,17 +13,13 @@ module.exports = {
 
     async execute(interaction) {
         if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild))
-            return interaction.reply({ content: 'You do not have permission to manage server settings.', ephemeral: true });
+            return interaction.reply({ content: 'You do not have permission to manage server settings.', flags: MessageFlags.Ephemeral });
 
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const role = interaction.options.getRole('role');
 
-        await GuildSchema.findOneAndUpdate(
-            { guildId: interaction.guild.id },
-            { $set: { muteRoleId: role.id }, $setOnInsert: { guildId: interaction.guild.id } },
-            { upsert: true }
-        );
+        await updateGuildConfig(interaction.guild.id, { muteRoleId: role.id });
 
         return interaction.editReply({ content: `Mute role set to ${role}.` });
     },

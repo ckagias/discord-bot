@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -42,12 +42,12 @@ module.exports = {
             const member = interaction.guild.members.cache.get(user.id);
 
             if (!member) {
-                return interaction.reply({ content: 'That user is not in this server.', ephemeral: true });
+                return interaction.reply({ content: 'That user is not in this server.', flags: MessageFlags.Ephemeral });
             }
 
             const serverAvatar = member.avatarURL({ dynamic: true, size: 4096 });
             if (!serverAvatar) {
-                return interaction.reply({ content: 'That user has no server-specific avatar.', ephemeral: true });
+                return interaction.reply({ content: 'That user has no server-specific avatar.', flags: MessageFlags.Ephemeral });
             }
 
             const embed = new EmbedBuilder()
