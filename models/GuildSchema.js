@@ -21,6 +21,17 @@ const guildSchema = new Schema({
     automodTimeoutSeconds: { type: Number, default: 300 },
     automodBannedWordList: { type: [String], default: [] },
     automodMentionLimit: { type: Number, default: 5 },
+    warnThresholds: {
+        type: [
+            {
+                _id: false,
+                count:    { type: Number, required: true },
+                action:   { type: String, enum: ['timeout', 'kick', 'ban'], required: true },
+                duration: { type: Number, default: null }, // seconds, only used for timeout
+            },
+        ],
+        default: [],
+    },
 });
 
 module.exports = model('Guild', guildSchema);

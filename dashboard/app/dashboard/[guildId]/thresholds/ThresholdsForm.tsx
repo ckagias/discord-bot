@@ -1,0 +1,211 @@
+"use client";
+
+import { useEffect, useState, useTransition } from "react";
+import SettingsCard from "@/components/SettingsCard";
+import { updateWarnThresholds } from "./actions";
+import type { WarnThreshold } from "@/lib/models/Guild";
+
+type Action = "timeout" | "kick" | "ban";
+
+interface Row extends WarnThreshold {
+  key: number;
+}
+
+const ACTION_OPTIONS: { value: Action; label: string }[] = [
+  { value: "timeout", label: "Timeout" },
+  { value: "kick",    label: "Kick" },
+  { value: "ban",     label: "Ban" },
+];
+
+const DURATION_OPTIONS: { value: number; label: string }[] = [
+  { value: 60,      label: "1 minute" },
+  { value: 300,     label: "5 minutes" },
+  { value: 600,     label: "10 minutes" },
+  { value: 1800,    label: "30 minutes" },
+  { value: 3600,    label: "1 hour" },
+  { value: 21600,   label: "6 hours" },
+  { value: 86400,   label: "1 day" },
+  { value: 604800,  label: "1 week" },
+  { value: 2419200, label: "28 days" },
+];
+
+const STYLES = {
+  form: "flex flex-col gap-6 max-w-xl",
+  footer: "flex items-center gap-3",
+  submitButton:
+    "cursor-pointer self-start rounded-full bg-[#5865F2] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#4752c4] disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:text-zinc-500 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-600",
+  savedText: "text-sm text-green-600 dark:text-green-400",
+  errorText: "text-sm text-red-600 dark:text-red-400",
+  row: "flex items-end gap-3",
+  rowField: "flex flex-col gap-1.5 flex-1 min-w-0",
+  label: "text-sm font-medium text-black dark:text-zinc-50",
+  input:
+    "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-black outline-none transition-colors focus:border-[#5865F2] dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50",
+  select:
+    "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-black outline-none transition-colors focus:border-[#5865F2] dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50",
+  removeButton:
+    "cursor-pointer shrink-0 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-500 transition-colors hover:border-red-300 hover:text-red-500 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-red-800 dark:hover:text-red-400",
+  addButton:
+    "cursor-pointer self-start rounded-lg border border-dashed border-zinc-300 px-4 py-2 text-sm text-zinc-500 transition-colors hover:border-[#5865F2] hover:text-[#5865F2] dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-[#5865F2] dark:hover:text-[#5865F2]",
+  empty: "text-sm text-zinc-500 dark:text-zinc-400",
+};
+
+export default function ThresholdsForm({
+  guildId,
+  initial,
+}: {
+  guildId: string;
+  initial: WarnThreshold[];
+}) {
+  const [rows, setRows] = useState<Row[]>(() =>
+    initial.map((t, i) => ({ ...t, key: i }))
+  );
+  const [nextKey, setNextKey] = useState(initial.length);
+  const [dirty, setDirty] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [status, setStatus] = useState<"idle" | "saved" | "error">("idle");
+
+  useEffect(() => {
+    if (!dirty) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirty]);
+
+  function mark() {
+    setDirty(true);
+    setStatus("idle");
+  }
+
+  function addRow() {
+    setRows((prev) => {
+      const maxCount = prev.reduce((max, r) => Math.max(max, r.count), 0);
+      return [...prev, { key: nextKey, count: maxCount + 1, action: "timeout", duration: 300 }];
+    });
+    setNextKey((k) => k + 1);
+    mark();
+  }
+
+  function removeRow(key: number) {
+    setRows((prev) => prev.filter((r) => r.key !== key));
+    mark();
+  }
+
+  function updateRow(key: number, patch: Partial<Omit<Row, "key">>) {
+    setRows((prev) =>
+      prev.map((r) => {
+        if (r.key !== key) return r;
+        const next = { ...r, ...patch };
+        if (next.action !== "timeout") next.duration = null;
+        if (next.action === "timeout" && next.duration === null) next.duration = 300;
+        return next;
+      })
+    );
+    mark();
+  }
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setStatus("idle");
+    const payload = rows.map(({ key: _key, ...t }) => t);
+    const fd = new FormData();
+    fd.set("warnThresholds", JSON.stringify(payload));
+
+    startTransition(async () => {
+      try {
+        await updateWarnThresholds(guildId, fd);
+        setStatus("saved");
+        setDirty(false);
+      } catch (err) {
+        console.error(err);
+        setStatus("error");
+      }
+    });
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className={STYLES.form}>
+      <SettingsCard
+        title="Warning Thresholds"
+        description="Automatically punish members when they reach a set number of warnings. Each threshold fires exactly once at that count."
+      >
+        {rows.length === 0 ? (
+          <p className={STYLES.empty}>No thresholds configured. Add one below.</p>
+        ) : (
+          rows.map((row) => (
+            <div key={row.key} className={STYLES.row}>
+              <div className={STYLES.rowField}>
+                <label className={STYLES.label}>Warnings</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={row.count}
+                  onChange={(e) =>
+                    updateRow(row.key, { count: Math.max(1, parseInt(e.target.value) || 1) })
+                  }
+                  className={STYLES.input}
+                />
+              </div>
+
+              <div className={STYLES.rowField}>
+                <label className={STYLES.label}>Action</label>
+                <select
+                  value={row.action}
+                  onChange={(e) => updateRow(row.key, { action: e.target.value as Action })}
+                  className={STYLES.select}
+                >
+                  {ACTION_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {row.action === "timeout" && (
+                <div className={STYLES.rowField}>
+                  <label className={STYLES.label}>Duration</label>
+                  <select
+                    value={row.duration ?? 300}
+                    onChange={(e) =>
+                      updateRow(row.key, { duration: parseInt(e.target.value) })
+                    }
+                    className={STYLES.select}
+                  >
+                    {DURATION_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => removeRow(row.key)}
+                className={STYLES.removeButton}
+              >
+                Remove
+              </button>
+            </div>
+          ))
+        )}
+
+        <button type="button" onClick={addRow} className={STYLES.addButton}>
+          + Add threshold
+        </button>
+      </SettingsCard>
+
+      <div className={STYLES.footer}>
+        <button
+          type="submit"
+          disabled={isPending || !dirty}
+          className={STYLES.submitButton}
+        >
+          {isPending ? "Saving..." : "Save changes"}
+        </button>
+        {status === "saved" && <span className={STYLES.savedText}>Saved</span>}
+        {status === "error" && (
+          <span className={STYLES.errorText}>Failed to save — try again</span>
+        )}
+      </div>
+    </form>
+  );
+}

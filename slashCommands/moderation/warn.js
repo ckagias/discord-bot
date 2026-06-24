@@ -1,5 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const WarnSchema = require('../../models/WarnSchema');
+const { getGuildConfig } = require('../../utils/guildConfig');
+const { checkWarnThresholds } = require('../../utils/warnThresholds');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -36,7 +38,12 @@ module.exports = {
             reason,
         });
 
-        const totalWarnings = await WarnSchema.countDocuments({ guildId: interaction.guild.id, userId: target.id });
+        const [totalWarnings, guildData] = await Promise.all([
+            WarnSchema.countDocuments({ guildId: interaction.guild.id, userId: target.id }),
+            getGuildConfig(interaction.guild.id),
+        ]);
+
+        await checkWarnThresholds(interaction.guild, target, totalWarnings, guildData);
 
         return interaction.reply({ content: `Warned **${target.user.tag}** (warning #${totalWarnings}) for \`${reason}\`` });
     },

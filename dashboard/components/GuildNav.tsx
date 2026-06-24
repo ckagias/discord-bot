@@ -15,11 +15,12 @@ const STYLES = {
 };
 
 const SECTIONS = [
-  { slug: "general", label: "General" },
-  { slug: "welcome", label: "Welcome & Farewell" },
-  { slug: "moderation", label: "Moderation" },
-  { slug: "automod", label: "Auto-Mod" },
-  { slug: "tickets", label: "Tickets" },
+  { slug: "general",     label: "General" },
+  { slug: "welcome",     label: "Welcome & Farewell" },
+  { slug: "moderation",  label: "Moderation" },
+  { slug: "automod",     label: "Auto-Mod" },
+  { slug: "thresholds",  label: "Warn Thresholds" },
+  { slug: "tickets",     label: "Tickets" },
 ];
 
 export default function GuildNav({ guildId }: { guildId: string }) {

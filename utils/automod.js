@@ -1,6 +1,7 @@
 const { PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const WarnSchema = require('../models/WarnSchema');
 const { getLogChannel } = require('./logger');
+const { checkWarnThresholds } = require('./warnThresholds');
 
 const EXEMPT_PERMISSIONS = [
     PermissionFlagsBits.Administrator,
@@ -80,6 +81,13 @@ async function applyAction(message, guildData, filter) {
             moderatorId: message.client.user.id,
             reason,
         }).catch(err => console.error('[automod] Failed to record warning:', err));
+
+        const totalWarnings = await WarnSchema.countDocuments({
+            guildId: message.guild.id,
+            userId: message.author.id,
+        }).catch(() => 0);
+
+        await checkWarnThresholds(message.guild, message.member, totalWarnings, guildData);
 
         await message.author.send(
             `You were warned in **${message.guild.name}** for ${filter}. Your message was removed.`

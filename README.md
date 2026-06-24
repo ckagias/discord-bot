@@ -2,7 +2,7 @@
 
 ### A Discord bot built with [discord.js](https://github.com/discordjs/discord.js), Lavalink, and MongoDB
 
-[About](#about) • [Features](#features) • [Commands](#commands) • [Installation](#installation) • [Dashboard](#dashboard) • [Dependencies](#dependencies) • [License](#license)
+[About](#about) • [Features](#features) • [Commands](#commands) • [Installation](#installation) • [Dashboard](#dashboard) • [Dependencies](#dependencies) • [Contributing](#contributing) • [License](#license)
 
 ---
 
@@ -16,14 +16,14 @@ If you find this useful, feel free to leave a ⭐ to help others find it!
 
 ## Features
 
-**60+** commands across **8** categories:
+**65+** commands across **8** categories:
 
 - 🎉 **Fun:** `8ball`, `dare`, `truth`, `gayrate`, `poll`
 - ℹ️ **Info:** `avatar`, `help`, `commands`, `weather`, `github` and **9** more.
 - ⏫ **Leveling:** `leaderboard`, `level`, `toggleleveling`
 - 🎵 **Music:** `play`, `skip`, `pause`, `resume`, `stop` and **4** more.
 - 🔧 **Utility:** `purge`, `shorten`, `afk`, `slowmode`, `snipe` and **3** more.
-- 🛡️ **Moderation:** `kick`, `ban`, `timeout`, `mute`, `warn` and **14** more.
+- 🛡️ **Moderation:** `kick`, `ban`, `timeout`, `mute`, `warn` and **17** more.
 - 🎮 **Minigames:** `gamble`, `coinflip`, `rps`
 - 🎫 **Tickets:** `ticket setup`, `ticket panel`, `ticket close`, `ticket stats`, `ticket reset`
 - 🏷️ **Roles:** `reactionrole setup`, `reactionrole add`, `reactionrole remove`, `reactionrole list`
@@ -144,29 +144,32 @@ Other highlights:
 ### 🛡️ Moderation
 
 
-| Command           | Description                                                                         |
-| ----------------- | ----------------------------------------------------------------------------------- |
-| `/kick`           | Kick a member from the server (Kick Members)                                        |
-| `/ban`            | Ban a member from the server with optional message deletion (Ban Members)           |
-| `/unban`          | Unban a user by ID (Ban Members)                                                    |
-| `/timeout add`    | Timeout a member for a set duration (Moderate Members)                              |
-| `/timeout edit`   | Change the duration of a member's active timeout (Moderate Members)                 |
-| `/timeout remove` | Remove an active timeout from a member (Moderate Members)                           |
-| `/mute`           | Mute a member using the configured mute role (Moderate Members)                     |
-| `/unmute`         | Unmute a member by removing the mute role (Moderate Members)                        |
-| `/setmuterole`    | Set the role to assign when a member is muted (Manage Server)                       |
-| `/warn`           | Issue a warning to a member (Moderate Members)                                      |
-| `/warnings`       | View all warnings for a member (Moderate Members)                                   |
-| `/clearwarnings`  | Clear all warnings for a member (Moderate Members)                                  |
-| `/addtrigger`     | Add a keyword and the bot's response to it (Manage Messages)                        |
-| `/removetrigger`  | Remove a trigger keyword (Manage Messages)                                          |
-| `/triggers`       | List all trigger keywords configured for this server                                |
-| `/log set`        | Set the channel where server events will be logged (Manage Server)                  |
-| `/log unset`      | Disable event logging for this server (Manage Server)                               |
-| `/welcome set`    | Set the channel and optional message for member join announcements (Manage Server)  |
-| `/welcome unset`  | Disable welcome messages for this server (Manage Server)                            |
-| `/farewell set`   | Set the channel and optional message for member leave announcements (Manage Server) |
-| `/farewell unset` | Disable farewell messages for this server (Manage Server)                           |
+| Command                 | Description                                                                                      |
+| ----------------------- | ------------------------------------------------------------------------------------------------ |
+| `/kick`                 | Kick a member from the server (Kick Members)                                                     |
+| `/ban`                  | Ban a member from the server with optional message deletion (Ban Members)                        |
+| `/unban`                | Unban a user by ID (Ban Members)                                                                 |
+| `/timeout add`          | Timeout a member for a set duration (Moderate Members)                                           |
+| `/timeout edit`         | Change the duration of a member's active timeout (Moderate Members)                              |
+| `/timeout remove`       | Remove an active timeout from a member (Moderate Members)                                        |
+| `/mute`                 | Mute a member using the configured mute role (Moderate Members)                                  |
+| `/unmute`               | Unmute a member by removing the mute role (Moderate Members)                                     |
+| `/setmuterole`          | Set the role to assign when a member is muted (Manage Server)                                    |
+| `/warn`                 | Issue a warning to a member (Moderate Members)                                                   |
+| `/warnings`             | View all warnings for a member (Moderate Members)                                                |
+| `/clearwarnings`        | Clear all warnings for a member (Moderate Members)                                               |
+| `/warnthreshold set`    | Add or update an automatic punishment (timeout, kick, or ban) at a warning count (Manage Server) |
+| `/warnthreshold remove` | Remove the threshold at a specific warning count (Manage Server)                                 |
+| `/warnthreshold list`   | Show all configured warn thresholds for this server (Manage Server)                              |
+| `/addtrigger`           | Add a keyword and the bot's response to it (Manage Messages)                                     |
+| `/removetrigger`        | Remove a trigger keyword (Manage Messages)                                                       |
+| `/triggers`             | List all trigger keywords configured for this server                                             |
+| `/log set`              | Set the channel where server events will be logged (Manage Server)                               |
+| `/log unset`            | Disable event logging for this server (Manage Server)                                            |
+| `/welcome set`          | Set the channel and optional message for member join announcements (Manage Server)               |
+| `/welcome unset`        | Disable welcome messages for this server (Manage Server)                                         |
+| `/farewell set`         | Set the channel and optional message for member leave announcements (Manage Server)              |
+| `/farewell unset`       | Disable farewell messages for this server (Manage Server)                                        |
 
 
 ### 🎫 Tickets
@@ -320,6 +323,12 @@ The dashboard is entirely optional, the bot runs fine standalone if you never se
 | [outdent](https://www.npmjs.com/package/outdent)                 | Multi-line string formatting                        |
 | [dotenv](https://www.npmjs.com/package/dotenv)                   | Loads environment variables from `.env`             |
 
+
+---
+
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for how to get started.
 
 ---
 

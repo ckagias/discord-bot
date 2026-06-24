@@ -1,6 +1,12 @@
 import { model, models, Schema } from "mongoose";
 
 // Field-for-field identical to the bot's models/GuildSchema.js — keep in sync.
+export interface WarnThreshold {
+  count: number;
+  action: "timeout" | "kick" | "ban";
+  duration: number | null;
+}
+
 export interface GuildDoc {
   guildId: string;
   levelingEnabled: boolean;
@@ -22,6 +28,7 @@ export interface GuildDoc {
   automodTimeoutSeconds: number;
   automodBannedWordList: string[];
   automodMentionLimit: number;
+  warnThresholds: WarnThreshold[];
 }
 
 const guildSchema = new Schema<GuildDoc>({
@@ -45,6 +52,17 @@ const guildSchema = new Schema<GuildDoc>({
   automodTimeoutSeconds: { type: Number, default: 300 },
   automodBannedWordList: { type: [String], default: [] },
   automodMentionLimit: { type: Number, default: 5 },
+  warnThresholds: {
+    type: [
+      {
+        _id: false,
+        count:    { type: Number, required: true },
+        action:   { type: String, required: true },
+        duration: { type: Number, default: null },
+      },
+    ],
+    default: [],
+  },
 });
 
 export default models.Guild || model<GuildDoc>("Guild", guildSchema);
