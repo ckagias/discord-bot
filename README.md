@@ -16,7 +16,7 @@ If you find this useful, feel free to leave a ⭐ to help others find it!
 
 ## Features
 
-**65+** commands across **8** categories:
+**65+** commands across **9** categories:
 
 - 🎉 **Fun:** `8ball`, `dare`, `truth`, `gayrate`, `poll`
 - ℹ️ **Info:** `avatar`, `help`, `commands`, `weather`, `github` and **9** more.
@@ -25,6 +25,7 @@ If you find this useful, feel free to leave a ⭐ to help others find it!
 - 🔧 **Utility:** `purge`, `shorten`, `afk`, `slowmode`, `snipe` and **3** more.
 - 🛡️ **Moderation:** `kick`, `ban`, `timeout`, `mute`, `warn` and **17** more.
 - 🎮 **Minigames:** `gamble`, `coinflip`, `rps`
+- 💰 **Economy:** `balance`, `daily`, `work`, `rob`, `transfer`, and **2** more.
 - 🎫 **Tickets:** `ticket setup`, `ticket panel`, `ticket close`, `ticket stats`, `ticket reset`
 - 🏷️ **Roles:** `reactionrole setup`, `reactionrole add`, `reactionrole remove`, `reactionrole list`
 
@@ -37,6 +38,7 @@ Other highlights:
 - Temporary bans that automatically unban after the configured duration and survive bot restarts
 - Server event logger that logs message deletes/edits, joins, leaves, kicks, bans, nickname changes, role updates, and voice activity to a configurable channel
 - Welcome/farewell messages, configurable per-server with custom messages supporting `{user}` and `{server}` placeholders
+- Per-server economy with passive chat earnings, daily streak bonuses (up to 3.5× on day 7+), hourly `/work` jobs with flavour text, a `/rob` command with risk/reward, transfers, admin `/eco` tools, and a leaderboard — minigames (gamble, coinflip, rps) all bet and pay out real credits atomically; economy leaderboard also visible in the dashboard
 - Persistent XP leveling per server with atomic writes
 - AFK system with return detection and mention notifications
 - Ticket system with private channels, support role pinging, auto-cleanup of stale tickets, and per-server stats
@@ -137,9 +139,26 @@ Other highlights:
 
 | Command     | Description                                                     |
 | ----------- | --------------------------------------------------------------- |
-| `/gamble`   | Bet your credits on a high-low roll                             |
-| `/coinflip` | Flip a coin (optionally guess heads or tails)                   |
-| `/rps`      | Play Rock Paper Scissors against the bot with a button-based UI |
+| `/gamble`   | Bet credits on a high-low roll — win or lose real balance       |
+| `/coinflip` | Flip a coin, optionally betting credits on the outcome          |
+| `/rps`      | Play Rock Paper Scissors against the bot, optionally with a bet |
+
+
+### 💰 Economy
+
+
+| Command               | Description                                                                              |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| `/balance`            | Check your or another user's credit balance                                              |
+| `/daily`              | Claim daily credits with a streak bonus — up to 3.5× base on day 7+ (24h cooldown)       |
+| `/work`               | Work a random job and earn 50–450 credits (1-hour cooldown)                              |
+| `/rob`                | Attempt to steal credits from a member — 45% success rate, fine on failure (1h cooldown) |
+| `/transfer`           | Transfer credits to another member                                                       |
+| `/economyleaderboard` | Show the top 10 richest members in this server                                           |
+| `/eco give`           | Give credits to a member (Manage Server)                                                 |
+| `/eco take`           | Remove credits from a member (Manage Server)                                             |
+| `/eco set`            | Set a member's balance to an exact amount (Manage Server)                                |
+| `/eco reset`          | Reset a member's balance, streak, and cooldowns (Manage Server)                          |
 
 
 ### 🛡️ Moderation

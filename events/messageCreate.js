@@ -3,6 +3,7 @@ const AfkSchema = require('../models/AfkSchema');
 const TriggerSchema = require('../models/TriggerSchema');
 const { runAutoMod } = require('../utils/automod');
 const { ensureGuildConfig } = require('../utils/guildConfig');
+const { updateBalance } = require('../utils/economy');
 
 const xp_cooldown_ms = 60_000;
 
@@ -112,6 +113,10 @@ module.exports = {
             // When the cooldown filter doesn't match, upsert inserts a bare doc with a fresh lastXpAt.
             // Detect that case by checking if the write just happened (within 1s).
             if (!userData || Date.now() - userData.lastXpAt.getTime() > 1000) return;
+
+            // Passive credit earnings — fires on the same cooldown as XP so it's never spammed.
+            const creditsGained = Math.floor(Math.random() * 11) + 5; // 5–15 credits per message
+            updateBalance(author.id, guild.id, creditsGained).catch(() => {});
 
             // Level formula: 100 * (level + 1)^2 XP needed to advance
             const xpNeeded = 100 * Math.pow(userData.level + 1, 2);

@@ -215,4 +215,22 @@ module.exports = {
         "Very doubtful.",
     ],
 
+    workResponses: [
+        { text: "You delivered packages across town all morning.", min: 150, max: 300 },
+        { text: "You fixed a bug for a client and invoiced them.", min: 200, max: 350 },
+        { text: "You worked a shift at the local coffee shop.", min: 120, max: 250 },
+        { text: "You drove for a rideshare app for a few hours.", min: 140, max: 280 },
+        { text: "You helped a neighbour move furniture.", min: 100, max: 200 },
+        { text: "You sold some old stuff at a flea market.", min: 80, max: 220 },
+        { text: "You freelanced a logo design for a small business.", min: 200, max: 400 },
+        { text: "You tutored a student in math for two hours.", min: 150, max: 250 },
+        { text: "You walked dogs around the neighbourhood.", min: 100, max: 180 },
+        { text: "You completed a survey for a research company.", min: 50, max: 120 },
+        { text: "You stocked shelves at the supermarket overnight.", min: 130, max: 240 },
+        { text: "You wrote an article for an online blog.", min: 160, max: 300 },
+        { text: "You won a small coding competition.", min: 250, max: 450 },
+        { text: "You repaired a bike for a neighbour.", min: 90, max: 180 },
+        { text: "You baked and sold cookies at a school event.", min: 70, max: 160 },
+    ],
+
 };
