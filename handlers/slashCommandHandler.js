@@ -12,7 +12,11 @@ module.exports = (client) => {
 
         for (const file of files) {
             const command = require(path.join(commandsPath, file));
-            client.commands.set(command.data.name, command);
+            if (command.data && command.execute) {
+                client.commands.set(command.data.name, command);
+            } else {
+                console.warn(`[slashCommandHandler] ${file} is missing required "data" or "execute" property, skipping.`);
+            }
         }
     }
 };

@@ -21,6 +21,8 @@ module.exports = {
 
         await TicketSchema.findOneAndUpdate({ channelId: interaction.channel.id }, { status: 'closed' });
 
-        setTimeout(() => interaction.channel.delete().catch(() => {}), 5000);
+        setTimeout(() => {
+            interaction.channel.delete().catch(err => console.error('[ticket] Failed to delete closed ticket channel:', err));
+        }, 5000);
     },
 };

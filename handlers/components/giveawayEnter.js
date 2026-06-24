@@ -26,6 +26,7 @@ module.exports = {
 
         const currentEmbed = interaction.message.embeds[0];
         const updated = EmbedBuilder.from(currentEmbed).spliceFields(3, 1, { name: 'Entries', value: `${giveaway.entrants.length}`, inline: true });
-        await interaction.message.edit({ embeds: [updated] }).catch(() => {});
+        await interaction.message.edit({ embeds: [updated] })
+            .catch(err => console.error('[giveaway] Failed to update entry count on giveaway embed:', err));
     },
 };

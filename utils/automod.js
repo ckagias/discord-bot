@@ -39,7 +39,7 @@ function isSpamming(guildId, userId) {
     return timestamps.length >= SPAM_THRESHOLD;
 }
 
-function formatDuration(seconds) {
+function formatTimeoutDuration(seconds) {
     if (seconds >= 604800) return `${Math.round(seconds / 604800)} week(s)`;
     if (seconds >= 86400) return `${Math.round(seconds / 86400)} day(s)`;
     if (seconds >= 3600) return `${Math.round(seconds / 3600)} hour(s)`;
@@ -90,7 +90,7 @@ async function applyAction(message, guildData, filter) {
             const durationMs = (guildData.automodTimeoutSeconds ?? 300) * 1000;
             await member.timeout(durationMs, reason).catch(err => console.error('[automod] Failed to timeout member:', err));
 
-            const durationLabel = formatDuration(guildData.automodTimeoutSeconds ?? 300);
+            const durationLabel = formatTimeoutDuration(guildData.automodTimeoutSeconds ?? 300);
             await message.author.send(
                 `You were timed out for **${durationLabel}** in **${message.guild.name}** for ${filter}. Your message was removed.`
             ).catch(() => {});
