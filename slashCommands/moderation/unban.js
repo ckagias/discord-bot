@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
+const { createCase } = require('../../utils/cases');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -27,7 +28,10 @@ module.exports = {
             return interaction.reply({ content: 'That user is not banned.', flags: MessageFlags.Ephemeral });
         }
 
-        await interaction.guild.members.unban(userId, reason);
-        return interaction.reply({ content: `Unbanned **${ban.user.tag}** for \`${reason}\`` });
+        const [, modCase] = await Promise.all([
+            interaction.guild.members.unban(userId, reason),
+            createCase({ guildId: interaction.guild.id, type: 'unban', userId, moderatorId: interaction.user.id, reason }),
+        ]);
+        return interaction.reply({ content: `Unbanned **${ban.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
     },
 };

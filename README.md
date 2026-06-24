@@ -31,7 +31,7 @@ If you find this useful, feel free to leave a ⭐ to help others find it!
 
 Other highlights:
 
-- Full moderation suite with role hierarchy checks, bot capability guards, and runtime permission checks on every command
+- Full moderation suite with role hierarchy checks, bot capability guards, and runtime permission checks on every command; every mod action (warn, kick, ban, mute, timeout, unban, unmute) is recorded as a numbered case per server, viewable and deletable via `/case` commands or the dashboard Case Log page
 - Configurable auto-moderation: filters for banned words, spam/flood, excessive mentions, and invite links, with a per-server action (delete, delete + warn, or delete + timeout), DM notice to the affected user, and exemptions for admins/moderators managed from the dashboard
 - Trigger system: server admins configure keyword and the response for that word, bot replies when the word appears standalone in a message (Unicode-safe, works with Greek and other non-ASCII languages)
 - Mute system using a configurable muted role with automatic channel-level permission overwrites so the mute holds regardless of other roles; supports optional timed mutes that lift automatically and survive bot restarts
@@ -181,6 +181,9 @@ Other highlights:
 | `/warnthreshold set`    | Add or update an automatic punishment (timeout, kick, or ban) at a warning count (Manage Server) |
 | `/warnthreshold remove` | Remove the threshold at a specific warning count (Manage Server)                                 |
 | `/warnthreshold list`   | Show all configured warn thresholds for this server (Manage Server)                              |
+| `/case lookup`          | View a specific moderation case by its ID (Moderate Members)                                     |
+| `/case history`         | View the last 10 cases against a user (Moderate Members)                                         |
+| `/case delete`          | Delete a case by ID (Moderate Members)                                                           |
 | `/addtrigger`           | Add a keyword and the bot's response to it (Manage Messages)                                     |
 | `/removetrigger`        | Remove a trigger keyword (Manage Messages)                                                       |
 | `/triggers`             | List all trigger keywords configured for this server                                             |
@@ -307,7 +310,7 @@ Other highlights:
 
 An optional self-hosted web dashboard (`[dashboard/](dashboard)`) lets you manage your server's bot settings from the browser instead of slash commands only. It's built with Next.js, runs as an additional Docker Compose service alongside the bot, and shares the same MongoDB database so it talks only to **your own** bot instance. There is no centralized/shared backend, every self-hoster's dashboard is fully isolated to their own stack.
 
-Currently supports: Discord OAuth2 login, a picker for servers where you have Manage Server and the bot is present, and a sidebar of independently-saved settings sections. General (leveling, log channel), Welcome & Farewell (channels and messages), Moderation (mute role), Auto-Mod (filters, action, banned word list), and Tickets (category and support role).
+Currently supports: Discord OAuth2 login, a picker for servers where you have Manage Server and the bot is present, and a sidebar of independently-saved settings sections. General (leveling, log channel), Welcome & Farewell (channels and messages), Moderation (mute role), Auto-Mod (filters, action, banned word list), Warn Thresholds (auto-escalation rules), Case Log (full mod action history with user ID filter and per-case deletion), Economy (credit leaderboard), and Tickets (category and support role).
 
 ### Enabling it
 

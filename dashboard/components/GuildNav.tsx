@@ -20,6 +20,7 @@ const SECTIONS = [
   { slug: "moderation",  label: "Moderation" },
   { slug: "automod",     label: "Auto-Mod" },
   { slug: "thresholds",  label: "Warn Thresholds" },
+  { slug: "cases",       label: "Case Log" },
   { slug: "economy",     label: "Economy" },
   { slug: "tickets",     label: "Tickets" },
 ];

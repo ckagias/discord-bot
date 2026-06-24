@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
+const { createCase } = require('../../utils/cases');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -32,7 +33,10 @@ module.exports = {
             return interaction.reply({ content: 'I cannot kick that user (check my role position).', flags: MessageFlags.Ephemeral });
         }
 
-        await target.kick(reason);
-        return interaction.reply({ content: `Kicked **${target.user.tag}** for \`${reason}\`` });
+        const [, modCase] = await Promise.all([
+            target.kick(reason),
+            createCase({ guildId: interaction.guild.id, type: 'kick', userId: target.id, moderatorId: interaction.user.id, reason }),
+        ]);
+        return interaction.reply({ content: `Kicked **${target.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
     },
 };

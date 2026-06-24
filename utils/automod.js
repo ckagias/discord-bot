@@ -2,6 +2,7 @@ const { PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const WarnSchema = require('../models/WarnSchema');
 const { getLogChannel } = require('./logger');
 const { checkWarnThresholds } = require('./warnThresholds');
+const { createCase } = require('./cases');
 
 const EXEMPT_PERMISSIONS = [
     PermissionFlagsBits.Administrator,
@@ -87,6 +88,14 @@ async function applyAction(message, guildData, filter) {
             userId: message.author.id,
         }).catch(() => 0);
 
+        await createCase({
+            guildId: message.guild.id,
+            type: 'warn',
+            userId: message.author.id,
+            moderatorId: message.client.user.id,
+            reason,
+        }).catch(err => console.error('[automod] Failed to create case:', err));
+
         await checkWarnThresholds(message.guild, message.member, totalWarnings, guildData);
 
         await message.author.send(
@@ -95,10 +104,21 @@ async function applyAction(message, guildData, filter) {
     } else if (guildData.automodAction === 'timeout') {
         const member = message.member;
         if (member?.moderatable) {
-            const durationMs = (guildData.automodTimeoutSeconds ?? 300) * 1000;
+            const durationSeconds = guildData.automodTimeoutSeconds ?? 300;
+            const durationMs = durationSeconds * 1000;
+            const durationLabel = formatTimeoutDuration(durationSeconds);
+
             await member.timeout(durationMs, reason).catch(err => console.error('[automod] Failed to timeout member:', err));
 
-            const durationLabel = formatTimeoutDuration(guildData.automodTimeoutSeconds ?? 300);
+            await createCase({
+                guildId: message.guild.id,
+                type: 'timeout',
+                userId: message.author.id,
+                moderatorId: message.client.user.id,
+                reason,
+                duration: durationLabel,
+            }).catch(err => console.error('[automod] Failed to create case:', err));
+
             await message.author.send(
                 `You were timed out for **${durationLabel}** in **${message.guild.name}** for ${filter}. Your message was removed.`
             ).catch(() => {});

@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const PunishmentSchema = require('../../models/PunishmentSchema');
 const { parseDuration, formatDuration, schedulePunishment } = require('../../utils/punishments');
+const { createCase } = require('../../utils/cases');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -64,18 +65,18 @@ module.exports = {
 
         if (durationMs) {
             const expiresAt = new Date(Date.now() + durationMs);
-            const punishment = await PunishmentSchema.create({
-                type: 'ban',
-                guildId: interaction.guild.id,
-                userId: target.id,
-                expiresAt,
-            });
+            const durationLabel = formatDuration(durationMs);
+            const [punishment, modCase] = await Promise.all([
+                PunishmentSchema.create({ type: 'ban', guildId: interaction.guild.id, userId: target.id, expiresAt }),
+                createCase({ guildId: interaction.guild.id, type: 'ban', userId: target.id, moderatorId: interaction.user.id, reason, duration: durationLabel }),
+            ]);
             schedulePunishment(interaction.client, punishment);
             return interaction.reply({
-                content: `Banned **${target.user.tag}** for **${formatDuration(durationMs)}** for \`${reason}\``,
+                content: `Banned **${target.user.tag}** for **${durationLabel}** for \`${reason}\` | Case #${modCase.caseId}`,
             });
         }
 
-        return interaction.reply({ content: `Banned **${target.user.tag}** for \`${reason}\`` });
+        const modCase = await createCase({ guildId: interaction.guild.id, type: 'ban', userId: target.id, moderatorId: interaction.user.id, reason });
+        return interaction.reply({ content: `Banned **${target.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
     },
 };

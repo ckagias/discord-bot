@@ -1,5 +1,6 @@
 const { EmbedBuilder } = require('discord.js');
 const { getLogChannel } = require('./logger');
+const { createCase } = require('./cases');
 
 function formatDuration(seconds) {
     if (seconds >= 86400) return `${Math.round(seconds / 86400)}d`;
@@ -48,8 +49,9 @@ async function checkWarnThresholds(guild, member, totalWarnings, guildData) {
         if (threshold.action === 'timeout') {
             const durationMs = (threshold.duration ?? 300) * 1000;
             if (member?.moderatable) {
-                await member.timeout(durationMs, reason);
                 const label = formatDuration(threshold.duration ?? 300);
+                await member.timeout(durationMs, reason);
+                await createCase({ guildId: guild.id, type: 'timeout', userId: member.id, moderatorId: guild.client.user.id, reason, duration: label }).catch(() => {});
                 await member.send(
                     `You have been timed out in **${guild.name}** for **${label}** after reaching ${totalWarnings} warnings.`
                 ).catch(() => {});
@@ -61,6 +63,7 @@ async function checkWarnThresholds(guild, member, totalWarnings, guildData) {
                     `You have been kicked from **${guild.name}** after reaching ${totalWarnings} warnings.`
                 ).catch(() => {});
                 await member.kick(reason);
+                await createCase({ guildId: guild.id, type: 'kick', userId: member.id, moderatorId: guild.client.user.id, reason }).catch(() => {});
                 await logEscalation(guild, member, 'Kick', reason);
             }
         } else if (threshold.action === 'ban') {
@@ -69,6 +72,7 @@ async function checkWarnThresholds(guild, member, totalWarnings, guildData) {
                     `You have been banned from **${guild.name}** after reaching ${totalWarnings} warnings.`
                 ).catch(() => {});
                 await member.ban({ reason });
+                await createCase({ guildId: guild.id, type: 'ban', userId: member.id, moderatorId: guild.client.user.id, reason }).catch(() => {});
                 await logEscalation(guild, member, 'Ban', reason);
             }
         }

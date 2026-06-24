@@ -2,6 +2,7 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { getGuildConfig } = require('../../utils/guildConfig');
 const PunishmentSchema = require('../../models/PunishmentSchema');
 const { parseDuration, formatDuration, schedulePunishment } = require('../../utils/punishments');
+const { createCase } = require('../../utils/cases');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -81,19 +82,18 @@ module.exports = {
 
         if (durationMs) {
             const expiresAt = new Date(Date.now() + durationMs);
-            const punishment = await PunishmentSchema.create({
-                type: 'mute',
-                guildId: interaction.guild.id,
-                userId: target.id,
-                expiresAt,
-                muteRoleId: muteRole.id,
-            });
+            const durationLabel = formatDuration(durationMs);
+            const [punishment, modCase] = await Promise.all([
+                PunishmentSchema.create({ type: 'mute', guildId: interaction.guild.id, userId: target.id, expiresAt, muteRoleId: muteRole.id }),
+                createCase({ guildId: interaction.guild.id, type: 'mute', userId: target.id, moderatorId: interaction.user.id, reason, duration: durationLabel }),
+            ]);
             schedulePunishment(interaction.client, punishment);
             return interaction.editReply({
-                content: `Muted **${target.user.tag}** for **${formatDuration(durationMs)}** for \`${reason}\``,
+                content: `Muted **${target.user.tag}** for **${durationLabel}** for \`${reason}\` | Case #${modCase.caseId}`,
             });
         }
 
-        return interaction.editReply({ content: `Muted **${target.user.tag}** for \`${reason}\`` });
+        const modCase = await createCase({ guildId: interaction.guild.id, type: 'mute', userId: target.id, moderatorId: interaction.user.id, reason });
+        return interaction.editReply({ content: `Muted **${target.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
     },
 };

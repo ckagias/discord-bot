@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
+const { createCase } = require('../../utils/cases');
 
 const DURATION_CHOICES = [
     { name: '60 seconds', value: 60 },
@@ -86,10 +87,16 @@ module.exports = {
             }
 
             const duration = interaction.options.getInteger('duration');
-            await target.timeout(duration * 1000, reason);
+            const durationLabel = DURATION_CHOICES.find(c => c.value === duration)?.name ?? `${duration}s`;
+            const untilTs = Math.floor((Date.now() + duration * 1000) / 1000);
+
+            const [, modCase] = await Promise.all([
+                target.timeout(duration * 1000, reason),
+                createCase({ guildId: interaction.guild.id, type: 'timeout', userId: target.id, moderatorId: interaction.user.id, reason, duration: durationLabel }),
+            ]);
 
             const verb = sub === 'add' ? 'Timed out' : 'Updated timeout for';
-            return interaction.reply({ content: `${verb} **${target.user.tag}** until <t:${Math.floor((Date.now() + duration * 1000) / 1000)}:R> for \`${reason}\`` });
+            return interaction.reply({ content: `${verb} **${target.user.tag}** until <t:${untilTs}:R> for \`${reason}\` | Case #${modCase.caseId}` });
         }
 
         if (sub === 'remove') {
@@ -97,8 +104,11 @@ module.exports = {
                 return interaction.reply({ content: 'That user does not have an active timeout.', flags: MessageFlags.Ephemeral });
             }
 
-            await target.timeout(null, reason);
-            return interaction.reply({ content: `Removed timeout from **${target.user.tag}** for \`${reason}\`` });
+            const [, modCase] = await Promise.all([
+                target.timeout(null, reason),
+                createCase({ guildId: interaction.guild.id, type: 'timeout_remove', userId: target.id, moderatorId: interaction.user.id, reason }),
+            ]);
+            return interaction.reply({ content: `Removed timeout from **${target.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
         }
     },
 };

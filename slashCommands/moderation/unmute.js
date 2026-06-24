@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { getGuildConfig } = require('../../utils/guildConfig');
+const { createCase } = require('../../utils/cases');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -49,7 +50,10 @@ module.exports = {
             channels.map(c => c.permissionOverwrites.delete(muteRole))
         );
 
-        await target.roles.remove(muteRole, reason);
-        return interaction.editReply({ content: `Unmuted **${target.user.tag}** for \`${reason}\`` });
+        const [, modCase] = await Promise.all([
+            target.roles.remove(muteRole, reason),
+            createCase({ guildId: interaction.guild.id, type: 'unmute', userId: target.id, moderatorId: interaction.user.id, reason }),
+        ]);
+        return interaction.editReply({ content: `Unmuted **${target.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
     },
 };
