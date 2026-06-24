@@ -1,6 +1,7 @@
 const { ActivityType } = require('discord.js');
 const GiveawaySchema = require('../models/GiveawaySchema');
 const { endGiveaway } = require('../slashCommands/utility/giveaway');
+const { restorePunishments } = require('../utils/punishments');
 
 module.exports = {
     name: 'clientReady',
@@ -26,5 +27,7 @@ module.exports = {
             }
         }
         if (active.length) console.log(`[giveaway] Restored ${active.length} active giveaway(s).`);
+
+        await restorePunishments(client);
     }
 };

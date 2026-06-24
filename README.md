@@ -33,7 +33,8 @@ Other highlights:
 - Full moderation suite with role hierarchy checks, bot capability guards, and runtime permission checks on every command
 - Configurable auto-moderation: filters for banned words, spam/flood, excessive mentions, and invite links, with a per-server action (delete, delete + warn, or delete + timeout), DM notice to the affected user, and exemptions for admins/moderators managed from the dashboard
 - Trigger system: server admins configure keyword and the response for that word, bot replies when the word appears standalone in a message (Unicode-safe, works with Greek and other non-ASCII languages)
-- Mute system using a configurable muted role with automatic channel-level permission overwrites so the mute holds regardless of other roles
+- Mute system using a configurable muted role with automatic channel-level permission overwrites so the mute holds regardless of other roles; supports optional timed mutes that lift automatically and survive bot restarts
+- Temporary bans that automatically unban after the configured duration and survive bot restarts
 - Server event logger that logs message deletes/edits, joins, leaves, kicks, bans, nickname changes, role updates, and voice activity to a configurable channel
 - Welcome/farewell messages, configurable per-server with custom messages supporting `{user}` and `{server}` placeholders
 - Persistent XP leveling per server with atomic writes
@@ -147,12 +148,12 @@ Other highlights:
 | Command                 | Description                                                                                      |
 | ----------------------- | ------------------------------------------------------------------------------------------------ |
 | `/kick`                 | Kick a member from the server (Kick Members)                                                     |
-| `/ban`                  | Ban a member from the server with optional message deletion (Ban Members)                        |
+| `/ban`                  | Ban a member from the server with optional duration and message deletion (Ban Members)           |
 | `/unban`                | Unban a user by ID (Ban Members)                                                                 |
 | `/timeout add`          | Timeout a member for a set duration (Moderate Members)                                           |
 | `/timeout edit`         | Change the duration of a member's active timeout (Moderate Members)                              |
 | `/timeout remove`       | Remove an active timeout from a member (Moderate Members)                                        |
-| `/mute`                 | Mute a member using the configured mute role (Moderate Members)                                  |
+| `/mute`                 | Mute a member using the configured mute role, with optional duration (Moderate Members)          |
 | `/unmute`               | Unmute a member by removing the mute role (Moderate Members)                                     |
 | `/setmuterole`          | Set the role to assign when a member is muted (Manage Server)                                    |
 | `/warn`                 | Issue a warning to a member (Moderate Members)                                                   |

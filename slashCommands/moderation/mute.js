@@ -1,5 +1,7 @@
-const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { getGuildConfig } = require('../../utils/guildConfig');
+const PunishmentSchema = require('../../models/PunishmentSchema');
+const { parseDuration, formatDuration, schedulePunishment } = require('../../utils/punishments');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -9,6 +11,10 @@ module.exports = {
             option.setName('user')
                 .setDescription('The user to mute')
                 .setRequired(true))
+        .addStringOption(option =>
+            option.setName('duration')
+                .setDescription('Duration of the mute (e.g. 10m, 2h, 1d). Omit for permanent.')
+                .setRequired(false))
         .addStringOption(option =>
             option.setName('reason')
                 .setDescription('Reason for the mute')
@@ -21,6 +27,7 @@ module.exports = {
         await interaction.deferReply();
 
         const target = interaction.options.getMember('user');
+        const durStr = interaction.options.getString('duration');
         const reason = interaction.options.getString('reason') ?? 'No reason provided';
 
         if (!target) {
@@ -47,6 +54,14 @@ module.exports = {
             return interaction.editReply({ content: 'That user is already muted.' });
         }
 
+        let durationMs = null;
+        if (durStr) {
+            durationMs = parseDuration(durStr);
+            if (!durationMs) {
+                return interaction.editReply({ content: 'Invalid duration format. Use a number followed by `s`, `m`, `h`, or `d` (e.g. `30m`).' });
+            }
+        }
+
         const textChannels = interaction.guild.channels.cache.filter(c => c.isTextBased());
         const voiceChannels = interaction.guild.channels.cache.filter(c => c.isVoiceBased());
 
@@ -63,6 +78,22 @@ module.exports = {
         ]);
 
         await target.roles.add(muteRole, reason);
+
+        if (durationMs) {
+            const expiresAt = new Date(Date.now() + durationMs);
+            const punishment = await PunishmentSchema.create({
+                type: 'mute',
+                guildId: interaction.guild.id,
+                userId: target.id,
+                expiresAt,
+                muteRoleId: muteRole.id,
+            });
+            schedulePunishment(interaction.client, punishment);
+            return interaction.editReply({
+                content: `Muted **${target.user.tag}** for **${formatDuration(durationMs)}** for \`${reason}\``,
+            });
+        }
+
         return interaction.editReply({ content: `Muted **${target.user.tag}** for \`${reason}\`` });
     },
 };
