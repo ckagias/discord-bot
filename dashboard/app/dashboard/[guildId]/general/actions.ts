@@ -11,7 +11,6 @@ export async function updateGeneralSettings(guildId: string, formData: FormData)
   await connectDB();
 
   const update = {
-    levelingEnabled: formData.get("levelingEnabled") === "on",
     logChannelId: emptyToNull(formData.get("logChannelId")),
   };
 

@@ -129,7 +129,10 @@ module.exports = {
                     { returnDocument: 'after' }
                 );
                 if (levelled) {
-                    await channel.send(
+                    const announceChannel = guildData.levelUpChannelId
+                        ? (guild.channels.cache.get(guildData.levelUpChannelId) ?? channel)
+                        : channel;
+                    await announceChannel.send(
                         `🎉 Congratulations ${author}! You leveled up to **Level ${levelled.level}**!`
                     ).catch(() => {});
 

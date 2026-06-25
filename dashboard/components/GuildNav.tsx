@@ -15,15 +15,17 @@ const STYLES = {
 };
 
 const SECTIONS = [
-  { slug: "general",     label: "General" },
-  { slug: "welcome",     label: "Welcome & Farewell" },
-  { slug: "moderation",  label: "Moderation" },
-  { slug: "automod",     label: "Auto-Mod" },
-  { slug: "thresholds",  label: "Warn Thresholds" },
-  { slug: "level-roles", label: "Level Roles" },
-  { slug: "cases",       label: "Case Log" },
-  { slug: "economy",     label: "Economy" },
-  { slug: "tickets",     label: "Tickets" },
+  { slug: "general",        label: "General" },
+  { slug: "welcome",        label: "Welcome & Farewell" },
+  { slug: "moderation",     label: "Moderation" },
+  { slug: "automod",        label: "Auto-Mod" },
+  { slug: "thresholds",     label: "Warn Thresholds" },
+  { slug: "leveling",       label: "Leveling" },
+  { slug: "reaction-roles", label: "Reaction Roles" },
+  { slug: "triggers",       label: "Triggers" },
+  { slug: "cases",          label: "Case Log" },
+  { slug: "economy",        label: "Economy" },
+  { slug: "tickets",        label: "Tickets" },
 ];
 
 export default function GuildNav({ guildId }: { guildId: string }) {

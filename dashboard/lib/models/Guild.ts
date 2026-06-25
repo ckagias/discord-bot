@@ -35,6 +35,7 @@ export interface GuildDoc {
   automodMentionLimit: number;
   warnThresholds: WarnThreshold[];
   levelRoles: LevelRole[];
+  levelUpChannelId: string | null;
 }
 
 const guildSchema = new Schema<GuildDoc>({
@@ -79,6 +80,7 @@ const guildSchema = new Schema<GuildDoc>({
     ],
     default: [],
   },
+  levelUpChannelId: { type: String, default: null },
 });
 
 export default models.Guild || model<GuildDoc>("Guild", guildSchema);

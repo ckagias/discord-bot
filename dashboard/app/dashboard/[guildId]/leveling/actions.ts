@@ -3,8 +3,23 @@
 import { revalidatePath } from "next/cache";
 import { requireGuildAccess } from "@/lib/authorize";
 import { connectDB } from "@/lib/db";
+import { emptyToNull } from "@/lib/forms";
 import Guild from "@/lib/models/Guild";
 import type { LevelRole } from "@/lib/models/Guild";
+
+export async function updateLevelingSettings(guildId: string, formData: FormData) {
+  await requireGuildAccess(guildId);
+  await connectDB();
+
+  const update = {
+    levelingEnabled: formData.get("levelingEnabled") === "on",
+    levelUpChannelId: emptyToNull(formData.get("levelUpChannelId")),
+  };
+
+  await Guild.findOneAndUpdate({ guildId }, { $set: update, $setOnInsert: { guildId } }, { upsert: true });
+
+  revalidatePath(`/dashboard/${guildId}/leveling`);
+}
 
 export async function updateLevelRoles(guildId: string, formData: FormData) {
   await requireGuildAccess(guildId);
@@ -36,7 +51,6 @@ export async function updateLevelRoles(guildId: string, formData: FormData) {
       roleId: t.roleId,
     }));
 
-  // Deduplicate by level — last entry wins.
   const seen = new Set<number>();
   const deduped = levelRoles.filter((t) => {
     if (seen.has(t.level)) return false;
@@ -50,5 +64,5 @@ export async function updateLevelRoles(guildId: string, formData: FormData) {
     { upsert: true }
   );
 
-  revalidatePath(`/dashboard/${guildId}/level-roles`);
+  revalidatePath(`/dashboard/${guildId}/leveling`);
 }

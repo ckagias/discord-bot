@@ -3,7 +3,7 @@ import { fetchGuildChannels } from "@/lib/discord";
 import Guild, { GuildDoc } from "@/lib/models/Guild";
 import SettingsCard from "@/components/SettingsCard";
 import SectionForm from "@/components/SectionForm";
-import { ChannelField, ToggleField } from "@/components/Field";
+import { ChannelField } from "@/components/Field";
 import { updateGeneralSettings } from "./actions";
 
 const STYLES = {
@@ -25,8 +25,7 @@ export default async function GeneralSettingsPage({
     fetchGuildChannels(guildId),
   ]);
 
-  const guild: Pick<GuildDoc, "levelingEnabled" | "logChannelId"> = guildDoc ?? {
-    levelingEnabled: false,
+  const guild: Pick<GuildDoc, "logChannelId"> = guildDoc ?? {
     logChannelId: null,
   };
   const textChannels = channels.filter((c) => c.type === TEXT_CHANNEL_TYPE);
@@ -35,13 +34,6 @@ export default async function GeneralSettingsPage({
     <>
       <h1 className={STYLES.heading}>General</h1>
       <SectionForm action={updateGeneralSettings.bind(null, guildId)}>
-        <SettingsCard title="Leveling" description="Award XP and levels for chat activity.">
-          <ToggleField
-            label="Enable leveling"
-            name="levelingEnabled"
-            defaultChecked={guild.levelingEnabled}
-          />
-        </SettingsCard>
         <SettingsCard title="Logging" description="Where moderation and member events are posted.">
           <ChannelField
             label="Log channel"

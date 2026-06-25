@@ -2,35 +2,16 @@
 
 import { useEffect, useState, useTransition } from "react";
 import SettingsCard from "@/components/SettingsCard";
-import { updateWarnThresholds } from "./actions";
-import type { WarnThreshold } from "@/lib/models/Guild";
+import { updateLevelRoles } from "./actions";
+import type { LevelRole } from "@/lib/models/Guild";
+import type { DiscordRole } from "@/lib/discord";
 
-type Action = "timeout" | "kick" | "ban";
-
-interface Row extends WarnThreshold {
+interface Row extends LevelRole {
   key: number;
 }
 
-const ACTION_OPTIONS: { value: Action; label: string }[] = [
-  { value: "timeout", label: "Timeout" },
-  { value: "kick",    label: "Kick" },
-  { value: "ban",     label: "Ban" },
-];
-
-const DURATION_OPTIONS: { value: number; label: string }[] = [
-  { value: 60,      label: "1 minute" },
-  { value: 300,     label: "5 minutes" },
-  { value: 600,     label: "10 minutes" },
-  { value: 1800,    label: "30 minutes" },
-  { value: 3600,    label: "1 hour" },
-  { value: 21600,   label: "6 hours" },
-  { value: 86400,   label: "1 day" },
-  { value: 604800,  label: "1 week" },
-  { value: 2419200, label: "28 days" },
-];
-
 const STYLES = {
-  form: "flex flex-col gap-6 max-w-xl",
+  form: "flex flex-col gap-6",
   footer: "flex items-center gap-3",
   submitButton:
     "cursor-pointer self-start rounded-full bg-[#5865F2] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#4752c4] disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:text-zinc-500 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-600",
@@ -50,15 +31,17 @@ const STYLES = {
   empty: "text-sm text-zinc-500 dark:text-zinc-400",
 };
 
-export default function ThresholdsForm({
+export default function LevelRolesForm({
   guildId,
   initial,
+  roles,
 }: {
   guildId: string;
-  initial: WarnThreshold[];
+  initial: LevelRole[];
+  roles: DiscordRole[];
 }) {
   const [rows, setRows] = useState<Row[]>(() =>
-    initial.map((t, i) => ({ ...t, key: i }))
+    initial.map((lr, i) => ({ ...lr, key: i }))
   );
   const [nextKey, setNextKey] = useState(initial.length);
   const [dirty, setDirty] = useState(false);
@@ -78,9 +61,10 @@ export default function ThresholdsForm({
   }
 
   function addRow() {
+    const defaultRoleId = roles[0]?.id ?? "";
     setRows((prev) => {
-      const maxCount = prev.reduce((max, r) => Math.max(max, r.count), 0);
-      return [...prev, { key: nextKey, count: maxCount + 1, action: "timeout", duration: 300 }];
+      const maxLevel = prev.reduce((max, r) => Math.max(max, r.level), 0);
+      return [...prev, { key: nextKey, level: maxLevel + 1, roleId: defaultRoleId }];
     });
     setNextKey((k) => k + 1);
     mark();
@@ -93,13 +77,7 @@ export default function ThresholdsForm({
 
   function updateRow(key: number, patch: Partial<Omit<Row, "key">>) {
     setRows((prev) =>
-      prev.map((r) => {
-        if (r.key !== key) return r;
-        const next = { ...r, ...patch };
-        if (next.action !== "timeout") next.duration = null;
-        if (next.action === "timeout" && next.duration === null) next.duration = 300;
-        return next;
-      })
+      prev.map((r) => (r.key !== key ? r : { ...r, ...patch }))
     );
     mark();
   }
@@ -107,13 +85,13 @@ export default function ThresholdsForm({
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus("idle");
-    const payload = rows.map(({ key: _key, ...t }) => t);
+    const payload = rows.map(({ key: _key, ...lr }) => lr);
     const fd = new FormData();
-    fd.set("warnThresholds", JSON.stringify(payload));
+    fd.set("levelRoles", JSON.stringify(payload));
 
     startTransition(async () => {
       try {
-        await updateWarnThresholds(guildId, fd);
+        await updateLevelRoles(guildId, fd);
         setStatus("saved");
         setDirty(false);
       } catch (err) {
@@ -126,56 +104,39 @@ export default function ThresholdsForm({
   return (
     <form onSubmit={handleSubmit} className={STYLES.form}>
       <SettingsCard
-        title="Warning Thresholds"
-        description="Automatically punish members when they reach a set number of warnings. Each threshold fires exactly once at that count."
+        title="Level Roles"
+        description="Grant a role automatically when a member reaches a specific level. Roles stack — members keep all earned level roles."
       >
         {rows.length === 0 ? (
-          <p className={STYLES.empty}>No thresholds configured. Add one below.</p>
+          <p className={STYLES.empty}>No level roles configured. Add one below.</p>
         ) : (
           rows.map((row) => (
             <div key={row.key} className={STYLES.row}>
               <div className={STYLES.rowField}>
-                <label className={STYLES.label}>Warnings</label>
+                <label className={STYLES.label}>Level</label>
                 <input
                   type="number"
                   min={1}
-                  value={row.count}
+                  value={row.level}
                   onChange={(e) =>
-                    updateRow(row.key, { count: Math.max(1, parseInt(e.target.value) || 1) })
+                    updateRow(row.key, { level: Math.max(1, parseInt(e.target.value) || 1) })
                   }
                   className={STYLES.input}
                 />
               </div>
 
               <div className={STYLES.rowField}>
-                <label className={STYLES.label}>Action</label>
+                <label className={STYLES.label}>Role</label>
                 <select
-                  value={row.action}
-                  onChange={(e) => updateRow(row.key, { action: e.target.value as Action })}
+                  value={row.roleId}
+                  onChange={(e) => updateRow(row.key, { roleId: e.target.value })}
                   className={STYLES.select}
                 >
-                  {ACTION_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
+                  {roles.map((r) => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
                   ))}
                 </select>
               </div>
-
-              {row.action === "timeout" && (
-                <div className={STYLES.rowField}>
-                  <label className={STYLES.label}>Duration</label>
-                  <select
-                    value={row.duration ?? 300}
-                    onChange={(e) =>
-                      updateRow(row.key, { duration: parseInt(e.target.value) })
-                    }
-                    className={STYLES.select}
-                  >
-                    {DURATION_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
 
               <button
                 type="button"
@@ -189,7 +150,7 @@ export default function ThresholdsForm({
         )}
 
         <button type="button" onClick={addRow} className={STYLES.addButton}>
-          + Add threshold
+          + Add level role
         </button>
       </SettingsCard>
 

@@ -15,7 +15,7 @@ module.exports = {
                         .setRequired(false)))
         .addSubcommand(sub =>
             sub.setName('set')
-                .setDescription("Set a member's level (resets their XP to 0 at that level).")
+                .setDescription("Set a member's level and optionally their XP within that level.")
                 .addUserOption(option =>
                     option.setName('user')
                         .setDescription('The member whose level to set')
@@ -24,6 +24,11 @@ module.exports = {
                     option.setName('level')
                         .setDescription('The level to set')
                         .setRequired(true)
+                        .setMinValue(0))
+                .addIntegerOption(option =>
+                    option.setName('xp')
+                        .setDescription('XP within that level (defaults to 0; cannot exceed the XP needed to reach the next level)')
+                        .setRequired(false)
                         .setMinValue(0))),
 
     async execute(interaction) {
@@ -77,12 +82,21 @@ module.exports = {
 
             const target = interaction.options.getUser('user');
             const level = interaction.options.getInteger('level');
+            const xpInput = interaction.options.getInteger('xp') ?? 0;
             const { guild } = interaction;
+
+            // XP must be strictly less than the threshold that would trigger a level-up.
+            const xpNeeded = 100 * Math.pow(level + 1, 2);
+            if (xpInput >= xpNeeded) {
+                return interaction.editReply({
+                    content: `XP for level **${level}** must be less than **${xpNeeded}** (the amount needed to reach level ${level + 1}). To set that level, use \`/level set\` with level \`${level + 1}\`.`,
+                });
+            }
 
             const [, guildData] = await Promise.all([
                 LevelSchema.findOneAndUpdate(
                     { userId: target.id, guildId: guild.id },
-                    { $set: { level, xp: 0 } },
+                    { $set: { level, xp: xpInput } },
                     { upsert: true }
                 ),
                 getGuildConfig(guild.id),
@@ -99,7 +113,8 @@ module.exports = {
                 }
             }
 
-            return interaction.editReply({ content: `Set **${target.username}**'s level to **${level}** (XP reset to 0).` });
+            const xpNote = xpInput > 0 ? ` with **${xpInput} XP**` : ' (XP reset to 0)';
+            return interaction.editReply({ content: `Set **${target.username}**'s level to **${level}**${xpNote}.` });
         }
     },
 };

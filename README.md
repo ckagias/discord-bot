@@ -16,11 +16,11 @@ If you find this useful, feel free to leave a ⭐ to help others find it!
 
 ## Features
 
-**65+** commands across **9** categories:
+**70+** commands across **9** categories:
 
 - 🎉 **Fun:** `8ball`, `dare`, `truth`, `gayrate`, `poll`
 - ℹ️ **Info:** `avatar`, `help`, `commands`, `weather`, `github` and **9** more.
-- ⏫ **Leveling:** `leaderboard`, `level`, `toggleleveling`, `levelrole`
+- ⏫ **Leveling:** `leaderboard`, `level`, `toggleleveling`, `levelrole`, `levelchannel`
 - 🎵 **Music:** `play`, `skip`, `pause`, `resume`, `stop` and **4** more.
 - 🔧 **Utility:** `purge`, `shorten`, `afk`, `slowmode`, `snipe` and **3** more.
 - 🛡️ **Moderation:** `kick`, `ban`, `timeout`, `mute`, `warn` and **17** more.
@@ -95,10 +95,12 @@ Other highlights:
 | `/level check`      | Check your or another user's current level and XP (disabled if leveling is off)     |
 | `/level set`        | Set a member's level and reset their XP to 0; also grants all earned level roles (Manage Server) |
 | `/leaderboard`      | Display the server's top 10 leaderboard                                             |
-| `/toggleleveling`   | Enable or disable the XP system for this server (Admin only)                        |
-| `/levelrole set`    | Assign a role to be granted when a member reaches a level (Manage Server)           |
-| `/levelrole remove` | Remove the level role mapping at a specific level (Manage Server)                   |
-| `/levelrole list`   | Show all configured level role mappings for this server (Manage Server)             |
+| `/toggleleveling`    | Enable or disable the XP system for this server (Admin only)                           |
+| `/levelrole set`     | Assign a role to be granted when a member reaches a level (Manage Server)              |
+| `/levelrole remove`  | Remove the level role mapping at a specific level (Manage Server)                      |
+| `/levelrole list`    | Show all configured level role mappings for this server (Manage Server)                |
+| `/levelchannel set`  | Set a dedicated channel where level-up announcements are posted (Manage Server)        |
+| `/levelchannel reset`| Remove the dedicated level-up channel (announcements post in the active channel)       |
 
 
 ### 🎵 Music
@@ -314,7 +316,7 @@ Other highlights:
 
 An optional self-hosted web dashboard (`[dashboard/](dashboard)`) lets you manage your server's bot settings from the browser instead of slash commands only. It's built with Next.js, runs as an additional Docker Compose service alongside the bot, and shares the same MongoDB database so it talks only to **your own** bot instance. There is no centralized/shared backend, every self-hoster's dashboard is fully isolated to their own stack.
 
-Currently supports: Discord OAuth2 login, a picker for servers where you have Manage Server and the bot is present, and a sidebar of independently-saved settings sections. General (leveling, log channel), Welcome & Farewell (channels and messages), Moderation (mute role), Auto-Mod (filters, action, banned word list), Warn Thresholds (auto-escalation rules), Level Roles (add/remove level→role mappings), Case Log (full mod action history with user ID filter and per-case deletion), Economy (credit leaderboard), and Tickets (category and support role).
+Currently supports: Discord OAuth2 login, a picker for servers where you have Manage Server and the bot is present, and a sidebar of independently-saved settings sections. General (log channel), Welcome & Farewell (channels and messages), Moderation (mute role), Auto-Mod (filters, action, banned word list), Warn Thresholds (auto-escalation rules), Leveling (enable toggle, level-up channel, level→role mappings), Reaction Roles (add/remove emoji→role bindings per message), Triggers (keyword→response pairs), Case Log (full mod action history with user ID filter and per-case deletion), Economy (credit leaderboard), and Tickets (category and support role).
 
 ### Enabling it
 

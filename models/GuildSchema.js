@@ -42,6 +42,7 @@ const guildSchema = new Schema({
         ],
         default: [],
     },
+    levelUpChannelId: { type: String, default: null },
 });
 
 module.exports = model('Guild', guildSchema);
