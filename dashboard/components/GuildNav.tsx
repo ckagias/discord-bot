@@ -19,6 +19,7 @@ const SECTIONS = [
   { slug: "welcome",        label: "Welcome & Farewell" },
   { slug: "moderation",     label: "Moderation" },
   { slug: "automod",        label: "Auto-Mod" },
+  { slug: "anti-raid",      label: "Anti-Raid" },
   { slug: "thresholds",     label: "Warn Thresholds" },
   { slug: "warnings",       label: "Warnings" },
   { slug: "leveling",       label: "Leveling" },

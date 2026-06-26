@@ -2,6 +2,7 @@ const { EmbedBuilder } = require('discord.js');
 const { getLogChannel } = require('../utils/logger');
 const { getWelcomeConfig, formatMessage } = require('../utils/welcome');
 const { getGuildConfig } = require('../utils/guildConfig');
+const { handleJoin } = require('../utils/antiRaid');
 
 module.exports = {
     name: 'guildMemberAdd',
@@ -12,7 +13,12 @@ module.exports = {
             getGuildConfig(member.guild.id).catch(() => null),
         ]);
 
-        if (guildConfig?.autoroleId) {
+        // Anti-raid check: returns true synchronously if the member should be quarantined.
+        // The role is assigned after a short delay so Discord's join log fires cleanly first.
+        // Autorole and welcome are skipped for quarantined members; the join log still runs.
+        const quarantined = handleJoin(member, guildConfig);
+
+        if (!quarantined && guildConfig?.autoroleId) {
             const role = member.guild.roles.cache.get(guildConfig.autoroleId);
             if (role) {
                 await member.roles.add(role).catch(err =>
@@ -21,7 +27,7 @@ module.exports = {
             }
         }
 
-        if (welcomeConfig) {
+        if (!quarantined && welcomeConfig) {
             await welcomeConfig.channel.send({ content: formatMessage(welcomeConfig.message, member) }).catch(() => {});
         }
 

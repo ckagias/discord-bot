@@ -2,6 +2,7 @@ const { ActivityType } = require('discord.js');
 const GiveawaySchema = require('../models/GiveawaySchema');
 const { endGiveaway } = require('../slashCommands/utility/giveaway');
 const { restorePunishments } = require('../utils/punishments');
+const { restoreLockdowns } = require('../utils/antiRaid');
 const GuildSchema = require('../models/GuildSchema');
 const PollSchema = require('../models/PollSchema');
 const { closePoll } = require('../slashCommands/fun/poll');
@@ -44,6 +45,7 @@ module.exports = {
 
         await restorePunishments(client);
         await restoreAutoroles(client);
+        await restoreLockdowns(client);
     }
 };
 

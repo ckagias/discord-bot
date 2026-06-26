@@ -50,6 +50,13 @@ const guildSchema = new Schema({
     starboardEmoji:      { type: String,  default: '⭐' },
     starboardThreshold:  { type: Number,  default: 3 },
     starboardIgnoreNsfw: { type: Boolean, default: true },
+    antiRaidEnabled:           { type: Boolean, default: false },
+    antiRaidQuarantineRoleId:  { type: String,  default: null },
+    antiRaidJoinThreshold:     { type: Number,  default: 10 },
+    antiRaidJoinWindow:        { type: Number,  default: 10 },
+    antiRaidAlertChannelId:    { type: String,  default: null },
+    antiRaidLocked:            { type: Boolean, default: false },
+    antiRaidLockedAt:          { type: Date,    default: null },
 });
 
 module.exports = model('Guild', guildSchema);
