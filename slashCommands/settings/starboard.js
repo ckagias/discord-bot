@@ -88,7 +88,7 @@ module.exports = {
                 : null;
 
             const embed = new EmbedBuilder()
-                .setColor(0x5865f2)
+                .setColor(Math.floor(Math.random() * 0xFFFFFF))
                 .setTitle('Starboard Configuration')
                 .addFields(
                     { name: 'Status',    value: config?.starboardEnabled ? '✅ Enabled' : '❌ Disabled', inline: true },

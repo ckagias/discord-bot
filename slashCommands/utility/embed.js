@@ -64,7 +64,7 @@ module.exports = {
         if (sub === 'help') {
             const embed = new EmbedBuilder()
                 .setTitle('Embed Formatting Guide')
-                .setColor(0x5865F2)
+                .setColor(Math.floor(Math.random() * 0xFFFFFF))
                 .setDescription('Everything below works inside the **Description** field of `/embed create`.')
                 .addFields(
                     {

@@ -32,7 +32,7 @@ module.exports = {
                 { name: 'Your Bet',     value: `💰 ${formatBalance(bet)} credits`,     inline: true },
                 { name: 'Your Balance', value: `💳 ${formatBalance(wallet.balance)} credits`, inline: true },
             )
-            .setColor('Blurple')
+            .setColor(Math.floor(Math.random() * 0xFFFFFF))
             .setFooter({ text: 'You have 30 seconds to decide!' });
 
         const row = new ActionRowBuilder().addComponents(

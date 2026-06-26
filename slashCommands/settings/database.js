@@ -24,7 +24,7 @@ module.exports = {
 
             const embed = new EmbedBuilder()
                 .setTitle('📊 Database Storage Stats')
-                .setColor('Green')
+                .setColor(Math.floor(Math.random() * 0xFFFFFF))
                 .addFields(
                     { name: '🗄️ Database Name', value: `\`${stats.db}\``, inline: true },
                     { name: '📁 Collections', value: `\`${stats.collections}\``, inline: true },

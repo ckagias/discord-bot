@@ -41,7 +41,7 @@ module.exports = {
         await updateBalance(target.id, interaction.guild.id, amount);
 
         const embed = new EmbedBuilder()
-            .setColor(0x5865F2)
+            .setColor(Math.floor(Math.random() * 0xFFFFFF))
             .setTitle('Transfer Complete')
             .addFields(
                 { name: 'To',          value: `${target}`,                                    inline: true },

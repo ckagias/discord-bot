@@ -97,7 +97,7 @@ async function handleStarReaction(reaction) {
  */
 function buildEmbed(message, guildId, channelId, messageId) {
     const embed = new EmbedBuilder()
-        .setColor(0x5865f2)
+        .setColor(Math.floor(Math.random() * 0xFFFFFF))
         .setAuthor({
             name: message.author.tag,
             iconURL: message.author.displayAvatarURL(),

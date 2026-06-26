@@ -30,7 +30,7 @@ module.exports = {
         // No bet — pure flip
         if (!bet) {
             let description = `The coin landed on **${result.charAt(0).toUpperCase() + result.slice(1)}**! ${emoji}`;
-            let color = 'Blurple';
+            let color = Math.floor(Math.random() * 0xFFFFFF);
 
             if (guess) {
                 const won = guess === result;

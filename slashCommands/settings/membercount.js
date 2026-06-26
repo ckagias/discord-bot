@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, Colors } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -10,7 +10,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setTitle(`👥 Members in ${guild.name}`)
-            .setColor(Colors.Blue)
+            .setColor(Math.floor(Math.random() * 0xFFFFFF))
             .setDescription(`This server has **${guild.memberCount} members**.`)
             .setThumbnail(guild.iconURL({ dynamic: true }))
             .setTimestamp();

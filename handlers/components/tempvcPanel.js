@@ -21,7 +21,7 @@ function buildPanel(channel) {
     const limit = channel.userLimit === 0 ? 'Unlimited' : `${channel.userLimit}`;
 
     const embed = new EmbedBuilder()
-        .setColor(0x5865f2)
+        .setColor(Math.floor(Math.random() * 0xFFFFFF))
         .setTitle('🎙️ Voice Channel Controls')
         .setDescription(`**${channel.name}**`)
         .addFields(

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, Colors } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -11,7 +11,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setTitle('🏓 | Pong!')
-            .setColor(Colors.Green)
+            .setColor(Math.floor(Math.random() * 0xFFFFFF))
             .addFields(
                 { name: 'API Latency', value: `\`${apiLatency} ms\`` },
                 { name: 'Bot Latency', value: `\`${botLatency} ms\`` }
