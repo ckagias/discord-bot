@@ -19,7 +19,7 @@ If you find this useful, feel free to leave a ⭐ to help others find it!
 **70+** commands across **9** categories:
 
 - 🎉 **Fun:** `8ball`, `dare`, `truth`, `gayrate`, `poll` and **1** more.
-- ℹ️ **Info:** `avatar`, `help`, `commands`, `weather`, `github` and **9** more.
+- ℹ️ **Info:** `avatar`, `help`, `commands`, `weather`, `github` and **10** more.
 - ⏫ **Leveling:** `leaderboard`, `level`, `toggleleveling`, `levelrole`, `levelchannel`
 - 🎵 **Music:** `play`, `skip`, `shuffle`, `pause`, `resume`, `stop` and **7** more.
 - 🔧 **Utility:** `purge`, `shorten`, `afk`, `slowmode`, `snipe` and **3** more.
@@ -88,6 +88,7 @@ Other highlights:
 | `/botstats`      | Show bot performance stats, feature overview, and total command count                                                            |
 | `/server icon`   | Show the server's icon with download links                                                                                       |
 | `/server banner` | Show the server's banner with download links (requires server boost level 2+)                                                    |
+| `/profile`       | View a member's server profile — level, balance, warnings, join date, account age, and badges                                    |
 
 
 ### ⏫ Leveling
