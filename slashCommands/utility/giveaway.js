@@ -1,6 +1,18 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const GiveawaySchema = require('../../models/GiveawaySchema');
 
+function formatTimeLeft(endsAt) {
+    const ms = endsAt.getTime() - Date.now();
+    if (ms <= 0) return 'ended';
+    const s = Math.floor(ms / 1000);
+    if (s < 60) return `${s}s`;
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m}m`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ${m % 60}m`;
+    return `${Math.floor(h / 24)}d ${h % 24}h`;
+}
+
 function parseDuration(str) {
     const match = str.match(/^(\d+)(s|m|h|d)$/);
     if (!match) return null;
@@ -9,7 +21,7 @@ function parseDuration(str) {
     return value * units[match[2]];
 }
 
-function giveawayEmbed(prize, hostId, endsAt, winnerCount, entrantCount = 0, ended = false, winners = []) {
+function giveawayEmbed(prize, hostId, endsAt, winnerCount, entrantCount = 0, ended = false, winners = [], requireRoleId = null) {
     const embed = new EmbedBuilder()
         .setTitle('🎉 Giveaway')
         .setColor(ended ? 0x95a5a6 : 0xf1c40f)
@@ -20,6 +32,10 @@ function giveawayEmbed(prize, hostId, endsAt, winnerCount, entrantCount = 0, end
             { name: 'Entries', value: `${entrantCount}`, inline: true },
             { name: ended ? 'Ended' : 'Ends', value: `<t:${Math.floor(endsAt.getTime() / 1000)}:R>`, inline: true },
         );
+
+    if (requireRoleId) {
+        embed.addFields({ name: 'Required Role', value: `<@&${requireRoleId}>`, inline: true });
+    }
 
     if (ended) {
         embed.addFields({
@@ -54,7 +70,20 @@ function pickWinners(entrants, hostId, count) {
 }
 
 async function endGiveaway(client, giveaway) {
-    const winners = pickWinners(giveaway.entrants, giveaway.hostId, giveaway.winnerCount);
+    let eligibleEntrants = giveaway.entrants;
+
+    if (giveaway.requireRoleId) {
+        const guild = await client.guilds.fetch(giveaway.guildId).catch(() => null);
+        if (guild) {
+            const members = await guild.members.fetch({ user: giveaway.entrants }).catch(() => new Map());
+            eligibleEntrants = giveaway.entrants.filter(id => {
+                const member = members.get(id);
+                return member && member.roles.cache.has(giveaway.requireRoleId);
+            });
+        }
+    }
+
+    const winners = pickWinners(eligibleEntrants, giveaway.hostId, giveaway.winnerCount);
 
     giveaway.ended = true;
     giveaway.winners = winners;
@@ -65,7 +94,7 @@ async function endGiveaway(client, giveaway) {
 
     const message = await channel.messages.fetch(giveaway.messageId).catch(() => null);
     if (message) {
-        const embed = giveawayEmbed(giveaway.prize, giveaway.hostId, giveaway.endsAt, giveaway.winnerCount, giveaway.entrants.length, true, winners);
+        const embed = giveawayEmbed(giveaway.prize, giveaway.hostId, giveaway.endsAt, giveaway.winnerCount, giveaway.entrants.length, true, winners, giveaway.requireRoleId);
         await message.edit({ embeds: [embed], components: [entryRow(true)] }).catch(() => {});
     }
 
@@ -86,7 +115,8 @@ module.exports = {
                 .setDescription('Start a giveaway in this channel.')
                 .addStringOption(o => o.setName('prize').setDescription('What are you giving away?').setRequired(true))
                 .addStringOption(o => o.setName('duration').setDescription('Duration e.g. 10m, 2h, 1d').setRequired(true))
-                .addIntegerOption(o => o.setName('winners').setDescription('Number of winners (default 1)').setMinValue(1).setMaxValue(20)))
+                .addIntegerOption(o => o.setName('winners').setDescription('Number of winners (default 1)').setMinValue(1).setMaxValue(20))
+                .addRoleOption(o => o.setName('require_role').setDescription('Only members with this role can enter')))
         .addSubcommand(sub =>
             sub.setName('end')
                 .setDescription('End an active giveaway early.')
@@ -94,7 +124,10 @@ module.exports = {
         .addSubcommand(sub =>
             sub.setName('reroll')
                 .setDescription('Reroll winners for an ended giveaway.')
-                .addStringOption(o => o.setName('message_id').setDescription('Message ID of the giveaway').setRequired(true))),
+                .addStringOption(o => o.setName('message_id').setDescription('Message ID of the giveaway').setRequired(true)))
+        .addSubcommand(sub =>
+            sub.setName('list')
+                .setDescription('List active giveaways in this server.')),
 
     permissions: PermissionFlagsBits.ManageGuild,
 
@@ -107,6 +140,7 @@ module.exports = {
             const prize = interaction.options.getString('prize');
             const durationStr = interaction.options.getString('duration');
             const winnerCount = interaction.options.getInteger('winners') ?? 1;
+            const requireRole = interaction.options.getRole('require_role');
 
             const ms = parseDuration(durationStr);
             if (!ms) return interaction.reply({ content: 'Invalid duration. Use formats like `10m`, `2h`, `1d`.', flags: MessageFlags.Ephemeral });
@@ -116,7 +150,7 @@ module.exports = {
 
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-            const embed = giveawayEmbed(prize, interaction.user.id, endsAt, winnerCount, 0, false);
+            const embed = giveawayEmbed(prize, interaction.user.id, endsAt, winnerCount, 0, false, [], requireRole?.id ?? null);
             const msg = await interaction.channel.send({ embeds: [embed], components: [entryRow(false)] });
 
             const giveaway = await GiveawaySchema.create({
@@ -127,6 +161,7 @@ module.exports = {
                 prize,
                 winnerCount,
                 endsAt,
+                requireRoleId: requireRole?.id ?? null,
             });
 
             setTimeout(() => endGiveaway(client, giveaway), ms);
@@ -155,7 +190,16 @@ module.exports = {
 
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-            const winners = pickWinners(giveaway.entrants, giveaway.hostId, giveaway.winnerCount);
+            let eligibleEntrants = giveaway.entrants;
+            if (giveaway.requireRoleId) {
+                const members = await interaction.guild.members.fetch({ user: giveaway.entrants }).catch(() => new Map());
+                eligibleEntrants = giveaway.entrants.filter(id => {
+                    const member = members.get(id);
+                    return member && member.roles.cache.has(giveaway.requireRoleId);
+                });
+            }
+
+            const winners = pickWinners(eligibleEntrants, giveaway.hostId, giveaway.winnerCount);
             giveaway.winners = winners;
             await giveaway.save();
 
@@ -163,7 +207,7 @@ module.exports = {
             if (channel) {
                 const message = await channel.messages.fetch(giveaway.messageId).catch(() => null);
                 if (message) {
-                    const embed = giveawayEmbed(giveaway.prize, giveaway.hostId, giveaway.endsAt, giveaway.winnerCount, giveaway.entrants.length, true, winners);
+                    const embed = giveawayEmbed(giveaway.prize, giveaway.hostId, giveaway.endsAt, giveaway.winnerCount, giveaway.entrants.length, true, winners, giveaway.requireRoleId);
                     await message.edit({ embeds: [embed] }).catch(() => {});
                 }
 
@@ -174,6 +218,28 @@ module.exports = {
             }
 
             return interaction.editReply({ content: 'Reroll complete.' });
+        }
+
+        if (sub === 'list') {
+            const giveaways = await GiveawaySchema.find({ guildId: interaction.guild.id, ended: false }).sort({ endsAt: 1 });
+
+            if (!giveaways.length) {
+                return interaction.reply({ content: 'No active giveaways in this server.', flags: MessageFlags.Ephemeral });
+            }
+
+            const lines = giveaways.map(g => {
+                const jump = `https://discord.com/channels/${g.guildId}/${g.channelId}/${g.messageId}`;
+                const timeLeft = formatTimeLeft(g.endsAt);
+                const winners = g.winnerCount === 1 ? '1 winner' : `${g.winnerCount} winners`;
+                return `• **${g.prize}** — ${winners} — ends in **${timeLeft}** — [Jump](${jump})`;
+            });
+
+            const embed = new EmbedBuilder()
+                .setTitle('🎉 Active Giveaways')
+                .setColor(0xf1c40f)
+                .setDescription(lines.join('\n'));
+
+            return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
     },
 };

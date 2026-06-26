@@ -11,6 +11,13 @@ module.exports = {
         if (!giveaway)
             return interaction.reply({ content: 'This giveaway has already ended.', flags: MessageFlags.Ephemeral });
 
+        if (giveaway.requireRoleId) {
+            const member = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
+            if (!member || !member.roles.cache.has(giveaway.requireRoleId)) {
+                return interaction.reply({ content: `You need the <@&${giveaway.requireRoleId}> role to enter this giveaway.`, flags: MessageFlags.Ephemeral });
+            }
+        }
+
         const userId = interaction.user.id;
         const already = giveaway.entrants.includes(userId);
 

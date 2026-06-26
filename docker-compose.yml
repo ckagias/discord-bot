@@ -40,6 +40,7 @@ services:
       LAVALINK_PORT: 2333
       LAVALINK_PASSWORD: youshallnotpass
       MONGODB_URL: mongodb://mongodb:27017/discordbot
+      INTERNAL_API_PORT: 4000
     networks:
       - bot-network
 
@@ -53,6 +54,7 @@ services:
     env_file: .env
     environment:
       MONGODB_URL: mongodb://mongodb:27017/discordbot
+      BOT_INTERNAL_URL: http://bot:4000
     ports:
       - "3000:3000"
     networks:

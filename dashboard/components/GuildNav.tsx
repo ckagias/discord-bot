@@ -28,6 +28,7 @@ const SECTIONS = [
   { slug: "cases",          label: "Case Log" },
   { slug: "economy",        label: "Economy" },
   { slug: "tickets",        label: "Tickets" },
+  { slug: "giveaways",     label: "Giveaways" },
 ];
 
 export default function GuildNav({ guildId }: { guildId: string }) {

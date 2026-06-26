@@ -135,9 +135,10 @@ Other highlights:
 | `/tempvc invite`   | Invite a user to your locked temp VC (owner only)                                                    |
 | `/snipe delete`    | Show the last deleted message in the current channel                                                 |
 | `/snipe edit`      | Show the last edited message (before/after) in this channel                                          |
-| `/giveaway start`  | Start a timed giveaway with a prize, duration, and optional winner count (Manage Server)             |
+| `/giveaway start`  | Start a timed giveaway with a prize, duration, optional winner count, and optional role requirement (Manage Server) |
 | `/giveaway end`    | End an active giveaway early and pick winners immediately (Manage Server)                            |
 | `/giveaway reroll` | Reroll winners for an ended giveaway (Manage Server)                                                 |
+| `/giveaway list`   | List all active giveaways in this server with time remaining and jump links (Manage Server)          |
 | `/embed create`    | Build and post a custom embed via a two-step modal (main fields + optional fields) (Manage Messages) |
 | `/embed edit`      | Edit an existing embed posted by the bot, pre-filled with current values (Manage Messages)           |
 | `/embed help`      | Show an in-Discord formatting reference for markdown, links, mentions, and timestamps                |
@@ -322,7 +323,7 @@ Other highlights:
 
 An optional self-hosted web dashboard (`[dashboard/](dashboard)`) lets you manage your server's bot settings from the browser instead of slash commands only. It's built with Next.js, runs as an additional Docker Compose service alongside the bot, and shares the same MongoDB database so it talks only to **your own** bot instance. There is no centralized/shared backend, every self-hoster's dashboard is fully isolated to their own stack.
 
-Currently supports: Discord OAuth2 login, a picker for servers where you have Manage Server and the bot is present, and a sidebar of independently-saved settings sections. General (log channel), Welcome & Farewell (channels and messages), Moderation (mute role, autorole), Auto-Mod (filters, action, banned word list), Warn Thresholds (auto-escalation rules), Warnings (full warning history with user ID filter and per-warning deletion), Leveling (enable toggle, level-up channel, level→role mappings, top-20 XP leaderboard), Starboard (channel, emoji, threshold, NSFW exclusion), Reaction Roles (add/remove emoji→role bindings per message), Triggers (keyword→response pairs), Case Log (full mod action history with user ID filter and per-case deletion), Economy (credit leaderboard), and Tickets (category and support role setup, plus a live ticket list with open/closed filter).
+Currently supports: Discord OAuth2 login, a picker for servers where you have Manage Server and the bot is present, and a sidebar of independently-saved settings sections. General (log channel), Welcome & Farewell (channels and messages), Moderation (mute role, autorole), Auto-Mod (filters, action, banned word list), Warn Thresholds (auto-escalation rules), Warnings (full warning history with user ID filter and per-warning deletion), Leveling (enable toggle, level-up channel, level→role mappings, top-20 XP leaderboard), Starboard (channel, emoji, threshold, NSFW exclusion), Reaction Roles (add/remove emoji→role bindings per message), Triggers (keyword→response pairs), Case Log (full mod action history with user ID filter and per-case deletion), Economy (credit leaderboard), Tickets (category and support role setup, plus a live ticket list with open/closed filter), and Giveaways (active giveaways with an End button, past giveaways with Reroll and Delete buttons).
 
 ### Enabling it
 

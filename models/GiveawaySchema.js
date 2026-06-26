@@ -8,9 +8,10 @@ const giveawaySchema = new Schema({
     prize:      { type: String, required: true },
     winnerCount:{ type: Number, default: 1 },
     endsAt:     { type: Date, required: true },
-    ended:      { type: Boolean, default: false },
-    entrants:   { type: [String], default: [] },
-    winners:    { type: [String], default: [] },
+    ended:        { type: Boolean, default: false },
+    entrants:     { type: [String], default: [] },
+    winners:      { type: [String], default: [] },
+    requireRoleId: { type: String, default: null },
 });
 
 giveawaySchema.index({ guildId: 1, ended: 1 });
