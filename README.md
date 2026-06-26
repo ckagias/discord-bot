@@ -16,14 +16,14 @@ If you find this useful, feel free to leave a ⭐ to help others find it!
 
 ## Features
 
-**70+** commands across **9** categories:
+**75+** commands across **9** categories:
 
 - 🎉 **Fun:** `8ball`, `dare`, `truth`, `gayrate`, `poll` and **1** more.
 - ℹ️ **Info:** `avatar`, `help`, `commands`, `weather`, `github` and **10** more.
 - ⏫ **Leveling:** `leaderboard`, `level`, `toggleleveling`, `levelrole`, `levelchannel`
-- 🎵 **Music:** `play`, `skip`, `shuffle`, `pause`, `resume`, `stop` and **7** more.
+- 🎵 **Music:** `play`, `skip`, `pause`, `resume`, `stop` and **8** more.
 - 🔧 **Utility:** `purge`, `shorten`, `afk`, `slowmode`, `snipe` and **3** more.
-- 🛡️ **Moderation:** `kick`, `ban`, `timeout`, `mute`, `warn` and **17** more.
+- 🛡️ **Moderation:** `kick`, `ban`, `timeout`, `mute`, `warn` and **30** more.
 - 🎮 **Minigames:** `gamble`, `coinflip`, `rps`
 - 💰 **Economy:** `balance`, `daily`, `work`, `rob`, `transfer`, and **2** more.
 - 🎫 **Tickets:** `ticket setup`, `ticket panel`, `ticket close`, `ticket stats`, `ticket reset`
@@ -43,6 +43,7 @@ Other highlights:
 - AFK system with return detection and mention notifications
 - Ticket system with private channels, support role pinging, auto-cleanup of stale tickets, and per-server stats
 - Autorole: assigns a configured role to every new member on join. If the bot is offline when members join, any missing role assignments are caught and applied on the next startup
+- Anti-raid system: detects join-rate spikes and activates a lockdown, assigning a configurable quarantine role to every new joiner (blocking them from all channels via automatic permission overwrites) and alerting staff. Lockdowns can be triggered manually or automatically (configurable threshold and window). Active lockdowns survive bot restarts and are resumed on startup. Fully configurable via `/antiraid` commands or the dashboard Anti-Raid page
 - Starboard: messages that earn enough star (⭐) reactions are automatically reposted to a dedicated starboard channel. Τhe post updates live as reactions change and is removed if stars drop below the threshold; emoji, threshold, and NSFW-channel exclusion are fully configurable via `/starboard` or the dashboard Starboard page
 - Reaction roles with support for unicode and custom/animated emojis, bound per message and stored in MongoDB
 - Giveaway system with button-based entry, live entrant count, configurable winner count, and MongoDB persistence so active giveaways survive bot restarts
@@ -209,6 +210,14 @@ Other highlights:
 | `/welcome unset`        | Disable welcome messages for this server (Manage Server)                                         |
 | `/farewell set`         | Set the channel and optional message for member leave announcements (Manage Server)              |
 | `/farewell unset`       | Disable farewell messages for this server (Manage Server)                                        |
+| `/lockdown lock`        | Prevent everyone from sending messages in the current channel, with an optional reason (Manage Channels) |
+| `/lockdown remove`      | Restore normal messaging permissions in the current channel (Manage Channels)                            |
+| `/antiraid setrole`     | Set the quarantine role assigned to new members during a lockdown; applies channel overwrites immediately (Manage Server) |
+| `/antiraid lock`        | Manually activate a raid lockdown — new joiners are quarantined until unlocked (Manage Server)   |
+| `/antiraid unlock`      | Lift an active lockdown; already-quarantined members remain held (Manage Server)                 |
+| `/antiraid release`     | Remove the quarantine role from a specific member (false-positive recovery) (Manage Server)      |
+| `/antiraid config`      | Set the join threshold, time window, and enable/disable automatic detection (Manage Server)      |
+| `/antiraid status`      | Show current anti-raid config: role, thresholds, lockdown state, and start time (Manage Server)  |
 
 
 ### 🎫 Tickets
@@ -329,7 +338,7 @@ Other highlights:
 
 An optional self-hosted web dashboard (`[dashboard/](dashboard)`) lets you manage your server's bot settings from the browser instead of slash commands only. It's built with Next.js, runs as an additional Docker Compose service alongside the bot, and shares the same MongoDB database so it talks only to **your own** bot instance. There is no centralized/shared backend, every self-hoster's dashboard is fully isolated to their own stack.
 
-Currently supports: Discord OAuth2 login, a picker for servers where you have Manage Server and the bot is present, and a sidebar of independently-saved settings sections. General (log channel), Welcome & Farewell (channels and messages), Moderation (mute role, autorole), Auto-Mod (filters, action, banned word list), Warn Thresholds (auto-escalation rules), Warnings (full warning history with user ID filter and per-warning deletion), Leveling (enable toggle, level-up channel, level→role mappings, top-20 XP leaderboard), Starboard (channel, emoji, threshold, NSFW exclusion), Reaction Roles (add/remove emoji→role bindings per message), Triggers (keyword→response pairs), Case Log (full mod action history with user ID filter and per-case deletion), Economy (credit leaderboard), Tickets (category and support role setup, plus a live ticket list with open/closed filter), and Giveaways (active giveaways with an End button, past giveaways with Reroll and Delete buttons).
+Currently supports: Discord OAuth2 login, a picker for servers where you have Manage Server and the bot is present, and a sidebar of independently-saved settings sections. General (log channel), Welcome & Farewell (channels and messages), Moderation (mute role, autorole), Auto-Mod (filters, action, banned word list), Anti-Raid (quarantine role, alert channel, join threshold/window, auto-detection toggle, live lockdown status), Warn Thresholds (auto-escalation rules), Warnings (full warning history with user ID filter and per-warning deletion), Leveling (enable toggle, level-up channel, level→role mappings, top-20 XP leaderboard), Starboard (channel, emoji, threshold, NSFW exclusion), Reaction Roles (add/remove emoji→role bindings per message), Triggers (keyword→response pairs), Case Log (full mod action history with user ID filter and per-case deletion), Economy (credit leaderboard), Tickets (category and support role setup, plus a live ticket list with open/closed filter), and Giveaways (active giveaways with an End button, past giveaways with Reroll and Delete buttons).
 
 ### Enabling it
 
