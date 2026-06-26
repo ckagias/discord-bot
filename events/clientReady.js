@@ -3,6 +3,8 @@ const GiveawaySchema = require('../models/GiveawaySchema');
 const { endGiveaway } = require('../slashCommands/utility/giveaway');
 const { restorePunishments } = require('../utils/punishments');
 const GuildSchema = require('../models/GuildSchema');
+const PollSchema = require('../models/PollSchema');
+const { closePoll } = require('../slashCommands/fun/poll');
 
 module.exports = {
     name: 'clientReady',
@@ -28,6 +30,17 @@ module.exports = {
             }
         }
         if (active.length) console.log(`[giveaway] Restored ${active.length} active giveaway(s).`);
+
+        const activePolls = await PollSchema.find({ ended: false, endsAt: { $ne: null } });
+        for (const poll of activePolls) {
+            const remaining = poll.endsAt.getTime() - Date.now();
+            if (remaining <= 0) {
+                await closePoll(client, poll._id);
+            } else {
+                setTimeout(() => closePoll(client, poll._id), remaining);
+            }
+        }
+        if (activePolls.length) console.log(`[poll] Restored ${activePolls.length} active timed poll(s).`);
 
         await restorePunishments(client);
         await restoreAutoroles(client);

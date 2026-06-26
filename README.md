@@ -18,7 +18,7 @@ If you find this useful, feel free to leave a ⭐ to help others find it!
 
 **70+** commands across **9** categories:
 
-- 🎉 **Fun:** `8ball`, `dare`, `truth`, `gayrate`, `poll`
+- 🎉 **Fun:** `8ball`, `dare`, `truth`, `gayrate`, `poll` and **1** more.
 - ℹ️ **Info:** `avatar`, `help`, `commands`, `weather`, `github` and **9** more.
 - ⏫ **Leveling:** `leaderboard`, `level`, `toggleleveling`, `levelrole`, `levelchannel`
 - 🎵 **Music:** `play`, `skip`, `shuffle`, `pause`, `resume`, `stop` and **7** more.
@@ -64,7 +64,8 @@ Other highlights:
 | `/dare`    | Get a random dare                                      |
 | `/truth`   | Get a random truth question                            |
 | `/gayrate` | Rate how gay a user is                                 |
-| `/poll`    | Create a poll with up to 4 options and reaction voting |
+| `/poll`    | Create a poll with up to 4 options, button voting, live result bars, and optional auto-close duration |
+| `/pollend` | End an active poll early (poll creator or Manage Server) |
 
 
 ### ℹ️ Info
