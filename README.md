@@ -24,7 +24,7 @@ If you find this useful, feel free to leave a ⭐ to help others find it!
 - 🎵 **Music:** `play`, `skip`, `pause`, `resume`, `stop` and **8** more.
 - 🔧 **Utility:** `purge`, `shorten`, `afk`, `slowmode`, `snipe` and **3** more.
 - 🛡️ **Moderation:** `kick`, `ban`, `timeout`, `mute`, `warn` and **30** more.
-- 🎮 **Minigames:** `gamble`, `coinflip`, `rps`, `wordle`
+- 🎮 **Minigames:** `gamble`, `coinflip`, `rps`, `wordle`, `trivia`
 - 💰 **Economy:** `balance`, `daily`, `work`, `rob`, `transfer`, and **2** more.
 - 🎫 **Tickets:** `ticket setup`, `ticket panel`, `ticket close`, `ticket stats`, `ticket reset`
 - 🏷️ **Roles:** `reactionrole setup`, `reactionrole add`, `reactionrole remove`, `reactionrole list`
@@ -38,7 +38,7 @@ Other highlights:
 - Temporary bans that automatically unban after the configured duration and survive bot restarts
 - Server event logger that logs message deletes/edits, joins, leaves, kicks, bans, nickname changes, role updates, and voice activity to a configurable channel
 - Welcome/farewell messages, configurable per-server with custom messages supporting `{user}` and `{server}` placeholders
-- Per-server economy with passive chat earnings, daily streak bonuses (up to 3.5× on day 7+), hourly `/work` jobs with flavour text, a `/rob` command with risk/reward, transfers, admin `/eco` tools, and a leaderboard. Minigames (gamble, coinflip, rps, wordle) all bet and pay out real credits atomically; economy leaderboard also visible in the dashboard
+- Per-server economy with passive chat earnings, daily streak bonuses (up to 3.5× on day 7+), hourly `/work` jobs with flavour text, a `/rob` command with risk/reward, transfers, admin `/eco` tools, and a leaderboard. Minigames (gamble, coinflip, rps, wordle, trivia) all bet and pay out real credits atomically; economy leaderboard also visible in the dashboard
 - Persistent XP leveling per server with atomic writes, admins can map levels to roles so members are automatically granted the matching role when they level up (roles stack and members keep all earned level roles), manageable via `/levelrole` or the dashboard. Leveling page also shows a read-only top-20 leaderboard sorted by level then XP
 - AFK system with return detection and mention notifications
 - Ticket system with private channels, support role pinging, auto-cleanup of stale tickets, and per-server stats
@@ -161,6 +161,7 @@ Other highlights:
 | `/rps`           | Play Rock Paper Scissors against the bot, optionally with a bet                                                   |
 | `/wordle guess`  | Submit a 5-letter guess for today's official NYT Wordle — earn up to 500 coins for a win, 25 for a loss          |
 | `/wordle status` | View your current Wordle board for today                                                                          |
+| `/trivia`        | Answer a multiple-choice trivia question from Open Trivia DB — earn 50 / 100 / 200 coins for easy / medium / hard |
 
 
 ### 💰 Economy
