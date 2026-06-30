@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const EconomySchema = require('../../models/EconomySchema');
-const { updateBalance, formatBalance, DAILY_COOLDOWN_MS, DAILY_STREAK_WINDOW_MS, dailyStreakAmount } = require('../../utils/economy');
+const { formatBalance, DAILY_COOLDOWN_MS, DAILY_STREAK_WINDOW_MS, dailyStreakAmount } = require('../../utils/economy');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -10,6 +10,7 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
 
+        // Read current state for cooldown check and streak calculation
         const wallet = await EconomySchema.findOneAndUpdate(
             { userId: interaction.user.id, guildId: interaction.guild.id },
             { $setOnInsert: { userId: interaction.user.id, guildId: interaction.guild.id } },
@@ -35,12 +36,25 @@ module.exports = {
         const newStreak = streakAlive ? wallet.dailyStreak + 1 : 1;
         const earned = dailyStreakAmount(newStreak);
 
-        await EconomySchema.updateOne(
-            { userId: interaction.user.id, guildId: interaction.guild.id },
-            { $set: { lastDailyAt: new Date(now), dailyStreak: newStreak } }
+        // Atomic: stamp cooldown, update streak, and credit coins in one operation.
+        // This prevents a crash between steps from locking the user out without paying them,
+        // and closes the first-claim race where two concurrent calls both pass the cooldown check.
+        const updated = await EconomySchema.findOneAndUpdate(
+            {
+                userId: interaction.user.id,
+                guildId: interaction.guild.id,
+                $or: [{ lastDailyAt: null }, { lastDailyAt: { $lte: new Date(now - DAILY_COOLDOWN_MS) } }],
+            },
+            { $set: { lastDailyAt: new Date(now), dailyStreak: newStreak }, $inc: { balance: earned } },
+            { returnDocument: 'after' }
         );
 
-        const updated = await updateBalance(interaction.user.id, interaction.guild.id, earned);
+        if (!updated) {
+            // Another concurrent claim beat us — re-fetch for the cooldown timestamp
+            const fresh = await EconomySchema.findOne({ userId: interaction.user.id, guildId: interaction.guild.id });
+            const availableAt = Math.floor((fresh.lastDailyAt.getTime() + DAILY_COOLDOWN_MS) / 1000);
+            return interaction.editReply({ content: `You already claimed your daily credits. Come back <t:${availableAt}:R>.` });
+        }
 
         const streakBroken = lastDaily > 0 && !streakAlive && wallet.dailyStreak > 1;
 
@@ -49,7 +63,7 @@ module.exports = {
             .setTitle('Daily Credits Claimed!')
             .addFields(
                 { name: 'Received',    value: `💰 **+${formatBalance(earned)}** credits`,           inline: true },
-                { name: 'New Balance', value: `💳 **${formatBalance(updated.balance)}** credits`,   inline: true },
+                { name: 'New Balance', value: `💳 **${formatBalance(updated.balance)}** credits`, inline: true },
                 { name: 'Streak',      value: `🔥 Day **${newStreak}**`,                            inline: true },
             );
 

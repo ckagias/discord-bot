@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { updateBalance, formatBalance } = require('../../utils/economy');
+const { formatBalance } = require('../../utils/economy');
 const EconomySchema = require('../../models/EconomySchema');
 const { workResponses } = require('../../data/responses');
 
@@ -33,12 +33,23 @@ module.exports = {
         const job = workResponses[Math.floor(Math.random() * workResponses.length)];
         const earned = Math.floor(Math.random() * (job.max - job.min + 1)) + job.min;
 
-        await EconomySchema.updateOne(
-            { userId: interaction.user.id, guildId: interaction.guild.id },
-            { $set: { lastWorkAt: new Date(now) } }
+        // Atomic: stamp cooldown and credit coins in one operation so a crash between
+        // steps can't lock the user out without paying them.
+        const updated = await EconomySchema.findOneAndUpdate(
+            {
+                userId: interaction.user.id,
+                guildId: interaction.guild.id,
+                $or: [{ lastWorkAt: null }, { lastWorkAt: { $lte: new Date(now - WORK_COOLDOWN_MS) } }],
+            },
+            { $set: { lastWorkAt: new Date(now) }, $inc: { balance: earned } },
+            { returnDocument: 'after' }
         );
 
-        const updated = await updateBalance(interaction.user.id, interaction.guild.id, earned);
+        if (!updated) {
+            const fresh = await EconomySchema.findOne({ userId: interaction.user.id, guildId: interaction.guild.id });
+            const availableAt = Math.floor((fresh.lastWorkAt.getTime() + WORK_COOLDOWN_MS) / 1000);
+            return interaction.editReply({ content: `You're tired from your last job. You can work again <t:${availableAt}:R>.` });
+        }
 
         const embed = new EmbedBuilder()
             .setColor(0x57F287)
