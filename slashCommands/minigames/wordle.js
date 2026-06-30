@@ -67,10 +67,17 @@ function todayDateString() {
     return new Date().toISOString().slice(0, 10);
 }
 
+// Cache today's solution in-process so every guess/status call doesn't re-hit the NYT API.
+let cachedWord = { date: null, solution: null };
+
 async function fetchTodaysWord() {
     const date = todayDateString();
+    if (cachedWord.date === date) return cachedWord.solution;
+
     const res = await axios.get(`https://www.nytimes.com/svc/wordle/v2/${date}.json`, { timeout: 5000 });
-    return res.data.solution.toLowerCase();
+    const solution = res.data.solution.toLowerCase();
+    cachedWord = { date, solution };
+    return solution;
 }
 
 function buildEmbed(game, solution, { reward = null } = {}) {

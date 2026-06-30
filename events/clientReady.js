@@ -15,6 +15,10 @@ module.exports = {
     async execute(client) {
         console.log(`Logged in as ${client.user.tag}`);
 
+        // Init after READY so client.user.id is guaranteed populated and the gateway
+        // is fully connected before Lavalink starts forwarding voice state.
+        await client.lavalink.init({ id: client.user.id, username: client.user.username });
+
         const activityName = process.env.BOT_ACTIVITY_NAME;
         if (activityName) {
             const activityType = ActivityType[process.env.BOT_ACTIVITY_TYPE] ?? ActivityType.Watching;

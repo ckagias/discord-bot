@@ -37,8 +37,8 @@ module.exports = {
             };
 
             const [userRes, reposRes, contribRes] = await Promise.all([
-                axios.get(`https://api.github.com/users/${encodeURIComponent(username)}`, { headers }),
-                axios.get(`https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=100&sort=updated`, { headers }),
+                axios.get(`https://api.github.com/users/${encodeURIComponent(username)}`, { headers, timeout: 5000 }),
+                axios.get(`https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=100&sort=updated`, { headers, timeout: 5000 }),
                 process.env.GITHUB_TOKEN
                     ? axios.post('https://api.github.com/graphql', graphqlQuery, { headers, timeout: 5000 }).catch(() => null)
                     : Promise.resolve(null),
@@ -106,7 +106,7 @@ module.exports = {
 
             let files = [];
             try {
-                const svgRes = await axios.get(`https://ghchart.rshah.org/${encodeURIComponent(username)}`, { responseType: 'text' });
+                const svgRes = await axios.get(`https://ghchart.rshah.org/${encodeURIComponent(username)}`, { responseType: 'text', timeout: 5000 });
                 const colorMap = {
                     '#ebedf0': '#161b22',
                     '#eeeeee': '#161b22',

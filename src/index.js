@@ -44,9 +44,6 @@ const client = new Client({
 
     await client.login(process.env.Token);
 
-    // Init after login so client.user.id is available
-    await client.lavalink.init({ id: client.user.id, username: client.user.username });
-
     require('./internalApi')(client);
 })();
 

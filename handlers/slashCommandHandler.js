@@ -11,7 +11,14 @@ module.exports = (client) => {
         const files = fs.readdirSync(commandsPath).filter(f => f.endsWith('.js'));
 
         for (const file of files) {
-            const command = require(path.join(commandsPath, file));
+            let command;
+            try {
+                command = require(path.join(commandsPath, file));
+            } catch (err) {
+                console.error(`[slashCommandHandler] Failed to load ${file}:`, err);
+                continue;
+            }
+
             if (command.data && command.execute) {
                 client.commands.set(command.data.name, command);
             } else {

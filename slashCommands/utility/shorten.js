@@ -35,6 +35,7 @@ module.exports = {
         try {
             const response = await axios.get('https://is.gd/create.php', {
                 params: { format: 'json', url },
+                timeout: 5000,
             });
 
             const shortUrl = response.data.shorturl;

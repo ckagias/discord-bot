@@ -15,7 +15,7 @@ module.exports = {
         const apiKey = process.env.WEATHER_API_KEY;
 
         try {
-            const geoRes = await axios.get(`https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(location)}&limit=5&appid=${apiKey}`);
+            const geoRes = await axios.get(`https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(location)}&limit=5&appid=${apiKey}`, { timeout: 5000 });
 
             if (!geoRes.data.length) {
                 return interaction.reply({ content: '❌ City not found.', flags: MessageFlags.Ephemeral });
@@ -72,7 +72,7 @@ module.exports = {
 async function sendWeather(interaction, place, apiKey) {
     try {
         const { lat, lon, name, country, state } = place;
-        const weatherRes = await axios.get(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=en`);
+        const weatherRes = await axios.get(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=en`, { timeout: 5000 });
         const weather = weatherRes.data;
         const locationString = state ? `${name}, ${state}, ${country}` : `${name}, ${country}`;
 

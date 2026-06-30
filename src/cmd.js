@@ -14,7 +14,14 @@ for (const folder of folders) {
     console.log(`Loading files from ${folder}:`, files);
 
     for (const file of files) {
-        const command = require(path.join(folderPath, file));
+        let command;
+        try {
+            command = require(path.join(folderPath, file));
+        } catch (err) {
+            console.error(`[cmd] Failed to load ${file}:`, err);
+            continue;
+        }
+
         if (command.data && command.execute) {
             commands.push(command.data.toJSON());
         } else {
