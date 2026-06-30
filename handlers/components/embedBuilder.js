@@ -81,13 +81,23 @@ async function handleFieldsModal(interaction) {
         const channel = await interaction.guild.channels.fetch(parts[2]).catch(() => null);
         const message = await channel?.messages.fetch(parts[3]).catch(() => null);
         if (!message) return interaction.editReply({ content: 'Could not find the original message.', components: [] });
-        await message.edit({ embeds: [embed] });
+        try {
+            await message.edit({ embeds: [embed] });
+        } catch (err) {
+            console.error('[embedBuilder] message.edit failed:', err);
+            return interaction.editReply({ content: 'Failed to edit the message. Check my permissions in that channel.', components: [] });
+        }
         return interaction.editReply({ content: 'Embed updated.', components: [] });
     } else {
         const channel = await interaction.guild.channels.fetch(parts[2]).catch(() => null);
         if (!channel) return interaction.editReply({ content: 'Could not find the target channel.', components: [] });
-        const sent = await channel.send({ embeds: [embed] });
-        return interaction.editReply({ content: `Embed posted in ${channel}. Message ID: \`${sent.id}\``, components: [] });
+        try {
+            const sent = await channel.send({ embeds: [embed] });
+            return interaction.editReply({ content: `Embed posted in ${channel}. Message ID: \`${sent.id}\``, components: [] });
+        } catch (err) {
+            console.error('[embedBuilder] channel.send failed:', err);
+            return interaction.editReply({ content: 'Failed to post the embed. Check my permissions in that channel.', components: [] });
+        }
     }
 }
 
@@ -110,13 +120,23 @@ async function handlePostNow(interaction) {
         const channel = await interaction.guild.channels.fetch(parts[1]).catch(() => null);
         const message = await channel?.messages.fetch(parts[2]).catch(() => null);
         if (!message) return interaction.editReply({ content: 'Could not find the original message.', components: [] });
-        await message.edit({ embeds: [embed] });
+        try {
+            await message.edit({ embeds: [embed] });
+        } catch (err) {
+            console.error('[embedBuilder] message.edit failed:', err);
+            return interaction.editReply({ content: 'Failed to edit the message. Check my permissions in that channel.', components: [] });
+        }
         return interaction.editReply({ content: 'Embed updated.', components: [] });
     } else {
         const channel = await interaction.guild.channels.fetch(parts[1]).catch(() => null);
         if (!channel) return interaction.editReply({ content: 'Could not find the target channel.', components: [] });
-        const sent = await channel.send({ embeds: [embed] });
-        return interaction.editReply({ content: `Embed posted in ${channel}. Message ID: \`${sent.id}\``, components: [] });
+        try {
+            const sent = await channel.send({ embeds: [embed] });
+            return interaction.editReply({ content: `Embed posted in ${channel}. Message ID: \`${sent.id}\``, components: [] });
+        } catch (err) {
+            console.error('[embedBuilder] channel.send failed:', err);
+            return interaction.editReply({ content: 'Failed to post the embed. Check my permissions in that channel.', components: [] });
+        }
     }
 }
 

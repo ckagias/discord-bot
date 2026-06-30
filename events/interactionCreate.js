@@ -34,13 +34,37 @@ module.exports = {
 
         if (interaction.isModalSubmit()) {
             const handler = resolveComponent(client, 'modal', interaction.customId);
-            if (handler) await handler(interaction);
+            if (handler) {
+                try {
+                    await handler(interaction);
+                } catch (error) {
+                    console.error('[interactionCreate] Modal handler error:', error);
+                    const payload = { content: 'Something went wrong processing your input.', flags: MessageFlags.Ephemeral };
+                    if (interaction.deferred || interaction.replied) {
+                        await interaction.editReply(payload).catch(() => {});
+                    } else {
+                        await interaction.reply(payload).catch(() => {});
+                    }
+                }
+            }
             return;
         }
 
         if (interaction.isButton()) {
             const handler = resolveComponent(client, 'button', interaction.customId);
-            if (handler) await handler(interaction);
+            if (handler) {
+                try {
+                    await handler(interaction);
+                } catch (error) {
+                    console.error('[interactionCreate] Button handler error:', error);
+                    const payload = { content: 'Something went wrong. Please try again.', flags: MessageFlags.Ephemeral };
+                    if (interaction.deferred || interaction.replied) {
+                        await interaction.editReply(payload).catch(() => {});
+                    } else {
+                        await interaction.reply(payload).catch(() => {});
+                    }
+                }
+            }
         }
     }
 };
