@@ -35,10 +35,13 @@ export async function updateTriggers(guildId: string, formData: FormData) {
         typeof t.response === "string" &&
         t.response.trim().length > 0
     )
-    .map((t) => ({
-      trigger: t.trigger.trim().toLowerCase(),
-      response: t.response.trim(),
-    }));
+    .map((t) => {
+      const trigger = t.trigger.trim().toLowerCase();
+      const response = t.response.trim();
+      if (trigger.length > 100) throw new Error(`Trigger "${trigger.slice(0, 20)}…" exceeds 100 character limit.`);
+      if (response.length > 500) throw new Error(`Response for trigger "${trigger.slice(0, 20)}…" exceeds 500 character limit.`);
+      return { trigger, response };
+    });
 
   // Dedupe by trigger — last entry wins, matching bot's addtrigger.js logic.
   const seen = new Map<string, TriggerRow>();

@@ -14,9 +14,12 @@ function parseWordList(value: FormDataEntryValue | null): string[] {
   return Array.from(new Set(words));
 }
 
-function parsePositiveInt(value: FormDataEntryValue | null, fallback: number): number {
+const MAX_TIMEOUT_SECONDS = 2419200; // Discord maximum: 28 days
+
+function parsePositiveInt(value: FormDataEntryValue | null, fallback: number, max?: number): number {
   const n = parseInt((value ?? "").toString(), 10);
-  return Number.isFinite(n) && n > 0 ? n : fallback;
+  if (!Number.isFinite(n) || n <= 0) return fallback;
+  return max !== undefined ? Math.min(n, max) : n;
 }
 
 export async function updateAutomodSettings(guildId: string, formData: FormData) {
@@ -33,7 +36,7 @@ export async function updateAutomodSettings(guildId: string, formData: FormData)
     automodMentions: formData.get("automodMentions") === "on",
     automodInvites: formData.get("automodInvites") === "on",
     automodAction: validAction,
-    automodTimeoutSeconds: parsePositiveInt(formData.get("automodTimeoutSeconds"), 300),
+    automodTimeoutSeconds: parsePositiveInt(formData.get("automodTimeoutSeconds"), 300, MAX_TIMEOUT_SECONDS),
     automodBannedWordList: parseWordList(formData.get("automodBannedWordList")),
     automodMentionLimit: parsePositiveInt(formData.get("automodMentionLimit"), 5),
   };

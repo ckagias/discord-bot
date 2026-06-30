@@ -3,9 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { exchangeCodeForToken, fetchCurrentUser } from "@/lib/discord";
 import { getSession } from "@/lib/session";
 
-const BASE_URL = process.env.DASHBOARD_URL!;
-
 export async function GET(req: NextRequest) {
+  const BASE_URL = process.env.DASHBOARD_URL;
+  if (!BASE_URL) throw new Error("DASHBOARD_URL env var is not set");
+
   const url = req.nextUrl;
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");

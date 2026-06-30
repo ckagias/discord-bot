@@ -1,6 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { randomUUID } = require('node:crypto');
 const { formatBalance } = require('../../utils/economy');
+
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const ShopSchema = require('../../models/ShopSchema');
 const InventorySchema = require('../../models/InventorySchema');
 
@@ -81,7 +83,7 @@ module.exports = {
             }
 
             // Prevent duplicate names per guild
-            const existing = await ShopSchema.findOne({ guildId: interaction.guild.id, name: { $regex: `^${name}$`, $options: 'i' } });
+            const existing = await ShopSchema.findOne({ guildId: interaction.guild.id, name: { $regex: `^${escapeRegex(name)}$`, $options: 'i' } });
             if (existing) {
                 return interaction.editReply({ content: `An item named **${name}** already exists in the shop.` });
             }

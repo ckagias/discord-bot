@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { requireGuildAccess } from "@/lib/authorize";
 import { connectDB } from "@/lib/db";
+import { escapeRegex } from "@/lib/forms";
 import Shop from "@/lib/models/Shop";
 
 interface ShopRow {
@@ -78,7 +79,7 @@ export async function updateShop(guildId: string, formData: FormData) {
   }
   const dupes = await Shop.find({
     guildId,
-    name: { $in: allNames.map((n) => new RegExp(`^${n}$`, "i")) },
+    name: { $in: allNames.map((n) => new RegExp(`^${escapeRegex(n)}$`, "i")) },
     itemId: { $nin: keptItemIds },
   }).lean<{ name: string }[]>();
   if (dupes.length > 0) {
