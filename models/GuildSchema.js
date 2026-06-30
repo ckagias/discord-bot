@@ -57,6 +57,7 @@ const guildSchema = new Schema({
     antiRaidAlertChannelId:    { type: String,  default: null },
     antiRaidLocked:            { type: Boolean, default: false },
     antiRaidLockedAt:          { type: Date,    default: null },
+    caseCounter:               { type: Number,  default: 0 },
 });
 
 module.exports = model('Guild', guildSchema);

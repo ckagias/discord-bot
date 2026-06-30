@@ -49,8 +49,8 @@ async function liftBan(client, punishment) {
 function schedulePunishment(client, punishment) {
     const remaining = punishment.expiresAt.getTime() - Date.now();
     if (remaining <= 0) {
-        if (punishment.type === 'mute') liftMute(client, punishment);
-        else liftBan(client, punishment);
+        if (punishment.type === 'mute') liftMute(client, punishment).catch(err => console.error('[punishments] liftMute error:', err));
+        else liftBan(client, punishment).catch(err => console.error('[punishments] liftBan error:', err));
         return;
     }
     setTimeout(() => {

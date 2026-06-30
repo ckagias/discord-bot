@@ -1,8 +1,13 @@
 const CaseSchema = require('../models/CaseSchema');
+const GuildSchema = require('../models/GuildSchema');
 
 async function createCase({ guildId, type, userId, moderatorId, reason, duration = null }) {
-    const last = await CaseSchema.findOne({ guildId }).sort({ caseId: -1 }).select('caseId').lean();
-    const caseId = (last?.caseId ?? 0) + 1;
+    const guild = await GuildSchema.findOneAndUpdate(
+        { guildId },
+        { $inc: { caseCounter: 1 } },
+        { new: true, upsert: true },
+    );
+    const caseId = guild.caseCounter;
     return CaseSchema.create({ guildId, caseId, type, userId, moderatorId, reason, duration });
 }
 

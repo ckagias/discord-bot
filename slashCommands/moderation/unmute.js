@@ -44,12 +44,6 @@ module.exports = {
             return interaction.editReply({ content: 'That user is not muted.' });
         }
 
-        const channels = interaction.guild.channels.cache.filter(c => c.isTextBased() || c.isVoiceBased());
-
-        await Promise.allSettled(
-            channels.map(c => c.permissionOverwrites.delete(muteRole))
-        );
-
         const [, modCase] = await Promise.all([
             target.roles.remove(muteRole, reason),
             createCase({ guildId: interaction.guild.id, type: 'unmute', userId: target.id, moderatorId: interaction.user.id, reason }),
