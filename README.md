@@ -80,14 +80,13 @@ Other highlights:
 | `/server info`   | Display detailed server information                                                                                              |
 | `/userinfo`      | Display detailed user info including status, activity, voice state, device, nickname, boosting, join position, badges, and roles |
 | `/ping`          | Show the bot's latency and API ping                                                                                              |
-| `/uptime`        | Show how long the bot has been online                                                                                            |
-| `/help`          | Show bot info and system stats                                                                                                   |
+| `/help`          | Show bot info and point to `/commands`, `/botstats`, and `/link`                                                                  |
 | `/commands`      | List all available commands by category                                                                                          |
 | `/weather`       | Show the current weather for a city                                                                                              |
 | `/github`        | Show GitHub profile, repository stats, yearly contribution count, and contribution chart for a user                              |
 | `/invite`        | Generate a 7-day invite link for the current server                                                                              |
 | `/link`          | Generate an invite link to add the bot to another server                                                                         |
-| `/botstats`      | Show bot performance stats, feature overview, and total command count                                                            |
+| `/botstats`      | Show bot performance, system/stack info, and feature overview                                                                    |
 | `/server icon`   | Show the server's icon with download links                                                                                       |
 | `/server banner` | Show the server's banner with download links (requires server boost level 2+)                                                    |
 | `/profile`       | View a member's server profile — level, balance, warnings, join date, account age, and badges                                    |

@@ -1,6 +1,19 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const path = require('path');
-const fs = require('fs');
+const { SlashCommandBuilder, EmbedBuilder, version } = require('discord.js');
+const os = require('os');
+
+const CATEGORY_EMOJIS = {
+    economy: '💰',
+    fun: '🎉',
+    info: 'ℹ️',
+    leveling: '⏫',
+    minigames: '🎮',
+    moderation: '🛡️',
+    music: '🎵',
+    roles: '🏷️',
+    settings: '⚙️',
+    tickets: '🎫',
+    utility: '🔧',
+};
 
 function formatUptime(ms) {
     const s = Math.floor(ms / 1000);
@@ -16,15 +29,29 @@ function formatUptime(ms) {
     ].filter(Boolean).join(' ');
 }
 
-function countCommands() {
-    const base = path.join(__dirname, '../../slashCommands');
-    let total = 0;
-    for (const cat of fs.readdirSync(base)) {
-        const dir = path.join(base, cat);
-        if (!fs.statSync(dir).isDirectory()) continue;
-        total += fs.readdirSync(dir).filter(f => f.endsWith('.js')).length;
+function buildFeatureColumns(client) {
+    const categoryCounts = new Map();
+    for (const command of client.commands.values()) {
+        const category = command.category ?? 'other';
+        categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);
     }
-    return total;
+
+    const lines = [...categoryCounts.keys()]
+        .sort()
+        .map((category) => {
+            const emoji = CATEGORY_EMOJIS[category] ?? '📁';
+            const label = category.charAt(0).toUpperCase() + category.slice(1);
+            const count = categoryCounts.get(category);
+            return `➥ ${emoji} ${label}: \`${count}\``;
+        });
+
+    const mid = Math.ceil(lines.length / 2);
+    return [lines.slice(0, mid).join('\n'), lines.slice(mid).join('\n')];
+}
+
+function getLavalinkVersion(client) {
+    const node = client.lavalink?.nodeManager?.nodes?.values().next().value;
+    return node?.info?.version?.semver ?? 'N/A';
 }
 
 module.exports = {
@@ -34,7 +61,11 @@ module.exports = {
 
     async execute(interaction) {
         const { client } = interaction;
-        const total = countCommands();
+        const [featuresLeft, featuresRight] = buildFeatureColumns(client);
+
+        const platform = process.platform.replace(/win32/g, 'Windows');
+        const cpuUsage = `${(process.cpuUsage().user / 1024 / 1024).toFixed(2)} MB`;
+        const ramUsage = `${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)} MB`;
 
         const embed = new EmbedBuilder()
             .setColor(Math.floor(Math.random() * 0xFFFFFF))
@@ -48,41 +79,44 @@ module.exports = {
                 {
                     name: '⚡ | Performance',
                     value: [
-                        `➥ **Ping:** ${client.ws.ping}ms`,
-                        `➥ **Uptime:** ${formatUptime(client.uptime)}`,
-                        `➥ **Node.js:** ${process.version}`,
-                        `➥ **discord.js:** v${require('discord.js').version}`,
+                        `➥ **Ping:** \`${client.ws.ping}ms\``,
+                        `➥ **Uptime:** \`${formatUptime(client.uptime)}\``,
+                        `➥ **CPU Usage:** \`${cpuUsage}\``,
+                        `➥ **RAM Usage:** \`${ramUsage}\``,
+                        `➥ **Cores:** \`${os.cpus().length}\``,
                     ].join('\n'),
                     inline: true,
                 },
                 {
-                    name: '📦 | Commands',
-                    value: `➥ **Total:** ${total} slash commands`,
+                    name: '🗄️ | Stack',
+                    value: [
+                        `➥ **OS:** \`${platform} [${os.arch()}]\``,
+                        `➥ **Node.js:** \`${process.version}\``,
+                        `➥ **Discord.js:** \`v${version}\``,
+                        `➥ **Database:** \`MongoDB\``,
+                        `➥ **Music:** \`Lavalink v${getLavalinkVersion(client)}\``,
+                    ].join('\n'),
+                    inline: true,
+                },
+                {
+                    name: '​',
+                    value: '​',
                     inline: true,
                 },
                 {
                     name: '🛠️ | Features',
-                    value: [
-                        '➥ 🔨 Moderation (ban, kick, timed mute, temp-ban, warn, timeout, auto-escalation)',
-                        '➥ 🛡️ Auto-mod (spam, banned words, mentions, invite links)',
-                        '➥ 🎵 Music via Lavalink (play, queue, loop)',
-                        '➥ 🎫 Ticket system (open, close, stats)',
-                        '➥ 📈 XP & leveling system',
-                        '➥ 💰 Economy (balance, daily streak, work, rob, gamble, leaderboard)',
-                        '➥ 🎮 Minigames (coinflip, RPS, gamble) with real credit bets',
-                        '➥ 🏷️ Reaction roles',
-                        '➥ 🎉 Giveaways (button entry, reroll, MongoDB persistence)',
-                        '➥ 🔔 Welcome & farewell messages',
-                        '➥ 💬 Keyword trigger system',
-                        '➥ 🔧 Utility (purge, slowmode, AFK, snipe, temp VC, embed builder)',
-                        '➥ 🖥️ Web dashboard (Next.js)',
-                    ].join('\n'),
-                    inline: false,
+                    value: featuresLeft,
+                    inline: true,
                 },
                 {
-                    name: '🗄️ | Stack',
-                    value: '➥ **Runtime:** Node.js\n➥ **Database:** MongoDB (Mongoose)\n➥ **Music:** Lavalink\n➥ **Deploy:** Docker Compose',
-                    inline: false,
+                    name: '​',
+                    value: featuresRight,
+                    inline: true,
+                },
+                {
+                    name: '​',
+                    value: '​',
+                    inline: true,
                 },
             )
             .setFooter({
