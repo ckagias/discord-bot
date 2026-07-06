@@ -2,6 +2,11 @@ const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js'
 const ReminderSchema = require('../../models/ReminderSchema');
 
 const MAX_ACTIVE_PER_USER = 25;
+// setTimeout's delay is a 32-bit signed int internally; anything larger overflows and fires almost
+// immediately, so long waits are re-armed in chunks no larger than this.
+const MAX_TIMEOUT_MS = 2 ** 31 - 1;
+
+const activeTimers = new Map();
 
 function parseDuration(str) {
     const match = str.match(/^(\d+)(s|m|h|d)$/);
@@ -12,6 +17,8 @@ function parseDuration(str) {
 }
 
 async function sendReminder(client, reminder) {
+    activeTimers.delete(String(reminder._id));
+
     const update = await ReminderSchema.updateOne({ _id: reminder._id, sent: false }, { $set: { sent: true } });
     if (update.modifiedCount === 0) return;
 
@@ -25,6 +32,29 @@ async function sendReminder(client, reminder) {
         .setTimestamp();
 
     await channel.send({ content: `<@${reminder.userId}>`, embeds: [embed] }).catch(() => {});
+}
+
+// Schedules a reminder, re-arming in MAX_TIMEOUT_MS-sized chunks so waits longer than
+// ~24.8 days don't overflow setTimeout's delay and fire immediately.
+function scheduleReminder(client, reminder, remaining) {
+    const id = String(reminder._id);
+
+    if (remaining > MAX_TIMEOUT_MS) {
+        const timer = setTimeout(() => scheduleReminder(client, reminder, remaining - MAX_TIMEOUT_MS), MAX_TIMEOUT_MS);
+        activeTimers.set(id, timer);
+        return;
+    }
+
+    const timer = setTimeout(() => sendReminder(client, reminder), Math.max(remaining, 0));
+    activeTimers.set(id, timer);
+}
+
+function cancelScheduledReminder(id) {
+    const timer = activeTimers.get(String(id));
+    if (timer) {
+        clearTimeout(timer);
+        activeTimers.delete(String(id));
+    }
 }
 
 module.exports = {
@@ -45,11 +75,16 @@ module.exports = {
                 .addStringOption(o => o.setName('id').setDescription('Reminder ID from /remind list').setRequired(true))),
 
     sendReminder,
+    scheduleReminder,
 
     async execute(interaction, client) {
         const sub = interaction.options.getSubcommand();
 
         if (sub === 'set') {
+            if (!interaction.guild) {
+                return interaction.reply({ content: 'Reminders can only be set in a server, not in DMs.', flags: MessageFlags.Ephemeral });
+            }
+
             const durationStr = interaction.options.getString('duration');
             const message = interaction.options.getString('message').trim();
 
@@ -73,7 +108,7 @@ module.exports = {
                 remindAt,
             });
 
-            setTimeout(() => sendReminder(client, reminder), ms);
+            scheduleReminder(client, reminder, ms);
 
             return interaction.reply({
                 content: `Got it! I'll remind you <t:${Math.floor(remindAt.getTime() / 1000)}:R>.`,
@@ -90,10 +125,15 @@ module.exports = {
 
             const lines = reminders.map(r => `• \`${r._id}\` — ${r.message} — <t:${Math.floor(r.remindAt.getTime() / 1000)}:R>`);
 
+            let description = lines.join('\n');
+            if (description.length > 4096) {
+                description = description.slice(0, 4093) + '...';
+            }
+
             const embed = new EmbedBuilder()
                 .setTitle('⏰ Your Reminders')
                 .setColor(Math.floor(Math.random() * 0xFFFFFF))
-                .setDescription(lines.join('\n'));
+                .setDescription(description);
 
             return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
@@ -105,6 +145,8 @@ module.exports = {
             if (!result || result.deletedCount === 0) {
                 return interaction.reply({ content: 'No active reminder found with that ID.', flags: MessageFlags.Ephemeral });
             }
+
+            cancelScheduledReminder(id);
 
             return interaction.reply({ content: 'Reminder cancelled.', flags: MessageFlags.Ephemeral });
         }

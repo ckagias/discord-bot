@@ -9,7 +9,7 @@ const { closePoll } = require('../slashCommands/fun/poll');
 const HeistSchema = require('../models/HeistSchema');
 const { updateBalance } = require('../utils/economy');
 const ReminderSchema = require('../models/ReminderSchema');
-const { sendReminder } = require('../slashCommands/utility/remind');
+const { sendReminder, scheduleReminder } = require('../slashCommands/utility/remind');
 
 module.exports = {
     name: 'clientReady',
@@ -57,7 +57,7 @@ module.exports = {
             if (remaining <= 0) {
                 await sendReminder(client, reminder);
             } else {
-                setTimeout(() => sendReminder(client, reminder), remaining);
+                scheduleReminder(client, reminder, remaining);
             }
         }
         if (activeReminders.length) console.log(`[remind] Restored ${activeReminders.length} active reminder(s).`);
