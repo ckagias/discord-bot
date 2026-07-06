@@ -120,17 +120,17 @@ module.exports = {
 
         if (sub === 'toggle') {
             const guildData = await ensureGuildConfig(guild.id);
-            guildData.automodEnabled = !guildData.automodEnabled;
-            await guildData.save();
-            const status = guildData.automodEnabled ? '**Enabled**' : '**Disabled**';
+            const enabled = !guildData.automodEnabled;
+            await updateGuildConfig(guild.id, { automodEnabled: enabled });
+            const status = enabled ? '**Enabled**' : '**Disabled**';
             return interaction.editReply({ content: `Auto-moderation is now ${status} for **${guild.name}**.` });
         }
 
         if (sub === 'filter') {
             const name = interaction.options.getString('name');
             const guildData = await ensureGuildConfig(guild.id);
-            guildData[name] = !guildData[name];
-            await guildData.save();
+            const enabled = !guildData[name];
+            await updateGuildConfig(guild.id, { [name]: enabled });
 
             const labels = {
                 automodBannedWords: 'Banned Words',
@@ -138,7 +138,7 @@ module.exports = {
                 automodMentions: 'Mentions',
                 automodInvites: 'Invite Links',
             };
-            const status = guildData[name] ? '**enabled**' : '**disabled**';
+            const status = enabled ? '**enabled**' : '**disabled**';
             return interaction.editReply({ content: `${labels[name]} filter is now ${status}.` });
         }
 
