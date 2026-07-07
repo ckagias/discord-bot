@@ -51,7 +51,7 @@ function renderBoard(guesses, solution) {
         if (g < guesses.length) {
             const guess = guesses[g];
             const result = scoreGuess(guess, solution);
-            const tiles = result.map((r, i) => TILE[r]).join('');
+            const tiles = result.map((r) => TILE[r]).join('');
             const letters = guesses[g].toUpperCase().split('').join(' ');
             rows.push(`${tiles}  \`${letters}\``);
         } else {

@@ -1,6 +1,6 @@
 const { MessageFlags } = require('discord.js');
 const BlackjackGame = require('../../models/BlackjackSchema');
-const { handValue, isBlackjack, buildEmbed, buildRow, disabledRow, dealerPlay, buildPvpEmbed, buildPvpRow } = require('../../utils/blackjack');
+const { handValue, buildEmbed, buildRow, disabledRow, dealerPlay, buildPvpEmbed, buildPvpRow } = require('../../utils/blackjack');
 const { updateBalance, getWallet, formatBalance } = require('../../utils/economy');
 
 async function resolveGame(interaction, isOpponent = false) {
@@ -35,7 +35,7 @@ async function resolveGame(interaction, isOpponent = false) {
 }
 
 // Settle PvP — called once challenger is done (stand/bust) and opponent is also done
-async function settlePvp(interaction, game, client) {
+async function settlePvp(interaction, game) {
     const { userId, guildId, opponentId, bet, opponentBet, playerHand, opponentHand, dealerHand, deck } = game;
 
     dealerPlay(dealerHand, deck);

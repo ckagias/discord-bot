@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const EconomySchema = require('../../models/EconomySchema');
 const { getWallet, updateBalance, formatBalance } = require('../../utils/economy');
 

@@ -3,7 +3,6 @@ jest.mock('../models/PunishmentSchema', () => ({
     find: jest.fn().mockResolvedValue([]),
 }));
 
-const PunishmentSchema = require('../models/PunishmentSchema');
 const { schedulePunishment } = require('./punishments');
 
 const MAX_TIMEOUT_MS = 2 ** 31 - 1;

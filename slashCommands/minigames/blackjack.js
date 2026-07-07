@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
 const { getWallet, updateBalance, formatBalance } = require('../../utils/economy');
-const { buildDeck, handValue, isBlackjack, buildEmbed, buildRow, disabledRow, buildPvpEmbed, buildPvpRow } = require('../../utils/blackjack');
+const { buildDeck, isBlackjack, buildEmbed, buildRow, disabledRow, buildPvpEmbed, buildPvpRow } = require('../../utils/blackjack');
 const BlackjackGame = require('../../models/BlackjackSchema');
 
 module.exports = {

@@ -4,7 +4,6 @@ const { formatBalance } = require('../../utils/economy');
 
 const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const ShopSchema = require('../../models/ShopSchema');
-const InventorySchema = require('../../models/InventorySchema');
 
 module.exports = {
     data: new SlashCommandBuilder()

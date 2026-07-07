@@ -1,4 +1,4 @@
-const { Events, PartialType } = require('discord.js');
+const { Events } = require('discord.js');
 const ReactionRoleSchema = require('../models/ReactionRoleSchema');
 const { handleStarReaction } = require('../utils/starboard');
 const log = require('../utils/log');
