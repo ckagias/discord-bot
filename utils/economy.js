@@ -1,4 +1,5 @@
 const EconomySchema = require('../models/EconomySchema');
+const { upsertWithRetry } = require('./upsertRetry');
 
 const DAILY_AMOUNT = 500;
 const DAILY_COOLDOWN_MS = 86_400_000;  // 24 hours
@@ -12,10 +13,11 @@ function dailyStreakAmount(streak) {
 }
 
 function getWallet(userId, guildId) {
-    return EconomySchema.findOneAndUpdate(
+    return upsertWithRetry(
+        EconomySchema,
         { userId, guildId },
         { $setOnInsert: { userId, guildId } },
-        { upsert: true, returnDocument: 'after' }
+        { returnDocument: 'after' }
     );
 }
 
@@ -30,10 +32,11 @@ async function updateBalance(userId, guildId, amount) {
         );
         return wallet; // null if balance was too low
     }
-    return EconomySchema.findOneAndUpdate(
+    return upsertWithRetry(
+        EconomySchema,
         { userId, guildId },
         { $inc: { balance: amount }, $setOnInsert: { userId, guildId } },
-        { upsert: true, returnDocument: 'after' }
+        { returnDocument: 'after' }
     );
 }
 

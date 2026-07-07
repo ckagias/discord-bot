@@ -4,6 +4,7 @@ const TriggerSchema = require('../models/TriggerSchema');
 const { runAutoMod } = require('../utils/automod');
 const { ensureGuildConfig } = require('../utils/guildConfig');
 const { updateBalance } = require('../utils/economy');
+const { upsertWithRetry } = require('../utils/upsertRetry');
 const log = require('../utils/log');
 const logger = log.scope('messageCreate');
 const triggerLogger = log.scope('trigger');
@@ -98,8 +99,9 @@ module.exports = {
             const xpGained = Math.floor(Math.random() * 11) + 15;
             const cooldownCutoff = new Date(Date.now() - xp_cooldown_ms);
 
-            // Atomic XP award — the lastXpAt filter ensures only the first of any concurrent messages wins
-            const userData = await LevelSchema.findOneAndUpdate(
+            // Atomic XP award — the lastXpAt filter ensures only the first of any concurrent messages wins.
+            const userData = await upsertWithRetry(
+                LevelSchema,
                 {
                     userId: author.id,
                     guildId: guild.id,
@@ -110,7 +112,7 @@ module.exports = {
                     $set: { lastXpAt: new Date() },
                     $setOnInsert: { userId: author.id, guildId: guild.id },
                 },
-                { upsert: true, returnDocument: 'after' }
+                { returnDocument: 'after' }
             );
 
             // When the cooldown filter doesn't match, upsert inserts a bare doc with a fresh lastXpAt.
