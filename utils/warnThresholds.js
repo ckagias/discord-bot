@@ -1,13 +1,7 @@
 const { EmbedBuilder } = require('discord.js');
 const { getLogChannel } = require('./logger');
 const { createCase } = require('./cases');
-
-function formatDuration(seconds) {
-    if (seconds >= 86400) return `${Math.round(seconds / 86400)}d`;
-    if (seconds >= 3600)  return `${Math.round(seconds / 3600)}h`;
-    if (seconds >= 60)    return `${Math.round(seconds / 60)}m`;
-    return `${seconds}s`;
-}
+const { formatDuration } = require('./duration');
 
 // Finds the highest-priority threshold that matches totalWarnings exactly.
 // Only fires on the exact count so repeated warnings beyond the last threshold

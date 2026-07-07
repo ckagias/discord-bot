@@ -1,14 +1,12 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, MessageFlags } = require('discord.js');
 const { getGuildConfig, updateGuildConfig } = require('../../utils/guildConfig');
+const { formatDuration: formatExactDuration } = require('../../utils/duration');
 
 const ACTION_LABELS = { timeout: 'Timeout', kick: 'Kick', ban: 'Ban' };
 
 function formatDuration(seconds) {
     if (!seconds) return '—';
-    if (seconds >= 86400) return `${Math.round(seconds / 86400)}d`;
-    if (seconds >= 3600)  return `${Math.round(seconds / 3600)}h`;
-    if (seconds >= 60)    return `${Math.round(seconds / 60)}m`;
-    return `${seconds}s`;
+    return formatExactDuration(seconds);
 }
 
 function parseDuration(str) {

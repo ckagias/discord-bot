@@ -3,6 +3,7 @@ const WarnSchema = require('../models/WarnSchema');
 const { getLogChannel } = require('./logger');
 const { checkWarnThresholds } = require('./warnThresholds');
 const { createCase } = require('./cases');
+const { formatDuration } = require('./duration');
 
 const EXEMPT_PERMISSIONS = [
     PermissionFlagsBits.Administrator,
@@ -39,14 +40,6 @@ function isSpamming(guildId, userId) {
     timestamps.push(now);
     spamTracker.set(key, timestamps);
     return timestamps.length >= SPAM_THRESHOLD;
-}
-
-function formatTimeoutDuration(seconds) {
-    if (seconds >= 604800) return `${Math.round(seconds / 604800)} week(s)`;
-    if (seconds >= 86400) return `${Math.round(seconds / 86400)} day(s)`;
-    if (seconds >= 3600) return `${Math.round(seconds / 3600)} hour(s)`;
-    if (seconds >= 60) return `${Math.round(seconds / 60)} minute(s)`;
-    return `${seconds} second(s)`;
 }
 
 function exceedsMentionLimit(message, limit) {
@@ -106,7 +99,7 @@ async function applyAction(message, guildData, filter) {
         if (member?.moderatable) {
             const durationSeconds = guildData.automodTimeoutSeconds ?? 300;
             const durationMs = durationSeconds * 1000;
-            const durationLabel = formatTimeoutDuration(durationSeconds);
+            const durationLabel = formatDuration(durationSeconds);
 
             await member.timeout(durationMs, reason).catch(err => console.error('[automod] Failed to timeout member:', err));
 
