@@ -5,3 +5,4 @@ node_modules
 dashboard
 *.test.js
 jest.config.js
+eslint.config.js

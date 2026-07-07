@@ -2,7 +2,7 @@
 
 ### Help improve an open-source Discord bot built with [discord.js](https://github.com/discordjs/discord.js), Lavalink, and MongoDB
 
-[Getting Started](#getting-started) • [Project Structure](#project-structure) • [Adding a Command](#adding-a-command) • [Adding an Event](#adding-an-event) • [Adding a Component Handler](#adding-a-component-handler) • [Adding a Mongoose Model](#adding-a-mongoose-model) • [Guidelines](#guidelines) • [Testing](#testing) • [Submitting a PR](#submitting-a-pr)
+[Getting Started](#getting-started) • [Project Structure](#project-structure) • [Adding a Command](#adding-a-command) • [Adding an Event](#adding-an-event) • [Adding a Component Handler](#adding-a-component-handler) • [Adding a Mongoose Model](#adding-a-mongoose-model) • [Guidelines](#guidelines) • [Testing](#testing) • [Linting](#linting) • [Submitting a PR](#submitting-a-pr)
 
 ---
 
@@ -234,7 +234,7 @@ module.exports = model('Example', exampleSchema);
 - Keep each file focused on one thing. A command file handles one command; an event file handles one event.
 - Prefer `async/await` over `.then()/.catch()` chains.
 - Wrap anything that can fail with a try/catch or `.catch(() => {})`. Never let an uncaught promise rejection crash an interaction.
-- Follow the existing code style, no semicolons are not used selectively, indentation is 4 spaces.
+- Follow the existing code style: semicolons, 4-space indentation, single quotes. Run `npm run lint` before committing.
 
 ### Commits
 
@@ -255,15 +255,22 @@ Run `npm test` to run the Jest suite. Tests live next to the code they cover, as
 
 Not every file has tests yet — the suite is young. Pure functions in `utils/` (parsing, formatting, scheduling) are the best candidates for new coverage; add a test alongside your change if you touch one.
 
+## Linting
+
+Run `npm run lint` to check for real issues: unused variables, missing awaits, undefined references, and similar. It doesn't enforce formatting — just correctness.
+
+Most of the codebase predates this tooling, so don't be surprised if it flags files you didn't touch. Only fix warnings in files your change already modifies — don't do unrelated cleanup in the same PR.
+
 ---
 
 ## Submitting a PR
 
 1. Make sure `node src/cmd.js` succeeds and all touched commands appear correctly in Discord.
 2. Run `npm test` and make sure it passes.
-3. Test the happy path **and** at least one error/edge case (missing permissions, invalid input, target not in server).
-4. Update the **Commands** table in `README.md` if you added or removed a command.
-5. Open a pull request against `main` with a clear title and a short description of what changed and why.
+3. Run `npm run lint` on the files you changed.
+4. Test the happy path **and** at least one error/edge case (missing permissions, invalid input, target not in server).
+5. Update the **Commands** table in `README.md` if you added or removed a command.
+6. Open a pull request against `main` with a clear title and a short description of what changed and why.
 
 ---
 

@@ -10,7 +10,8 @@
     "start": "docker compose up -d",
     "stop": "docker compose down",
     "restart": "./restart.sh",
-    "test": "jest"
+    "test": "jest",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",
@@ -26,6 +27,9 @@
     "undici": "^6.23.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.6.0",
+    "globals": "^17.7.0",
     "jest": "^30.4.2"
   }
 }
