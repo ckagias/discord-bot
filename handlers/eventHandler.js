@@ -14,10 +14,19 @@ module.exports = (client) => {
             continue;
         }
 
+        const listener = (...args) => {
+            try {
+                Promise.resolve(event.execute(...args, client))
+                    .catch(err => console.error(`[eventHandler] Unhandled error in ${event.name}:`, err));
+            } catch (err) {
+                console.error(`[eventHandler] Unhandled error in ${event.name}:`, err);
+            }
+        };
+
         if (event.once) {
-            client.once(event.name, (...args) => event.execute(...args, client));
+            client.once(event.name, listener);
         } else {
-            client.on(event.name, (...args) => event.execute(...args, client));
+            client.on(event.name, listener);
         }
     }
 };
