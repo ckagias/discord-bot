@@ -6,6 +6,7 @@ const dns = require('node:dns');
 dns.setServers(['1.1.1.1', '1.0.0.1']);
 const log = require('../utils/log');
 const logger = log.scope('index');
+const { attachConnectionLogging } = require('../utils/dbLogging');
 
 const required = ['Token', 'ClientID', 'MONGODB_URL'];
 const missing = required.filter(k => !process.env[k]);
@@ -26,6 +27,8 @@ const client = new Client({
     ],
     partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
+
+attachConnectionLogging(mongoose.connection);
 
 (async () => {
     try {
