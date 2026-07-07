@@ -7,13 +7,9 @@ dns.setServers(['1.1.1.1', '1.0.0.1']);
 const log = require('../utils/log');
 const logger = log.scope('index');
 const { attachConnectionLogging } = require('../utils/dbLogging');
+const { checkEnv } = require('../utils/envCheck');
 
-const required = ['Token', 'ClientID', 'MONGODB_URL'];
-const missing = required.filter(k => !process.env[k]);
-if (missing.length) {
-    logger.error('Missing required env vars:', missing.join(', '));
-    process.exit(1);
-}
+checkEnv(process.env, logger);
 
 const client = new Client({
     intents: [
