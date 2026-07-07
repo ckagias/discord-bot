@@ -1,6 +1,6 @@
 const { ActivityType } = require('discord.js');
 const GiveawaySchema = require('../models/GiveawaySchema');
-const { endGiveaway } = require('../slashCommands/utility/giveaway');
+const { endGiveaway, scheduleGiveawayEnd } = require('../slashCommands/utility/giveaway');
 const { restorePunishments } = require('../utils/punishments');
 const { restoreLockdowns } = require('../utils/antiRaid');
 const GuildSchema = require('../models/GuildSchema');
@@ -35,7 +35,7 @@ module.exports = {
             if (remaining <= 0) {
                 await endGiveaway(client, giveaway);
             } else {
-                setTimeout(() => endGiveaway(client, giveaway), remaining);
+                scheduleGiveawayEnd(client, giveaway, remaining);
             }
         }
         if (active.length) console.log(`[giveaway] Restored ${active.length} active giveaway(s).`);

@@ -1,5 +1,8 @@
 const PunishmentSchema = require('../models/PunishmentSchema');
 
+// setTimeout delays beyond this overflow and fire immediately, so longer waits are chunked.
+const MAX_TIMEOUT_MS = 2 ** 31 - 1;
+
 function parseDuration(str) {
     const match = str.match(/^(\d+)(s|m|h|d)$/i);
     if (!match) return null;
@@ -46,17 +49,16 @@ async function liftBan(client, punishment) {
 }
 
 // Schedule a single punishment to be lifted. Called both on creation and on bot restart.
-function schedulePunishment(client, punishment) {
-    const remaining = punishment.expiresAt.getTime() - Date.now();
-    if (remaining <= 0) {
-        if (punishment.type === 'mute') liftMute(client, punishment).catch(err => console.error('[punishments] liftMute error:', err));
-        else liftBan(client, punishment).catch(err => console.error('[punishments] liftBan error:', err));
+function schedulePunishment(client, punishment, remaining = punishment.expiresAt.getTime() - Date.now()) {
+    if (remaining > MAX_TIMEOUT_MS) {
+        setTimeout(() => schedulePunishment(client, punishment, remaining - MAX_TIMEOUT_MS), MAX_TIMEOUT_MS);
         return;
     }
+
     setTimeout(() => {
-        if (punishment.type === 'mute') liftMute(client, punishment);
-        else liftBan(client, punishment);
-    }, remaining);
+        if (punishment.type === 'mute') liftMute(client, punishment).catch(err => console.error('[punishments] liftMute error:', err));
+        else liftBan(client, punishment).catch(err => console.error('[punishments] liftBan error:', err));
+    }, Math.max(remaining, 0));
 }
 
 // Restore all active timed punishments after a bot restart.

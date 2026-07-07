@@ -21,6 +21,17 @@ function parseDuration(str) {
     return value * units[match[2]];
 }
 
+// setTimeout delays beyond this overflow and fire immediately, so longer waits are chunked.
+const MAX_TIMEOUT_MS = 2 ** 31 - 1;
+
+function scheduleGiveawayEnd(client, giveaway, remaining) {
+    if (remaining > MAX_TIMEOUT_MS) {
+        setTimeout(() => scheduleGiveawayEnd(client, giveaway, remaining - MAX_TIMEOUT_MS), MAX_TIMEOUT_MS);
+        return;
+    }
+    setTimeout(() => endGiveaway(client, giveaway), Math.max(remaining, 0));
+}
+
 function giveawayEmbed(prize, hostId, endsAt, winnerCount, entrantCount = 0, ended = false, winners = [], requireRoleId = null) {
     const embed = new EmbedBuilder()
         .setTitle('🎉 Giveaway')
@@ -132,6 +143,7 @@ module.exports = {
     permissions: PermissionFlagsBits.ManageGuild,
 
     endGiveaway,
+    scheduleGiveawayEnd,
 
     async execute(interaction, client) {
         const sub = interaction.options.getSubcommand();
@@ -164,7 +176,7 @@ module.exports = {
                 requireRoleId: requireRole?.id ?? null,
             });
 
-            setTimeout(() => endGiveaway(client, giveaway), ms);
+            scheduleGiveawayEnd(client, giveaway, ms);
 
             return interaction.editReply({ content: `Giveaway started! [Jump to message](https://discord.com/channels/${interaction.guild.id}/${interaction.channel.id}/${msg.id})` });
         }
