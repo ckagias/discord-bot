@@ -1,4 +1,6 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
+const log = require('../../utils/log');
+const logger = log.scope('embedBuilder');
 
 async function handleMainModal(interaction) {
     const { parseMainFields } = require('../../slashCommands/utility/embed');
@@ -84,7 +86,7 @@ async function handleFieldsModal(interaction) {
         try {
             await message.edit({ embeds: [embed] });
         } catch (err) {
-            console.error('[embedBuilder] message.edit failed:', err);
+            logger.error('message.edit failed:', err);
             return interaction.editReply({ content: 'Failed to edit the message. Check my permissions in that channel.', components: [] });
         }
         return interaction.editReply({ content: 'Embed updated.', components: [] });
@@ -95,7 +97,7 @@ async function handleFieldsModal(interaction) {
             const sent = await channel.send({ embeds: [embed] });
             return interaction.editReply({ content: `Embed posted in ${channel}. Message ID: \`${sent.id}\``, components: [] });
         } catch (err) {
-            console.error('[embedBuilder] channel.send failed:', err);
+            logger.error('channel.send failed:', err);
             return interaction.editReply({ content: 'Failed to post the embed. Check my permissions in that channel.', components: [] });
         }
     }
@@ -123,7 +125,7 @@ async function handlePostNow(interaction) {
         try {
             await message.edit({ embeds: [embed] });
         } catch (err) {
-            console.error('[embedBuilder] message.edit failed:', err);
+            logger.error('message.edit failed:', err);
             return interaction.editReply({ content: 'Failed to edit the message. Check my permissions in that channel.', components: [] });
         }
         return interaction.editReply({ content: 'Embed updated.', components: [] });
@@ -134,7 +136,7 @@ async function handlePostNow(interaction) {
             const sent = await channel.send({ embeds: [embed] });
             return interaction.editReply({ content: `Embed posted in ${channel}. Message ID: \`${sent.id}\``, components: [] });
         } catch (err) {
-            console.error('[embedBuilder] channel.send failed:', err);
+            logger.error('channel.send failed:', err);
             return interaction.editReply({ content: 'Failed to post the embed. Check my permissions in that channel.', components: [] });
         }
     }

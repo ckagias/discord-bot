@@ -1,6 +1,9 @@
 const { Events, PartialType } = require('discord.js');
 const ReactionRoleSchema = require('../models/ReactionRoleSchema');
 const { handleStarReaction } = require('../utils/starboard');
+const log = require('../utils/log');
+const reactionRoleLogger = log.scope('reactionRole');
+const starboardLogger = log.scope('starboard');
 
 module.exports = {
     name: Events.MessageReactionAdd,
@@ -30,14 +33,14 @@ module.exports = {
                 const role = message.guild.roles.cache.get(mapping.roleId);
                 if (role) {
                     await member.roles.add(role).catch(err =>
-                        console.error(`[reactionRole] Failed to add role ${role.id} to ${user.id}:`, err)
+                        reactionRoleLogger.error(`Failed to add role ${role.id} to ${user.id}:`, err)
                     );
                 }
             }
         }
 
         await handleStarReaction(reaction).catch(err =>
-            console.error('[starboard] Error handling reaction add:', err)
+            starboardLogger.error('Error handling reaction add:', err)
         );
     },
 };

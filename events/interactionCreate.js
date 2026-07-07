@@ -1,5 +1,7 @@
 const { MessageFlags } = require('discord.js');
 const { resolveComponent } = require('../handlers/componentHandler');
+const log = require('../utils/log');
+const logger = log.scope('interactionCreate');
 
 module.exports = {
     name: 'interactionCreate',
@@ -15,7 +17,7 @@ module.exports = {
             try {
                 await command.execute(interaction, client);
             } catch (error) {
-                console.error(error);
+                logger.error(error);
                 const payload = { content: 'Error executing command', flags: MessageFlags.Ephemeral };
                 if (interaction.deferred || interaction.replied) {
                     await interaction.editReply(payload).catch(() => {});
@@ -38,7 +40,7 @@ module.exports = {
                 try {
                     await handler(interaction);
                 } catch (error) {
-                    console.error('[interactionCreate] Modal handler error:', error);
+                    logger.error('Modal handler error:', error);
                     const payload = { content: 'Something went wrong processing your input.', flags: MessageFlags.Ephemeral };
                     if (interaction.deferred || interaction.replied) {
                         await interaction.editReply(payload).catch(() => {});
@@ -56,7 +58,7 @@ module.exports = {
                 try {
                     await handler(interaction);
                 } catch (error) {
-                    console.error('[interactionCreate] Button handler error:', error);
+                    logger.error('Button handler error:', error);
                     const payload = { content: 'Something went wrong. Please try again.', flags: MessageFlags.Ephemeral };
                     if (interaction.deferred || interaction.replied) {
                         await interaction.editReply(payload).catch(() => {});

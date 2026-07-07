@@ -1,4 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
+const log = require('../../utils/log');
+const logger = log.scope('stop');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -23,7 +25,7 @@ module.exports = {
 
             await interaction.reply({ embeds: [embed] });
         } catch (error) {
-            console.error('[stop] Lavalink error:', error);
+            logger.error('Lavalink error:', error);
             await interaction.reply({ content: 'Failed to stop playback. Please try again.', flags: MessageFlags.Ephemeral }).catch(() => {});
         }
     },

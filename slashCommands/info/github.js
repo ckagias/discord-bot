@@ -1,6 +1,8 @@
 const axios = require('axios');
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, MessageFlags } = require('discord.js');
 const { Resvg } = require('@resvg/resvg-js');
+const log = require('../../utils/log');
+const logger = log.scope('github');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -125,7 +127,7 @@ module.exports = {
                 const attachment = new AttachmentBuilder(pngBuffer, { name: 'contributions.png' });
                 embed.setImage('attachment://contributions.png');
                 files = [attachment];
-            } catch (e) { console.error('[github] chart error:', e.message); }
+            } catch (e) { logger.error('chart error:', e.message); }
 
             await interaction.editReply({ embeds: [embed], files });
 
@@ -135,7 +137,7 @@ module.exports = {
             } else if (err.response?.status === 403) {
                 await interaction.editReply({ content: 'GitHub API rate limit exceeded. Please try again later.', flags: MessageFlags.Ephemeral });
             } else {
-                console.error('[github] Error:', err);
+                logger.error('Error:', err);
                 await interaction.editReply({ content: 'An error occurred while fetching GitHub data.', flags: MessageFlags.Ephemeral });
             }
         }

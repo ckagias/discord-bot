@@ -1,5 +1,7 @@
 const { PermissionFlagsBits, MessageFlags } = require('discord.js');
 const TicketSchema = require('../../models/TicketSchema');
+const log = require('../../utils/log');
+const logger = log.scope('ticket');
 
 module.exports = {
     type: 'button',
@@ -22,7 +24,7 @@ module.exports = {
         await TicketSchema.findOneAndUpdate({ channelId: interaction.channel.id }, { status: 'closed' });
 
         setTimeout(() => {
-            interaction.channel.delete().catch(err => console.error('[ticket] Failed to delete closed ticket channel:', err));
+            interaction.channel.delete().catch(err => logger.error('Failed to delete closed ticket channel:', err));
         }, 5000);
     },
 };

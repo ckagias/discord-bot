@@ -1,5 +1,7 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const axios = require('axios');
+const log = require('../../utils/log');
+const logger = log.scope('shorten');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -45,7 +47,7 @@ module.exports = {
 
             await interaction.editReply(`Here's your shortened URL:\n**${shortUrl}**\n\n> Original: <${url}>`);
         } catch (error) {
-            console.error('[shorten] Error:', error);
+            logger.error('Error:', error);
             await interaction.editReply('Something went wrong while shortening the URL. Please try again later.');
         }
     },

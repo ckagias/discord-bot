@@ -1,6 +1,8 @@
 const { SlashCommandBuilder, ChannelType, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { buildPanel } = require('../../handlers/components/tempvcPanel');
 const { getGuildConfig, updateGuildConfig } = require('../../utils/guildConfig');
+const log = require('../../utils/log');
+const logger = log.scope('tempvc');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -97,7 +99,7 @@ module.exports = {
                     permissionOverwrites,
                 });
             } catch (error) {
-                console.error('[tempvc] Channel creation error:', error);
+                logger.error('Channel creation error:', error);
                 return interaction.reply({ content: 'Failed to create the voice channel. Make sure I have the **Manage Channels** permission.', flags: MessageFlags.Ephemeral });
             }
 
@@ -105,11 +107,11 @@ module.exports = {
             interaction.client.tempVCs.set(tempChannel.id, member.id);
 
             await member.voice.setChannel(tempChannel).catch(err => {
-                console.error('[tempvc] Failed to move member:', err);
+                logger.error('Failed to move member:', err);
             });
 
             await tempChannel.send(buildPanel(tempChannel)).catch(err => {
-                console.error('[tempvc] Failed to send control panel:', err);
+                logger.error('Failed to send control panel:', err);
             });
 
             const limitText = limit === 0 ? 'unlimited' : `${limit}`;
@@ -152,7 +154,7 @@ module.exports = {
 
                 return interaction.reply({ content: `**${target.username}** has been invited to join **${voiceChannel.name}**.`, flags: MessageFlags.Ephemeral });
             } catch (error) {
-                console.error('[tempvc] Invite error:', error);
+                logger.error('Invite error:', error);
                 return interaction.reply({ content: 'Failed to invite the user.', flags: MessageFlags.Ephemeral });
             }
         }

@@ -2,6 +2,8 @@ const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('disc
 const PunishmentSchema = require('../../models/PunishmentSchema');
 const { parseDuration, formatDuration, schedulePunishment } = require('../../utils/punishments');
 const { createCase } = require('../../utils/cases');
+const log = require('../../utils/log');
+const logger = log.scope('ban');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -80,7 +82,7 @@ module.exports = {
             const modCase = await createCase({ guildId: interaction.guild.id, type: 'ban', userId: target.id, moderatorId: interaction.user.id, reason });
             return interaction.reply({ content: `Banned **${target.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
         } catch (err) {
-            console.error('[ban] Error:', err);
+            logger.error('Error:', err);
             const method = interaction.replied || interaction.deferred ? 'editReply' : 'reply';
             await interaction[method]({ content: 'An error occurred while trying to ban that user.', flags: MessageFlags.Ephemeral }).catch(() => {});
         }

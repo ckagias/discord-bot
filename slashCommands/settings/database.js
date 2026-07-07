@@ -1,5 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const mongoose = require('mongoose');
+const log = require('../../utils/log');
+const logger = log.scope('database');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -38,7 +40,7 @@ module.exports = {
             await interaction.editReply({ embeds: [embed] });
 
         } catch (error) {
-            console.error('[database] Error:', error);
+            logger.error('Error:', error);
             await interaction.editReply({ content: 'An error occurred while fetching database statistics.', flags: MessageFlags.Ephemeral });
         }
     },

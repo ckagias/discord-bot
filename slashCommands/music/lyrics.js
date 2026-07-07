@@ -1,5 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, MessageFlags } = require('discord.js');
 const axios = require('axios');
+const log = require('../../utils/log');
+const logger = log.scope('lyrics');
 
 const PAGE_SIZE = 3900;
 const COLLECTOR_TIME = 120_000;
@@ -138,7 +140,7 @@ module.exports = {
                 interaction.editReply({ components: [] }).catch(() => {});
             });
         } catch (error) {
-            console.error('[lyrics] Error fetching lyrics:', error);
+            logger.error('Error fetching lyrics:', error);
             await interaction.editReply({ content: '❌ Failed to fetch lyrics. Please try again.' }).catch(() => {});
         }
     },

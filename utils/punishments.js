@@ -1,4 +1,6 @@
 const PunishmentSchema = require('../models/PunishmentSchema');
+const log = require('./log');
+const logger = log.scope('punishments');
 
 // setTimeout delays beyond this overflow and fire immediately, so longer waits are chunked.
 const MAX_TIMEOUT_MS = 2 ** 31 - 1;
@@ -29,7 +31,7 @@ async function liftMute(client, punishment) {
             await member.roles.remove(punishment.muteRoleId, 'Timed mute expired').catch(() => {});
         }
     } catch (err) {
-        console.error('[punishments] Failed to lift mute:', err);
+        logger.error('Failed to lift mute:', err);
     } finally {
         await PunishmentSchema.deleteOne({ _id: punishment._id }).catch(() => {});
     }
@@ -42,7 +44,7 @@ async function liftBan(client, punishment) {
 
         await guild.members.unban(punishment.userId, 'Temp ban expired').catch(() => {});
     } catch (err) {
-        console.error('[punishments] Failed to lift ban:', err);
+        logger.error('Failed to lift ban:', err);
     } finally {
         await PunishmentSchema.deleteOne({ _id: punishment._id }).catch(() => {});
     }
@@ -56,8 +58,8 @@ function schedulePunishment(client, punishment, remaining = punishment.expiresAt
     }
 
     setTimeout(() => {
-        if (punishment.type === 'mute') liftMute(client, punishment).catch(err => console.error('[punishments] liftMute error:', err));
-        else liftBan(client, punishment).catch(err => console.error('[punishments] liftBan error:', err));
+        if (punishment.type === 'mute') liftMute(client, punishment).catch(err => logger.error('liftMute error:', err));
+        else liftBan(client, punishment).catch(err => logger.error('liftBan error:', err));
     }, Math.max(remaining, 0));
 }
 
@@ -65,7 +67,7 @@ function schedulePunishment(client, punishment, remaining = punishment.expiresAt
 async function restorePunishments(client) {
     const active = await PunishmentSchema.find({}).catch(() => []);
     for (const p of active) schedulePunishment(client, p);
-    if (active.length) console.log(`[punishments] Restored ${active.length} active timed punishment(s).`);
+    if (active.length) logger.info(`Restored ${active.length} active timed punishment(s).`);
 }
 
 module.exports = { parseDuration, formatDuration, schedulePunishment, restorePunishments };

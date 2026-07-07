@@ -1,6 +1,8 @@
 const http = require('node:http');
 const { endGiveaway } = require('../slashCommands/utility/giveaway');
 const GiveawaySchema = require('../models/GiveawaySchema');
+const log = require('../utils/log');
+const logger = log.scope('internal-api');
 
 const PORT = process.env.INTERNAL_API_PORT || 4000;
 const SECRET = process.env.INTERNAL_API_SECRET;
@@ -49,7 +51,7 @@ module.exports = function startInternalApi(client) {
                 await endGiveaway(client, giveaway);
                 send(res, 200, { ok: true });
             } catch (err) {
-                console.error('[internal-api] /internal/giveaway/end error:', err);
+                logger.error('/internal/giveaway/end error:', err);
                 send(res, 500, { error: 'Internal error' });
             }
             return;
@@ -103,7 +105,7 @@ module.exports = function startInternalApi(client) {
 
                 send(res, 200, { ok: true });
             } catch (err) {
-                console.error('[internal-api] /internal/giveaway/reroll error:', err);
+                logger.error('/internal/giveaway/reroll error:', err);
                 send(res, 500, { error: 'Internal error' });
             }
             return;
@@ -112,5 +114,5 @@ module.exports = function startInternalApi(client) {
         send(res, 404, { error: 'Not found' });
     });
 
-    server.listen(PORT, '127.0.0.1', () => console.log(`[internal-api] Listening on port ${PORT}`));
+    server.listen(PORT, '127.0.0.1', () => logger.info(`Listening on port ${PORT}`));
 };

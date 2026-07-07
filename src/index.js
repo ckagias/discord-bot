@@ -4,11 +4,13 @@ require('dotenv').config({ debug: false });
 // Use Cloudflare DNS — improves reliability for MongoDB Atlas connections
 const dns = require('node:dns');
 dns.setServers(['1.1.1.1', '1.0.0.1']);
+const log = require('../utils/log');
+const logger = log.scope('index');
 
 const required = ['Token', 'ClientID', 'MONGODB_URL'];
 const missing = required.filter(k => !process.env[k]);
 if (missing.length) {
-    console.error('Missing required env vars:', missing.join(', '));
+    logger.error('Missing required env vars:', missing.join(', '));
     process.exit(1);
 }
 
@@ -28,9 +30,9 @@ const client = new Client({
 (async () => {
     try {
         await mongoose.connect(process.env.MONGODB_URL);
-        console.log('Connected to MongoDB');
+        logger.info('Connected to MongoDB');
     } catch (err) {
-        console.error('MongoDB connection failed:', err);
+        logger.error('MongoDB connection failed:', err);
         process.exit(1);
     }
 
@@ -48,15 +50,15 @@ const client = new Client({
 })();
 
 process.on('unhandledRejection', (reason) => {
-    console.error('[Unhandled Rejection]', reason);
+    logger.error('[Unhandled Rejection]', reason);
 });
 
 process.on('uncaughtException', (err) => {
-    console.error('[Uncaught Exception]', err);
+    logger.error('[Uncaught Exception]', err);
 });
 
 async function shutdown(signal) {
-    console.log(`[${signal}] Shutting down gracefully...`);
+    logger.info(`[${signal}] Shutting down gracefully...`);
     client.destroy();
     await mongoose.connection.close();
     process.exit(0);

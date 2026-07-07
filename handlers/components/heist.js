@@ -2,6 +2,8 @@ const { MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle
 const { getWallet, updateBalance, formatBalance } = require('../../utils/economy');
 const { launchHeist } = require('../../utils/heist');
 const HeistSchema = require('../../models/HeistSchema');
+const log = require('../../utils/log');
+const logger = log.scope('heist');
 
 function lobbyEmbed(heist) {
     const memberList = heist.members.length
@@ -132,7 +134,7 @@ module.exports = [
             try {
                 await launchHeist(interaction.message, interaction.guild);
             } catch (err) {
-                console.error('[heist] launchHeist failed after begin button:', err);
+                logger.error('launchHeist failed after begin button:', err);
                 // Refund all members since the heist can't proceed
                 const fresh = await HeistSchema.findOne({ messageId: interaction.message.id });
                 if (fresh) {

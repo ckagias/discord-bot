@@ -1,5 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { createCase } = require('../../utils/cases');
+const log = require('../../utils/log');
+const logger = log.scope('kick');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -40,7 +42,7 @@ module.exports = {
             ]);
             return interaction.reply({ content: `Kicked **${target.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
         } catch (err) {
-            console.error('[kick] Error:', err);
+            logger.error('Error:', err);
             const method = interaction.replied || interaction.deferred ? 'editReply' : 'reply';
             await interaction[method]({ content: 'An error occurred while trying to kick that user.', flags: MessageFlags.Ephemeral }).catch(() => {});
         }

@@ -1,4 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
+const log = require('../../utils/log');
+const logger = log.scope('shuffle');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -25,7 +27,7 @@ module.exports = {
 
             await interaction.reply({ embeds: [embed] });
         } catch (error) {
-            console.error('[shuffle] Lavalink error:', error);
+            logger.error('Lavalink error:', error);
             await interaction.reply({ content: 'Failed to shuffle the queue. Please try again.', flags: MessageFlags.Ephemeral }).catch(() => {});
         }
     },

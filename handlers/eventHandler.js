@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const log = require('../utils/log');
+const logger = log.scope('eventHandler');
 
 module.exports = (client) => {
     const eventsPath = path.join(__dirname, '../events');
@@ -10,16 +12,16 @@ module.exports = (client) => {
         try {
             event = require(path.join(eventsPath, file));
         } catch (err) {
-            console.error(`[eventHandler] Failed to load ${file}:`, err);
+            logger.error(`Failed to load ${file}:`, err);
             continue;
         }
 
         const listener = (...args) => {
             try {
                 Promise.resolve(event.execute(...args, client))
-                    .catch(err => console.error(`[eventHandler] Unhandled error in ${event.name}:`, err));
+                    .catch(err => logger.error(`Unhandled error in ${event.name}:`, err));
             } catch (err) {
-                console.error(`[eventHandler] Unhandled error in ${event.name}:`, err);
+                logger.error(`Unhandled error in ${event.name}:`, err);
             }
         };
 

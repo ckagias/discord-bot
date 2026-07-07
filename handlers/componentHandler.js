@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const log = require('../utils/log');
+const logger = log.scope('componentHandler');
 
 module.exports = (client) => {
     client.components = {
@@ -17,7 +19,7 @@ module.exports = (client) => {
         for (const entry of entries) {
             const bucket = client.components[entry.type];
             if (!bucket) {
-                console.warn(`[componentHandler] ${file} has unknown type "${entry.type}", skipping.`);
+                logger.warn(`${file} has unknown type "${entry.type}", skipping.`);
                 continue;
             }
 
@@ -26,7 +28,7 @@ module.exports = (client) => {
             } else if (entry.prefix) {
                 bucket.prefixes.push([entry.prefix, entry.execute]);
             } else {
-                console.warn(`[componentHandler] ${file} is missing both "id" and "prefix", skipping.`);
+                logger.warn(`${file} is missing both "id" and "prefix", skipping.`);
             }
         }
     }

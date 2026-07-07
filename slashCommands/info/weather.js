@@ -1,5 +1,7 @@
 const axios = require('axios');
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ComponentType, MessageFlags } = require('discord.js');
+const log = require('../../utils/log');
+const logger = log.scope('weather');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -61,7 +63,7 @@ module.exports = {
             });
 
         } catch (err) {
-            console.error('[weather] Error:', err);
+            logger.error('Error:', err);
             if (!interaction.replied) {
                 await interaction.reply({ content: '❌ Error fetching weather data.', flags: MessageFlags.Ephemeral });
             }
@@ -95,7 +97,7 @@ async function sendWeather(interaction, place, apiKey) {
             await interaction.reply({ embeds: [embed] });
         }
     } catch (error) {
-        console.error('[weather] sendWeather error:', error);
+        logger.error('sendWeather error:', error);
         await interaction.followUp({ content: '❌ Failed to load weather details.', flags: MessageFlags.Ephemeral });
     }
 };

@@ -1,4 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
+const log = require('../../utils/log');
+const logger = log.scope('remove');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -39,7 +41,7 @@ module.exports = {
 
             await interaction.reply({ embeds: [embed] });
         } catch (error) {
-            console.error('[remove] Lavalink error:', error);
+            logger.error('Lavalink error:', error);
             await interaction.reply({ content: 'Failed to remove that track. Please try again.', flags: MessageFlags.Ephemeral }).catch(() => {});
         }
     },

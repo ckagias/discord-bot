@@ -1,4 +1,6 @@
 const { LavalinkManager } = require('lavalink-client');
+const log = require('../utils/log');
+const logger = log.scope('Lavalink');
 
 module.exports = (client) => {
     client.lavalink = new LavalinkManager({
@@ -31,11 +33,11 @@ module.exports = (client) => {
     });
 
     client.lavalink.on('nodeConnect', (node) => {
-        console.log(`[Lavalink] Node "${node.id}" connected`);
+        logger.info(`Node "${node.id}" connected`);
     });
 
     client.lavalink.on('nodeError', (node, error) => {
-        console.error(`[Lavalink] Node "${node.id}" error:`, error.message);
+        logger.error(`Node "${node.id}" error:`, error.message);
     });
 
     client.lavalink.on('trackStart', (player, track) => {

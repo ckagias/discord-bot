@@ -2,6 +2,8 @@ const { PermissionFlagsBits, EmbedBuilder, ChannelType } = require('discord.js')
 const { getLogChannel } = require('./logger');
 const { updateGuildConfig } = require('./guildConfig');
 const { randomColor } = require('./embeds');
+const log = require('./log');
+const logger = log.scope('antiraid');
 
 // Members with these permissions are never quarantined.
 const STAFF_PERMISSIONS = [
@@ -58,7 +60,7 @@ async function ensureQuarantineOverwrites(guild, role) {
 
     const failed = results.filter(r => r.status === 'rejected');
     if (failed.length) {
-        console.warn(`[antiraid] ${failed.length} channel overwrite(s) failed for role ${role.id} in ${guild.id}`);
+        logger.warn(`${failed.length} channel overwrite(s) failed for role ${role.id} in ${guild.id}`);
     }
 }
 
@@ -79,7 +81,7 @@ async function quarantineMember(member, guildData) {
     if (member.roles.cache.has(role.id)) return true;
 
     await member.roles.add(role, 'Anti-raid: lockdown active').catch(err =>
-        console.error(`[antiraid] Failed to quarantine ${member.id} in ${guild.id}:`, err)
+        logger.error(`Failed to quarantine ${member.id} in ${guild.id}:`, err)
     );
 
     return true;
@@ -196,9 +198,9 @@ function scheduleQuarantine(member, guildData, delayMs = 500) {
         const fresh = await member.guild.members.fetch(member.id).catch(() => null);
         if (!fresh) return;
         await quarantineMember(fresh, guildData).catch(err =>
-            console.error(`[antiraid] Delayed quarantine failed for ${member.id}:`, err)
+            logger.error(`Delayed quarantine failed for ${member.id}:`, err)
         );
-        console.log(`[antiraid] Quarantined ${member.user.tag} (${member.id}) in ${member.guild.id}`);
+        logger.info(`Quarantined ${member.user.tag} (${member.id}) in ${member.guild.id}`);
     }, delayMs);
 }
 
@@ -227,7 +229,7 @@ function handleJoin(member, guildData) {
     if (count >= threshold) {
         // Fire-and-forget: start lockdown async, then schedule quarantine for this member.
         startLockdown(member.guild, guildData, { auto: true }).catch(err =>
-            console.error('[antiraid] startLockdown error:', err)
+            logger.error('startLockdown error:', err)
         );
         if (!member.user.bot && !isStaff(member)) {
             scheduleQuarantine(member, guildData);
@@ -254,7 +256,7 @@ async function restoreLockdowns(client) {
         restored++;
     }
 
-    if (restored) console.log(`[antiraid] Re-asserted quarantine overwrites in ${restored} guild(s) on startup.`);
+    if (restored) logger.info(`Re-asserted quarantine overwrites in ${restored} guild(s) on startup.`);
 }
 
 module.exports = {

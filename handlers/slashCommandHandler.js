@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const log = require('../utils/log');
+const logger = log.scope('slashCommandHandler');
 
 module.exports = (client) => {
     client.commands = new Map();
@@ -15,7 +17,7 @@ module.exports = (client) => {
             try {
                 command = require(path.join(commandsPath, file));
             } catch (err) {
-                console.error(`[slashCommandHandler] Failed to load ${file}:`, err);
+                logger.error(`Failed to load ${file}:`, err);
                 continue;
             }
 
@@ -23,7 +25,7 @@ module.exports = (client) => {
                 command.category = folder;
                 client.commands.set(command.data.name, command);
             } else {
-                console.warn(`[slashCommandHandler] ${file} is missing required "data" or "execute" property, skipping.`);
+                logger.warn(`${file} is missing required "data" or "execute" property, skipping.`);
             }
         }
     }

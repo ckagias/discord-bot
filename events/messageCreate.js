@@ -4,6 +4,9 @@ const TriggerSchema = require('../models/TriggerSchema');
 const { runAutoMod } = require('../utils/automod');
 const { ensureGuildConfig } = require('../utils/guildConfig');
 const { updateBalance } = require('../utils/economy');
+const log = require('../utils/log');
+const logger = log.scope('messageCreate');
+const triggerLogger = log.scope('trigger');
 
 const xp_cooldown_ms = 60_000;
 
@@ -20,7 +23,7 @@ module.exports = {
         try {
             guildData = await ensureGuildConfig(guild.id);
         } catch (error) {
-            console.error('[messageCreate] Failed to load guild settings:', error);
+            logger.error('Failed to load guild settings:', error);
         }
 
         // Auto-moderation — runs before triggers/leveling so a deleted message doesn't get processed further
@@ -35,13 +38,13 @@ module.exports = {
             for (const { trigger, response } of triggers) {
                 const regex = new RegExp(`(?<![\\p{L}\\p{N}])${trigger.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{N}])`, 'iu');
                 if (regex.test(message.content)) {
-                    console.log(`[trigger] matched "${trigger}" in message: "${message.content}"`);
-                    await message.reply({ content: response, allowedMentions: { repliedUser: false } }).catch(err => console.error('[trigger] reply failed:', err));
+                    triggerLogger.info(`matched "${trigger}" in message: "${message.content}"`);
+                    await message.reply({ content: response, allowedMentions: { repliedUser: false } }).catch(err => triggerLogger.error('reply failed:', err));
                     break;
                 }
             }
         } catch (error) {
-            console.error('[messageCreate] Trigger check failed:', error);
+            logger.error('Trigger check failed:', error);
         }
 
         // AFK return check
@@ -62,7 +65,7 @@ module.exports = {
                 return;
             }
         } catch (error) {
-            console.error('[messageCreate] AFK return check failed:', error);
+            logger.error('AFK return check failed:', error);
         }
 
         // AFK mention check
@@ -84,7 +87,7 @@ module.exports = {
                         }).catch(() => {});
                     }
                 } catch (error) {
-                    console.error(`[messageCreate] AFK mention check failed for ${id}:`, error);
+                    logger.error(`AFK mention check failed for ${id}:`, error);
                 }
             }
         }
@@ -146,7 +149,7 @@ module.exports = {
                 }
             }
         } catch (error) {
-            console.error('[messageCreate] Leveling error:', error);
+            logger.error('Leveling error:', error);
         }
     },
 };

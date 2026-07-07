@@ -4,6 +4,8 @@ const { getLogChannel } = require('./logger');
 const { checkWarnThresholds } = require('./warnThresholds');
 const { createCase } = require('./cases');
 const { formatDuration } = require('./duration');
+const log = require('./log');
+const logger = log.scope('automod');
 
 const EXEMPT_PERMISSIONS = [
     PermissionFlagsBits.Administrator,
@@ -74,7 +76,7 @@ async function applyAction(message, guildData, filter) {
             userId: message.author.id,
             moderatorId: message.client.user.id,
             reason,
-        }).catch(err => console.error('[automod] Failed to record warning:', err));
+        }).catch(err => logger.error('Failed to record warning:', err));
 
         const totalWarnings = await WarnSchema.countDocuments({
             guildId: message.guild.id,
@@ -87,7 +89,7 @@ async function applyAction(message, guildData, filter) {
             userId: message.author.id,
             moderatorId: message.client.user.id,
             reason,
-        }).catch(err => console.error('[automod] Failed to create case:', err));
+        }).catch(err => logger.error('Failed to create case:', err));
 
         await checkWarnThresholds(message.guild, message.member, totalWarnings, guildData);
 
@@ -101,7 +103,7 @@ async function applyAction(message, guildData, filter) {
             const durationMs = durationSeconds * 1000;
             const durationLabel = formatDuration(durationSeconds);
 
-            await member.timeout(durationMs, reason).catch(err => console.error('[automod] Failed to timeout member:', err));
+            await member.timeout(durationMs, reason).catch(err => logger.error('Failed to timeout member:', err));
 
             await createCase({
                 guildId: message.guild.id,
@@ -110,7 +112,7 @@ async function applyAction(message, guildData, filter) {
                 moderatorId: message.client.user.id,
                 reason,
                 duration: durationLabel,
-            }).catch(err => console.error('[automod] Failed to create case:', err));
+            }).catch(err => logger.error('Failed to create case:', err));
 
             await message.author.send(
                 `You were timed out for **${durationLabel}** in **${message.guild.name}** for ${filter}. Your message was removed.`
@@ -148,7 +150,7 @@ async function runAutoMod(message, guildData) {
         await applyAction(message, guildData, filter);
         return true;
     } catch (error) {
-        console.error('[automod] Failed to process message:', error);
+        logger.error('Failed to process message:', error);
         return false;
     }
 }

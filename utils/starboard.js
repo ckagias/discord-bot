@@ -1,6 +1,8 @@
 const { EmbedBuilder } = require('discord.js');
 const { getGuildConfig } = require('./guildConfig');
 const StarboardSchema = require('../models/StarboardSchema');
+const log = require('./log');
+const logger = log.scope('starboard');
 
 /**
  * Handle a star reaction being added or removed on a message.
@@ -57,7 +59,7 @@ async function handleStarReaction(reaction) {
         const posted = await starboardChannel.send({
             content: `${config.starboardEmoji} **${count}** | <#${channelId}>`,
             embeds: [embed],
-        }).catch(err => { console.error('[starboard] Failed to post message:', err); return null; });
+        }).catch(err => { logger.error('Failed to post message:', err); return null; });
 
         if (!posted) return;
 
@@ -67,7 +69,7 @@ async function handleStarReaction(reaction) {
             messageId,
             starboardMessageId: posted.id,
             starCount: count,
-        }).catch(err => console.error('[starboard] Failed to save doc:', err));
+        }).catch(err => logger.error('Failed to save doc:', err));
 
     } else if (count >= config.starboardThreshold) {
         // Already posted — update the star count
@@ -77,10 +79,10 @@ async function handleStarReaction(reaction) {
             await postedMsg.edit({
                 content: `${config.starboardEmoji} **${count}** | <#${channelId}>`,
                 embeds: [embed],
-            }).catch(err => console.error('[starboard] Failed to edit message:', err));
+            }).catch(err => logger.error('Failed to edit message:', err));
         }
         existing.starCount = count;
-        await existing.save().catch(err => console.error('[starboard] Failed to update doc:', err));
+        await existing.save().catch(err => logger.error('Failed to update doc:', err));
 
     } else {
         // Already posted but stars dropped below threshold — remove it
@@ -88,7 +90,7 @@ async function handleStarReaction(reaction) {
         if (postedMsg) {
             await postedMsg.delete().catch(() => null);
         }
-        await existing.deleteOne().catch(err => console.error('[starboard] Failed to delete doc:', err));
+        await existing.deleteOne().catch(err => logger.error('Failed to delete doc:', err));
     }
 }
 

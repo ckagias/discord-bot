@@ -1,5 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const { formatDuration } = require('../../utils/music');
+const log = require('../../utils/log');
+const logger = log.scope('queue');
 
 const PAGE_SIZE = 10;
 
@@ -51,7 +53,7 @@ module.exports = {
 
             await interaction.reply({ embeds: [embed] });
         } catch (error) {
-            console.error('[queue] Lavalink error:', error);
+            logger.error('Lavalink error:', error);
             await interaction.reply({ content: 'Failed to fetch queue. Please try again.', flags: MessageFlags.Ephemeral }).catch(() => {});
         }
     },

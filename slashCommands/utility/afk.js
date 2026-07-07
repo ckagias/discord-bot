@@ -1,5 +1,7 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const AfkSchema = require('../../models/AfkSchema');
+const log = require('../../utils/log');
+const logger = log.scope('afk');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -40,7 +42,7 @@ module.exports = {
                 allowedMentions: { users: [] },
             });
         } catch (error) {
-            console.error('[afk] DB error:', error);
+            logger.error('DB error:', error);
             const payload = { content: 'Something went wrong. Please try again.', flags: MessageFlags.Ephemeral };
             if (interaction.replied || interaction.deferred) {
                 await interaction.editReply(payload).catch(() => {});

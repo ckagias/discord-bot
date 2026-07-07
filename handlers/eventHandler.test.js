@@ -43,7 +43,11 @@ describe('eventHandler', () => {
         registerEvents(client);
         await client.listeners.bad();
 
-        expect(consoleErrorSpy).toHaveBeenCalledWith('[eventHandler] Unhandled error in bad:', expect.any(Error));
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[ERROR] [eventHandler]'),
+            'Unhandled error in bad:',
+            expect.any(Error)
+        );
     });
 
     test('a rejected promise from an async event is caught, not left unhandled', async () => {
@@ -55,7 +59,11 @@ describe('eventHandler', () => {
         registerEvents(client);
         await client.listeners.bad();
 
-        expect(consoleErrorSpy).toHaveBeenCalledWith('[eventHandler] Unhandled error in bad:', expect.any(Error));
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[ERROR] [eventHandler]'),
+            'Unhandled error in bad:',
+            expect.any(Error)
+        );
     });
 
     test('one event throwing does not stop other registered events from firing', async () => {

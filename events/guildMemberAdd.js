@@ -3,6 +3,8 @@ const { getLogChannel } = require('../utils/logger');
 const { getWelcomeConfig, formatMessage } = require('../utils/welcome');
 const { getGuildConfig } = require('../utils/guildConfig');
 const { handleJoin } = require('../utils/antiRaid');
+const log = require('../utils/log');
+const logger = log.scope('autorole');
 
 module.exports = {
     name: 'guildMemberAdd',
@@ -22,7 +24,7 @@ module.exports = {
             const role = member.guild.roles.cache.get(guildConfig.autoroleId);
             if (role) {
                 await member.roles.add(role).catch(err =>
-                    console.error(`[autorole] Failed to assign role ${role.id} to ${member.id}:`, err)
+                    logger.error(`Failed to assign role ${role.id} to ${member.id}:`, err)
                 );
             }
         }

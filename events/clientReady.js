@@ -10,12 +10,19 @@ const HeistSchema = require('../models/HeistSchema');
 const { updateBalance } = require('../utils/economy');
 const ReminderSchema = require('../models/ReminderSchema');
 const { sendReminder, scheduleReminder } = require('../slashCommands/utility/remind');
+const log = require('../utils/log');
+const logger = log.scope('clientReady');
+const giveawayLogger = log.scope('giveaway');
+const pollLogger = log.scope('poll');
+const remindLogger = log.scope('remind');
+const heistLogger = log.scope('heist');
+const autoroleLogger = log.scope('autorole');
 
 module.exports = {
     name: 'clientReady',
     once: true,
     async execute(client) {
-        console.log(`Logged in as ${client.user.tag}`);
+        logger.info(`Logged in as ${client.user.tag}`);
 
         // Init after READY so client.user.id is guaranteed populated and the gateway
         // is fully connected before Lavalink starts forwarding voice state.
@@ -38,7 +45,7 @@ module.exports = {
                 scheduleGiveawayEnd(client, giveaway, remaining);
             }
         }
-        if (active.length) console.log(`[giveaway] Restored ${active.length} active giveaway(s).`);
+        if (active.length) giveawayLogger.info(`Restored ${active.length} active giveaway(s).`);
 
         const activePolls = await PollSchema.find({ ended: false, endsAt: { $ne: null } });
         for (const poll of activePolls) {
@@ -49,7 +56,7 @@ module.exports = {
                 setTimeout(() => closePoll(client, poll._id), remaining);
             }
         }
-        if (activePolls.length) console.log(`[poll] Restored ${activePolls.length} active timed poll(s).`);
+        if (activePolls.length) pollLogger.info(`Restored ${activePolls.length} active timed poll(s).`);
 
         const activeReminders = await ReminderSchema.find({ sent: false });
         for (const reminder of activeReminders) {
@@ -60,7 +67,7 @@ module.exports = {
                 scheduleReminder(client, reminder, remaining);
             }
         }
-        if (activeReminders.length) console.log(`[remind] Restored ${activeReminders.length} active reminder(s).`);
+        if (activeReminders.length) remindLogger.info(`Restored ${activeReminders.length} active reminder(s).`);
 
         await cancelStaleHeists();
         await restorePunishments(client);
@@ -79,7 +86,7 @@ async function cancelStaleHeists() {
         await HeistSchema.updateOne({ _id: heist._id }, { $set: { finished: true } });
         await Promise.allSettled(heist.members.map(m => updateBalance(m.userId, heist.guildId, heist.entryFee)));
     }
-    console.log(`[heist] Cancelled ${stale.length} stale heist(s) and refunded entry fees.`);
+    heistLogger.info(`Cancelled ${stale.length} stale heist(s) and refunded entry fees.`);
 }
 
 async function restoreAutoroles(client) {
@@ -101,11 +108,11 @@ async function restoreAutoroles(client) {
             if (member.user.bot) continue;
             if (member.roles.cache.has(role.id)) continue;
             await member.roles.add(role).catch(err =>
-                console.error(`[autorole] Failed to assign role to ${member.id}:`, err)
+                autoroleLogger.error(`Failed to assign role to ${member.id}:`, err)
             );
             assigned++;
         }
     }
 
-    if (assigned) console.log(`[autorole] Assigned missing autorole to ${assigned} member(s) on startup.`);
+    if (assigned) autoroleLogger.info(`Assigned missing autorole to ${assigned} member(s) on startup.`);
 }

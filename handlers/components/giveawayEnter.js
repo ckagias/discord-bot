@@ -1,5 +1,7 @@
 const { EmbedBuilder, MessageFlags } = require('discord.js');
 const GiveawaySchema = require('../../models/GiveawaySchema');
+const log = require('../../utils/log');
+const logger = log.scope('giveaway');
 
 module.exports = {
     type: 'button',
@@ -43,6 +45,6 @@ module.exports = {
         const currentEmbed = interaction.message.embeds[0];
         const updatedEmbed = EmbedBuilder.from(currentEmbed).spliceFields(3, 1, { name: 'Entries', value: `${updated.entrants.length}`, inline: true });
         await interaction.message.edit({ embeds: [updatedEmbed] })
-            .catch(err => console.error('[giveaway] Failed to update entry count on giveaway embed:', err));
+            .catch(err => logger.error('Failed to update entry count on giveaway embed:', err));
     },
 };

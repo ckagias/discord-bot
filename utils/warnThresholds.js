@@ -2,6 +2,8 @@ const { EmbedBuilder } = require('discord.js');
 const { getLogChannel } = require('./logger');
 const { createCase } = require('./cases');
 const { formatDuration } = require('./duration');
+const log = require('./log');
+const logger = log.scope('warnThresholds');
 
 // Finds the highest-priority threshold that matches totalWarnings exactly.
 // Only fires on the exact count so repeated warnings beyond the last threshold
@@ -71,7 +73,7 @@ async function checkWarnThresholds(guild, member, totalWarnings, guildData) {
             }
         }
     } catch (err) {
-        console.error('[warnThresholds] Failed to apply escalation:', err);
+        logger.error('Failed to apply escalation:', err);
     }
 }
 

@@ -9,6 +9,8 @@ const {
     MessageFlags,
     PermissionFlagsBits,
 } = require('discord.js');
+const log = require('../../utils/log');
+const logger = log.scope('tempvc');
 
 // Reads whether @everyone's Connect is denied to determine locked state.
 function isChannelLocked(channel) {
@@ -109,7 +111,7 @@ async function handleLockToggle(interaction) {
         });
         await interaction.update(buildPanel(channel));
     } catch (err) {
-        console.error('[tempvc] Lock toggle error:', err);
+        logger.error('Lock toggle error:', err);
         await interaction.reply({ content: 'Failed to update channel permissions.', flags: MessageFlags.Ephemeral });
     }
 }
@@ -163,7 +165,7 @@ async function handleRenameModal(interaction) {
             await interaction.reply({ content: `Channel renamed to **${name}**.`, flags: MessageFlags.Ephemeral });
         }
     } catch (err) {
-        console.error('[tempvc] Rename error:', err);
+        logger.error('Rename error:', err);
         await interaction.reply({ content: 'Failed to rename the channel.', flags: MessageFlags.Ephemeral });
     }
 }
@@ -196,7 +198,7 @@ async function handleLimitModal(interaction) {
             await interaction.reply({ content: `User limit set to **${limit === 0 ? 'unlimited' : limit}**.`, flags: MessageFlags.Ephemeral });
         }
     } catch (err) {
-        console.error('[tempvc] Limit error:', err);
+        logger.error('Limit error:', err);
         await interaction.reply({ content: 'Failed to update the user limit.', flags: MessageFlags.Ephemeral });
     }
 }

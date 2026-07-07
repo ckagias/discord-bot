@@ -1,5 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const { formatDuration, SPOTIFY_TRACK_URL, SPOTIFY_OTHER_URL, resolveSpotifyTrackQuery } = require('../../utils/music');
+const log = require('../../utils/log');
+const logger = log.scope('play');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -96,7 +98,7 @@ module.exports = {
 
             if (!player.playing) await player.play();
         } catch (error) {
-            console.error('[play] Lavalink error:', error);
+            logger.error('Lavalink error:', error);
             const payload = { content: 'Music service is unavailable. Please try again later.' };
             await interaction.editReply(payload).catch(() => {});
         }

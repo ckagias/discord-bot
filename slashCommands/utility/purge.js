@@ -1,4 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
+const log = require('../../utils/log');
+const logger = log.scope('purge');
 
 const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
 
@@ -76,7 +78,7 @@ module.exports = {
             return interaction.editReply({ content: `Deleted **${deleted.size}** of the last **${amount}** messages matching your filters.` });
 
         } catch (error) {
-            console.error('[purge] Error:', error);
+            logger.error('Error:', error);
             return interaction.editReply({ content: 'I cannot delete messages older than 14 days, or I lack the required permissions.' });
         }
     },

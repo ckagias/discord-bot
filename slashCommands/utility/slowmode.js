@@ -1,4 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
+const log = require('../../utils/log');
+const logger = log.scope('slowmode');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -31,7 +33,7 @@ module.exports = {
                 await interaction.reply(`Slowmode set to **${parts.join(' ')}** for this channel.`);
             }
         } catch (error) {
-            console.error('[slowmode] Error:', error);
+            logger.error('Error:', error);
             await interaction.reply({
                 content: 'Failed to set slowmode. Make sure I have the **Manage Channels** permission.',
                 flags: MessageFlags.Ephemeral,
