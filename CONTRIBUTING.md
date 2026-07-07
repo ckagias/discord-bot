@@ -2,7 +2,7 @@
 
 ### Help improve an open-source Discord bot built with [discord.js](https://github.com/discordjs/discord.js), Lavalink, and MongoDB
 
-[Getting Started](#getting-started) • [Project Structure](#project-structure) • [Adding a Command](#adding-a-command) • [Adding an Event](#adding-an-event) • [Adding a Component Handler](#adding-a-component-handler) • [Adding a Mongoose Model](#adding-a-mongoose-model) • [Guidelines](#guidelines) • [Submitting a PR](#submitting-a-pr)
+[Getting Started](#getting-started) • [Project Structure](#project-structure) • [Adding a Command](#adding-a-command) • [Adding an Event](#adding-an-event) • [Adding a Component Handler](#adding-a-component-handler) • [Adding a Mongoose Model](#adding-a-mongoose-model) • [Guidelines](#guidelines) • [Testing](#testing) • [Submitting a PR](#submitting-a-pr)
 
 ---
 
@@ -249,12 +249,21 @@ module.exports = model('Example', exampleSchema);
 
 ---
 
+## Testing
+
+Run `npm test` to run the Jest suite. Tests live next to the code they cover, as `*.test.js` (e.g. `utils/punishments.test.js`).
+
+Not every file has tests yet — the suite is young. Pure functions in `utils/` (parsing, formatting, scheduling) are the best candidates for new coverage; add a test alongside your change if you touch one.
+
+---
+
 ## Submitting a PR
 
 1. Make sure `node src/cmd.js` succeeds and all touched commands appear correctly in Discord.
-2. Test the happy path **and** at least one error/edge case (missing permissions, invalid input, target not in server).
-3. Update the **Commands** table in `README.md` if you added or removed a command.
-4. Open a pull request against `main` with a clear title and a short description of what changed and why.
+2. Run `npm test` and make sure it passes.
+3. Test the happy path **and** at least one error/edge case (missing permissions, invalid input, target not in server).
+4. Update the **Commands** table in `README.md` if you added or removed a command.
+5. Open a pull request against `main` with a clear title and a short description of what changed and why.
 
 ---
 

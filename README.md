@@ -2,7 +2,7 @@
 
 ### A Discord bot built with [discord.js](https://github.com/discordjs/discord.js), Lavalink, and MongoDB
 
-[About](#about) • [Features](#features) • [Commands](#commands) • [Installation](#installation) • [Dashboard](#dashboard) • [Dependencies](#dependencies) • [Contributing](#contributing) • [License](#license)
+[About](#about) • [Features](#features) • [Commands](#commands) • [Installation](#installation) • [Dashboard](#dashboard) • [Dependencies](#dependencies) • [Testing](#testing) • [Contributing](#contributing) • [License](#license)
 
 ---
 
@@ -16,7 +16,7 @@ If you find this useful, feel free to leave a ⭐ to help others find it!
 
 ## Features
 
-**80+** commands across **10** categories:
+**85+** commands across **10** categories:
 
 - 🎉 **Fun:** `8ball`, `dare`, `truth`, `gayrate`, `poll` and **1** more.
 - ℹ️ **Info:** `avatar`, `help`, `commands`, `weather`, `github` and **10** more.
@@ -55,19 +55,25 @@ Other highlights:
 
 ---
 
+
+
 ## Commands
+
+
 
 ### 🎉 Fun
 
 
-| Command    | Description                                            |
-| ---------- | ------------------------------------------------------ |
-| `/8ball`   | Ask a question and get a random answer                 |
-| `/dare`    | Get a random dare                                      |
-| `/truth`   | Get a random truth question                            |
-| `/gayrate` | Rate how gay a user is                                 |
+| Command    | Description                                                                                           |
+| ---------- | ----------------------------------------------------------------------------------------------------- |
+| `/8ball`   | Ask a question and get a random answer                                                                |
+| `/dare`    | Get a random dare                                                                                     |
+| `/truth`   | Get a random truth question                                                                           |
+| `/gayrate` | Rate how gay a user is                                                                                |
 | `/poll`    | Create a poll with up to 4 options, button voting, live result bars, and optional auto-close duration |
-| `/pollend` | End an active poll early (poll creator or Manage Server) |
+| `/pollend` | End an active poll early (poll creator or Manage Server)                                              |
+
+
 
 
 ### ℹ️ Info
@@ -80,7 +86,7 @@ Other highlights:
 | `/server info`   | Display detailed server information                                                                                              |
 | `/userinfo`      | Display detailed user info including status, activity, voice state, device, nickname, boosting, join position, badges, and roles |
 | `/ping`          | Show the bot's latency and API ping                                                                                              |
-| `/help`          | Show bot info and point to `/commands`, `/botstats`, and `/link`                                                                  |
+| `/help`          | Show bot info and point to `/commands`, `/botstats`, and `/link`                                                                 |
 | `/commands`      | List all available commands by category                                                                                          |
 | `/weather`       | Show the current weather for a city                                                                                              |
 | `/github`        | Show GitHub profile, repository stats, yearly contribution count, and contribution chart for a user                              |
@@ -92,20 +98,24 @@ Other highlights:
 | `/profile`       | View a member's server profile — level, balance, warnings, join date, account age, and badges                                    |
 
 
+
+
 ### ⏫ Leveling
 
 
-| Command           | Description                                                  |
-| ----------------- | ------------------------------------------------------------ |
-| `/level check`      | Check your or another user's current level and XP (disabled if leveling is off)     |
-| `/level set`        | Set a member's level and reset their XP to 0; also grants all earned level roles (Manage Server) |
-| `/leaderboard`      | Display the server's top 10 leaderboard                                             |
-| `/toggleleveling`    | Enable or disable the XP system for this server (Admin only)                           |
-| `/levelrole set`     | Assign a role to be granted when a member reaches a level (Manage Server)              |
-| `/levelrole remove`  | Remove the level role mapping at a specific level (Manage Server)                      |
-| `/levelrole list`    | Show all configured level role mappings for this server (Manage Server)                |
-| `/levelchannel set`  | Set a dedicated channel where level-up announcements are posted (Manage Server)        |
-| `/levelchannel reset`| Remove the dedicated level-up channel (announcements post in the active channel)       |
+| Command               | Description                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------ |
+| `/level check`        | Check your or another user's current level and XP (disabled if leveling is off)                  |
+| `/level set`          | Set a member's level and reset their XP to 0; also grants all earned level roles (Manage Server) |
+| `/leaderboard`        | Display the server's top 10 leaderboard                                                          |
+| `/toggleleveling`     | Enable or disable the XP system for this server (Admin only)                                     |
+| `/levelrole set`      | Assign a role to be granted when a member reaches a level (Manage Server)                        |
+| `/levelrole remove`   | Remove the level role mapping at a specific level (Manage Server)                                |
+| `/levelrole list`     | Show all configured level role mappings for this server (Manage Server)                          |
+| `/levelchannel set`   | Set a dedicated channel where level-up announcements are posted (Manage Server)                  |
+| `/levelchannel reset` | Remove the dedicated level-up channel (announcements post in the active channel)                 |
+
+
 
 
 ### 🎵 Music
@@ -128,46 +138,52 @@ Other highlights:
 | `/volume`     | Set or check the playback volume                          |
 
 
+
+
 ### 🔧 Utility
 
 
-| Command            | Description                                                                                          |
-| ------------------ | ---------------------------------------------------------------------------------------------------- |
-| `/afk`             | Set your AFK status (the bot notifies anyone who mentions you)                                       |
-| `/purge`           | Delete messages from a channel, optionally filter by user, bots only, text content, or attachments (requires Manage Messages) |
-| `/shorten`         | Shorten a URL using is.gd                                                                            |
-| `/slowmode`        | Set the slowmode delay for a channel (requires Manage Channels)                                      |
-| `/tempvc setup`    | Set the category where temp VCs are created (Manage Server; also configurable via dashboard)          |
+| Command            | Description                                                                                                                            |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `/afk`             | Set your AFK status (the bot notifies anyone who mentions you)                                                                         |
+| `/purge`           | Delete messages from a channel, optionally filter by user, bots only, text content, or attachments (requires Manage Messages)          |
+| `/shorten`         | Shorten a URL using is.gd                                                                                                              |
+| `/slowmode`        | Set the slowmode delay for a channel (requires Manage Channels)                                                                        |
+| `/tempvc setup`    | Set the category where temp VCs are created (Manage Server; also configurable via dashboard)                                           |
 | `/tempvc create`   | Create a temporary voice channel; auto-deletes when empty. Posts a control panel with Rename / Lock / Set Limit buttons for the owner. |
-| `/tempvc invite`   | Invite a user to your locked temp VC (owner only)                                                    |
-| `/snipe delete`    | Show the last deleted message in the current channel                                                 |
-| `/snipe edit`      | Show the last edited message (before/after) in this channel                                          |
-| `/giveaway start`  | Start a timed giveaway with a prize, duration, optional winner count, and optional role requirement (Manage Server) |
-| `/giveaway end`    | End an active giveaway early and pick winners immediately (Manage Server)                            |
-| `/giveaway reroll` | Reroll winners for an ended giveaway (Manage Server)                                                 |
-| `/giveaway list`   | List all active giveaways in this server with time remaining and jump links (Manage Server)          |
-| `/embed create`    | Build and post a custom embed via a two-step modal (main fields + optional fields) (Manage Messages) |
-| `/embed edit`      | Edit an existing embed posted by the bot, pre-filled with current values (Manage Messages)           |
-| `/embed help`      | Show an in-Discord formatting reference for markdown, links, mentions, and timestamps                |
-| `/remind set`      | Set a personal reminder with a duration and message; persists across bot restarts                    |
-| `/remind list`     | List your active reminders                                                                          |
-| `/remind cancel`   | Cancel one of your active reminders by ID                                                           |
+| `/tempvc invite`   | Invite a user to your locked temp VC (owner only)                                                                                      |
+| `/snipe delete`    | Show the last deleted message in the current channel                                                                                   |
+| `/snipe edit`      | Show the last edited message (before/after) in this channel                                                                            |
+| `/giveaway start`  | Start a timed giveaway with a prize, duration, optional winner count, and optional role requirement (Manage Server)                    |
+| `/giveaway end`    | End an active giveaway early and pick winners immediately (Manage Server)                                                              |
+| `/giveaway reroll` | Reroll winners for an ended giveaway (Manage Server)                                                                                   |
+| `/giveaway list`   | List all active giveaways in this server with time remaining and jump links (Manage Server)                                            |
+| `/embed create`    | Build and post a custom embed via a two-step modal (main fields + optional fields) (Manage Messages)                                   |
+| `/embed edit`      | Edit an existing embed posted by the bot, pre-filled with current values (Manage Messages)                                             |
+| `/embed help`      | Show an in-Discord formatting reference for markdown, links, mentions, and timestamps                                                  |
+| `/remind set`      | Set a personal reminder with a duration and message; persists across bot restarts                                                      |
+| `/remind list`     | List your active reminders                                                                                                             |
+| `/remind cancel`   | Cancel one of your active reminders by ID                                                                                              |
+
+
 
 
 ### 🎮 Minigames
 
 
-| Command     | Description                                                     |
-| ----------- | --------------------------------------------------------------- |
-| `/gamble`        | Bet credits on a high-low roll — win or lose real balance                                                                          |
-| `/coinflip`      | Flip a coin, optionally betting credits; challenge another player with `/coinflip opponent`                                         |
-| `/rps`           | Play Rock Paper Scissors against the bot or challenge another player, optionally with a bet                                         |
-| `/wordle guess`  | Submit a 5-letter guess for today's official NYT Wordle — earn up to 500 coins for a win, 25 for a loss                            |
-| `/wordle status` | View your current Wordle board for today                                                                                            |
-| `/trivia`        | Answer a multiple-choice trivia question from Open Trivia DB — earn 50 / 100 / 200 coins for easy / medium / hard                  |
-| `/hangman`       | Guess a hidden word letter by letter via a modal — earn 150 coins for solving it                                                    |
-| `/blackjack`     | Play Blackjack against the dealer with Hit / Stand / Double Down; challenge another player with `/blackjack opponent`               |
+| Command          | Description                                                                                                                                                   |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/gamble`        | Bet credits on a high-low roll — win or lose real balance                                                                                                     |
+| `/coinflip`      | Flip a coin, optionally betting credits; challenge another player with `/coinflip opponent`                                                                   |
+| `/rps`           | Play Rock Paper Scissors against the bot or challenge another player, optionally with a bet                                                                   |
+| `/wordle guess`  | Submit a 5-letter guess for today's official NYT Wordle — earn up to 500 coins for a win, 25 for a loss                                                       |
+| `/wordle status` | View your current Wordle board for today                                                                                                                      |
+| `/trivia`        | Answer a multiple-choice trivia question from Open Trivia DB — earn 50 / 100 / 200 coins for easy / medium / hard                                             |
+| `/hangman`       | Guess a hidden word letter by letter via a modal — earn 150 coins for solving it                                                                              |
+| `/blackjack`     | Play Blackjack against the dealer with Hit / Stand / Double Down; challenge another player with `/blackjack opponent`                                         |
 | `/heist`         | Organize a crew heist — players pay an entry fee to join, loot is multiplied and split among survivors; organizer can start early once 2+ members have joined |
+
+
 
 
 ### 💰 Economy
@@ -195,54 +211,58 @@ Other highlights:
 | `/shopmanage list`    | List all shop items including hidden ones (Manage Server)                                |
 
 
+
+
 ### 🛡️ Moderation
 
 
-| Command                 | Description                                                                                      |
-| ----------------------- | ------------------------------------------------------------------------------------------------ |
-| `/kick`                 | Kick a member from the server (Kick Members)                                                     |
-| `/ban`                  | Ban a member from the server with optional duration and message deletion (Ban Members)           |
-| `/unban`                | Unban a user by ID (Ban Members)                                                                 |
-| `/timeout add`          | Timeout a member for a set duration (Moderate Members)                                           |
-| `/timeout edit`         | Change the duration of a member's active timeout (Moderate Members)                              |
-| `/timeout remove`       | Remove an active timeout from a member (Moderate Members)                                        |
-| `/mute`                 | Mute a member using the configured mute role, with optional duration (Moderate Members)          |
-| `/unmute`               | Unmute a member by removing the mute role (Moderate Members)                                     |
-| `/setmuterole`          | Set the role to assign when a member is muted (Manage Server)                                    |
-| `/warn`                 | Issue a warning to a member (Moderate Members)                                                   |
-| `/warnings`             | View all warnings for a member (Moderate Members)                                                |
-| `/clearwarnings`        | Clear all warnings for a member (Moderate Members)                                               |
-| `/warnthreshold set`    | Add or update an automatic punishment (timeout, kick, or ban) at a warning count (Manage Server) |
-| `/warnthreshold remove` | Remove the threshold at a specific warning count (Manage Server)                                 |
-| `/warnthreshold list`   | Show all configured warn thresholds for this server (Manage Server)                              |
-| `/case lookup`          | View a specific moderation case by its ID (Moderate Members)                                     |
-| `/case history`         | View the last 10 cases against a user (Moderate Members)                                         |
-| `/case delete`          | Delete a case by ID (Moderate Members)                                                           |
-| `/addtrigger`           | Add a keyword and the bot's response to it (Manage Messages)                                     |
-| `/removetrigger`        | Remove a trigger keyword (Manage Messages)                                                       |
-| `/triggers`             | List all trigger keywords configured for this server                                             |
-| `/log set`              | Set the channel where server events will be logged (Manage Server)                               |
-| `/log unset`            | Disable event logging for this server (Manage Server)                                            |
-| `/welcome set`          | Set the channel and optional message for member join announcements (Manage Server)               |
-| `/welcome unset`        | Disable welcome messages for this server (Manage Server)                                         |
-| `/farewell set`         | Set the channel and optional message for member leave announcements (Manage Server)              |
-| `/farewell unset`       | Disable farewell messages for this server (Manage Server)                                        |
-| `/lockdown lock`        | Prevent everyone from sending messages in the current channel, with an optional reason (Manage Channels) |
-| `/lockdown remove`      | Restore normal messaging permissions in the current channel (Manage Channels)                            |
+| Command                 | Description                                                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `/kick`                 | Kick a member from the server (Kick Members)                                                                              |
+| `/ban`                  | Ban a member from the server with optional duration and message deletion (Ban Members)                                    |
+| `/unban`                | Unban a user by ID (Ban Members)                                                                                          |
+| `/timeout add`          | Timeout a member for a set duration (Moderate Members)                                                                    |
+| `/timeout edit`         | Change the duration of a member's active timeout (Moderate Members)                                                       |
+| `/timeout remove`       | Remove an active timeout from a member (Moderate Members)                                                                 |
+| `/mute`                 | Mute a member using the configured mute role, with optional duration (Moderate Members)                                   |
+| `/unmute`               | Unmute a member by removing the mute role (Moderate Members)                                                              |
+| `/setmuterole`          | Set the role to assign when a member is muted (Manage Server)                                                             |
+| `/warn`                 | Issue a warning to a member (Moderate Members)                                                                            |
+| `/warnings`             | View all warnings for a member (Moderate Members)                                                                         |
+| `/clearwarnings`        | Clear all warnings for a member (Moderate Members)                                                                        |
+| `/warnthreshold set`    | Add or update an automatic punishment (timeout, kick, or ban) at a warning count (Manage Server)                          |
+| `/warnthreshold remove` | Remove the threshold at a specific warning count (Manage Server)                                                          |
+| `/warnthreshold list`   | Show all configured warn thresholds for this server (Manage Server)                                                       |
+| `/case lookup`          | View a specific moderation case by its ID (Moderate Members)                                                              |
+| `/case history`         | View the last 10 cases against a user (Moderate Members)                                                                  |
+| `/case delete`          | Delete a case by ID (Moderate Members)                                                                                    |
+| `/addtrigger`           | Add a keyword and the bot's response to it (Manage Messages)                                                              |
+| `/removetrigger`        | Remove a trigger keyword (Manage Messages)                                                                                |
+| `/triggers`             | List all trigger keywords configured for this server                                                                      |
+| `/log set`              | Set the channel where server events will be logged (Manage Server)                                                        |
+| `/log unset`            | Disable event logging for this server (Manage Server)                                                                     |
+| `/welcome set`          | Set the channel and optional message for member join announcements (Manage Server)                                        |
+| `/welcome unset`        | Disable welcome messages for this server (Manage Server)                                                                  |
+| `/farewell set`         | Set the channel and optional message for member leave announcements (Manage Server)                                       |
+| `/farewell unset`       | Disable farewell messages for this server (Manage Server)                                                                 |
+| `/lockdown lock`        | Prevent everyone from sending messages in the current channel, with an optional reason (Manage Channels)                  |
+| `/lockdown remove`      | Restore normal messaging permissions in the current channel (Manage Channels)                                             |
 | `/antiraid setrole`     | Set the quarantine role assigned to new members during a lockdown; applies channel overwrites immediately (Manage Server) |
-| `/antiraid lock`        | Manually activate a raid lockdown — new joiners are quarantined until unlocked (Manage Server)   |
-| `/antiraid unlock`      | Lift an active lockdown; already-quarantined members remain held (Manage Server)                 |
-| `/antiraid release`     | Remove the quarantine role from a specific member (false-positive recovery) (Manage Server)      |
-| `/antiraid config`      | Set the join threshold, time window, and enable/disable automatic detection (Manage Server)      |
-| `/antiraid status`      | Show current anti-raid config: role, thresholds, lockdown state, and start time (Manage Server)  |
-| `/automod toggle`       | Enable or disable auto-moderation entirely (Manage Server)                                       |
-| `/automod filter`       | Toggle an individual filter: banned words, spam/flood, mentions, or invite links (Manage Server) |
-| `/automod action`       | Set the action taken on a filtered message: delete only, delete + warn, or delete + timeout (Manage Server) |
-| `/automod mentionlimit` | Set the max mentions allowed per message before the mentions filter triggers (Manage Server)      |
-| `/automod word add`     | Add a word to the banned word list (Manage Server)                                               |
-| `/automod word remove`  | Remove a word from the banned word list (Manage Server)                                          |
-| `/automod word list`    | List all banned words (Manage Server)                                                            |
-| `/automod view`         | View the current auto-moderation configuration (Manage Server)                                   |
+| `/antiraid lock`        | Manually activate a raid lockdown — new joiners are quarantined until unlocked (Manage Server)                            |
+| `/antiraid unlock`      | Lift an active lockdown; already-quarantined members remain held (Manage Server)                                          |
+| `/antiraid release`     | Remove the quarantine role from a specific member (false-positive recovery) (Manage Server)                               |
+| `/antiraid config`      | Set the join threshold, time window, and enable/disable automatic detection (Manage Server)                               |
+| `/antiraid status`      | Show current anti-raid config: role, thresholds, lockdown state, and start time (Manage Server)                           |
+| `/automod toggle`       | Enable or disable auto-moderation entirely (Manage Server)                                                                |
+| `/automod filter`       | Toggle an individual filter: banned words, spam/flood, mentions, or invite links (Manage Server)                          |
+| `/automod action`       | Set the action taken on a filtered message: delete only, delete + warn, or delete + timeout (Manage Server)               |
+| `/automod mentionlimit` | Set the max mentions allowed per message before the mentions filter triggers (Manage Server)                              |
+| `/automod word add`     | Add a word to the banned word list (Manage Server)                                                                        |
+| `/automod word remove`  | Remove a word from the banned word list (Manage Server)                                                                   |
+| `/automod word list`    | List all banned words (Manage Server)                                                                                     |
+| `/automod view`         | View the current auto-moderation configuration (Manage Server)                                                            |
+
+
 
 
 ### 🎫 Tickets
@@ -255,6 +275,8 @@ Other highlights:
 | `/ticket close` | Close the current ticket channel (usable by the ticket owner or support staff) |
 | `/ticket stats` | Show total, open, and closed ticket counts for this server (Manage Server)     |
 | `/ticket reset` | Reset the ticket counter to 0 and clear all ticket records (Administrator)     |
+
+
 
 
 ### 🏷️ Roles
@@ -271,6 +293,8 @@ Other highlights:
 | `/autorole view`       | Show the current autorole setting                                                                      |
 
 
+
+
 ### ⚙️ Settings
 
 
@@ -282,7 +306,11 @@ Other highlights:
 
 ---
 
+
+
 ## Installation
+
+
 
 ### Option A — Docker (recommended)
 
@@ -291,7 +319,7 @@ Other highlights:
    git clone https://github.com/ckagias/discord-bot.git
    cd discord-bot
   ```
-2. **Create a `.env` file**
+2. **Create a** `.env` **file**
   ```env
    Token=your_discord_bot_token
    ClientID=your_discord_application_id
@@ -321,6 +349,8 @@ Other highlights:
    ./restart.sh
   ```
 
+
+
 ### Option B — Manual
 
 1. **Clone and install dependencies**
@@ -329,7 +359,7 @@ Other highlights:
    cd discord-bot
    npm install
   ```
-2. **Create a `.env` file**
+2. **Create a** `.env` **file**
   ```env
    Token=your_discord_bot_token
    ClientID=your_discord_application_id
@@ -351,9 +381,12 @@ Other highlights:
   ```
 
 If you ever see duplicate or leftover guild-specific commands (e.g. from earlier testing), clear them with:
+
 ```bash
  node src/clean.js <guildId>
 ```
+
+
 
 #### Where to get your keys
 
@@ -363,6 +396,8 @@ If you ever see duplicate or leftover guild-specific commands (e.g. from earlier
 - GitHub token: [https://github.com/settings/tokens](https://github.com/settings/tokens)
 
 ---
+
+
 
 ## Dashboard
 
@@ -390,6 +425,8 @@ The dashboard is entirely optional, the bot runs fine standalone if you never se
 
 ---
 
+
+
 ## Dependencies
 
 
@@ -407,11 +444,23 @@ The dashboard is entirely optional, the bot runs fine standalone if you never se
 
 ---
 
+
+
+## Testing
+
+Run `npm test` to run the test suite (Jest).
+
+---
+
+
+
 ## Contributing
 
 Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for how to get started.
 
 ---
+
+
 
 ## License
 

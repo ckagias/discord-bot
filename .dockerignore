@@ -3,3 +3,5 @@ node_modules
 .git
 *.log
 dashboard
+*.test.js
+jest.config.js
