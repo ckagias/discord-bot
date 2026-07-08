@@ -45,7 +45,7 @@ async function checkWarnThresholds(guild, member, totalWarnings, guildData) {
         if (threshold.action === 'timeout') {
             const durationMs = (threshold.duration ?? 300) * 1000;
             if (member?.moderatable) {
-                const label = formatDuration(threshold.duration ?? 300);
+                const label = formatDuration(durationMs);
                 await member.timeout(durationMs, reason);
                 await createCase({ guildId: guild.id, type: 'timeout', userId: member.id, moderatorId: guild.client.user.id, reason, duration: label }).catch(() => {});
                 await member.send(

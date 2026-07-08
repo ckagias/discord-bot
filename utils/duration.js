@@ -1,7 +1,7 @@
-// Formats a duration in seconds as an exact compound string (e.g. "1h 30m"),
+// Formats a duration in milliseconds as an exact compound string (e.g. "1h 30m"),
 // never rounding away the remainder the way a single-unit label like "2h" would.
-function formatDuration(seconds) {
-    seconds = Math.round(seconds);
+function formatDuration(ms) {
+    let seconds = Math.round(ms / 1000);
 
     const units = [
         ['w', 604800],

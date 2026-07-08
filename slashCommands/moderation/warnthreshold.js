@@ -1,12 +1,12 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, MessageFlags } = require('discord.js');
 const { getGuildConfig, updateGuildConfig } = require('../../utils/guildConfig');
-const { formatDuration: formatExactDuration } = require('../../utils/duration');
+const { formatDuration: formatMsDuration } = require('../../utils/duration');
 
 const ACTION_LABELS = { timeout: 'Timeout', kick: 'Kick', ban: 'Ban' };
 
 function formatDuration(seconds) {
     if (!seconds) return '—';
-    return formatExactDuration(seconds);
+    return formatMsDuration(seconds * 1000);
 }
 
 function parseDuration(str) {

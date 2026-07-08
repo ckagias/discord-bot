@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, EmbedBuilder } = require('discord.js');
 const { getGuildConfig, updateGuildConfig, ensureGuildConfig } = require('../../utils/guildConfig');
-const { formatDuration: formatTimeoutDuration } = require('../../utils/duration');
+const { formatDuration } = require('../../utils/duration');
 
 const MAX_TIMEOUT_SECONDS = 2419200; // Discord maximum: 28 days
 const MAX_BANNED_WORDS = 200;
@@ -159,7 +159,7 @@ module.exports = {
             await updateGuildConfig(guild.id, update);
 
             const label = type === 'timeout'
-                ? `Delete + Timeout (${formatTimeoutDuration(update.automodTimeoutSeconds)})`
+                ? `Delete + Timeout (${formatDuration(update.automodTimeoutSeconds * 1000)})`
                 : type === 'warn' ? 'Delete + Warn' : 'Delete only';
             return interaction.editReply({ content: `Auto-mod action set to **${label}**.` });
         }
@@ -181,7 +181,7 @@ module.exports = {
                 .setTitle('Auto-Moderation Configuration')
                 .addFields(
                     { name: 'Status', value: config?.automodEnabled ? '✅ Enabled' : '❌ Disabled', inline: true },
-                    { name: 'Action', value: actionLabels[action] + (action === 'timeout' ? ` (${formatTimeoutDuration(config?.automodTimeoutSeconds ?? 300)})` : ''), inline: true },
+                    { name: 'Action', value: actionLabels[action] + (action === 'timeout' ? ` (${formatDuration((config?.automodTimeoutSeconds ?? 300) * 1000)})` : ''), inline: true },
                     { name: 'Banned Words', value: config?.automodBannedWords ? `✅ Enabled (${wordList.length} word${wordList.length === 1 ? '' : 's'})` : '❌ Disabled', inline: true },
                     { name: 'Spam/Flood', value: config?.automodSpam ? '✅ Enabled' : '❌ Disabled', inline: true },
                     { name: 'Mentions', value: config?.automodMentions ? `✅ Enabled (limit ${config?.automodMentionLimit ?? 5})` : '❌ Disabled', inline: true },
