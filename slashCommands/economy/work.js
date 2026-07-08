@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { formatBalance } = require('../../utils/economy');
+const { claimCooldown, formatBalance } = require('../../utils/economy');
 const EconomySchema = require('../../models/EconomySchema');
 const { workResponses } = require('../../data/responses');
 
@@ -35,15 +35,9 @@ module.exports = {
 
         // Atomic: stamp cooldown and credit coins in one operation so a crash between
         // steps can't lock the user out without paying them.
-        const updated = await EconomySchema.findOneAndUpdate(
-            {
-                userId: interaction.user.id,
-                guildId: interaction.guild.id,
-                $or: [{ lastWorkAt: null }, { lastWorkAt: { $lte: new Date(now - WORK_COOLDOWN_MS) } }],
-            },
-            { $set: { lastWorkAt: new Date(now) }, $inc: { balance: earned } },
-            { returnDocument: 'after' }
-        );
+        const updated = await claimCooldown(interaction.user.id, interaction.guild.id, 'lastWorkAt', WORK_COOLDOWN_MS, {
+            $inc: { balance: earned },
+        });
 
         if (!updated) {
             const fresh = await EconomySchema.findOne({ userId: interaction.user.id, guildId: interaction.guild.id });

@@ -44,4 +44,23 @@ function formatBalance(n) {
     return n.toLocaleString('en-US');
 }
 
-module.exports = { getWallet, updateBalance, formatBalance, DAILY_AMOUNT, DAILY_COOLDOWN_MS, DAILY_STREAK_WINDOW_MS, dailyStreakAmount };
+// Atomically checks a cooldown field and stamps it in one operation, closing the race where
+// two concurrent calls both pass the cooldown check. Returns the updated wallet on success,
+// or null if another call already claimed the cooldown first.
+function claimCooldown(userId, guildId, cooldownField, cooldownMs, extraUpdate = {}) {
+    const now = Date.now();
+    return EconomySchema.findOneAndUpdate(
+        {
+            userId,
+            guildId,
+            $or: [{ [cooldownField]: null }, { [cooldownField]: { $lte: new Date(now - cooldownMs) } }],
+        },
+        {
+            $set: { [cooldownField]: new Date(now), ...(extraUpdate.$set ?? {}) },
+            ...(extraUpdate.$inc ? { $inc: extraUpdate.$inc } : {}),
+        },
+        { returnDocument: 'after' }
+    );
+}
+
+module.exports = { getWallet, updateBalance, formatBalance, claimCooldown, DAILY_AMOUNT, DAILY_COOLDOWN_MS, DAILY_STREAK_WINDOW_MS, dailyStreakAmount };
