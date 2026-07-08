@@ -3,13 +3,14 @@ services:
     image: ghcr.io/lavalink-devs/lavalink:4
     container_name: lavalink
     restart: unless-stopped
+    env_file: .env
     volumes:
       - ./lavalink/application.yml:/opt/Lavalink/application.yml:ro
       - ./lavalink/plugins:/opt/Lavalink/plugins
     networks:
       - bot-network
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider --header='Authorization: youshallnotpass' http://localhost:2333/version || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider --header=\"Authorization: $${LAVALINK_PASSWORD}\" http://localhost:2333/version || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -38,7 +39,6 @@ services:
       # When running in Docker, use service names instead of localhost
       LAVALINK_HOST: lavalink
       LAVALINK_PORT: 2333
-      LAVALINK_PASSWORD: youshallnotpass
       MONGODB_URL: mongodb://mongodb:27017/discordbot
       INTERNAL_API_PORT: 4000
     networks:
