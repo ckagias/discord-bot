@@ -9,25 +9,25 @@
 ## Getting Started
 
 1. **Fork and clone the repository**
-  ```bash
+   ```bash
    git clone https://github.com/ckagias/discord-bot.git
    cd discord-bot
    npm install
-  ```
+   ```
 2. **Create a `.env` file** (see [Installation](README.md#installation) in the README for all required keys)
 3. **Run the bot locally**
-  ```bash
+   ```bash
    # Register slash commands with Discord once (or after any command change)
    node src/cmd.js
 
    # Start the bot
    node src/index.js
-  ```
+   ```
    Or use Docker if you prefer the full stack (bot + MongoDB + Lavalink) locally (see the README).
 4. **Create a branch** off `main` for your change:
-  ```bash
+   ```bash
    git checkout -b feat/my-feature
-  ```
+   ```
 
 ---
 
@@ -36,7 +36,7 @@
 ```
 discord-bot/
 ├── src/
-│   ├── index.js              # Entry point — creates the client and loads handlers
+│   ├── index.js              # Entry point, creates the client and loads handlers
 │   ├── cmd.js                # Registers slash commands with the Discord API
 │   └── clean.js              # Deletes leftover guild-specific slash commands: node src/clean.js <guildId>
 ├── events/                   # One file per Discord event (messageCreate, interactionCreate, …)
@@ -130,8 +130,8 @@ module.exports = {
 
 ### Rules for commands
 
-- `**data` and `execute` are required.** The handler skips files missing either and logs a warning.
-- `**permissions` is optional.** Only add it when the command should be restricted — it maps directly to a `PermissionFlagsBits` flag.
+- **`data` and `execute` are required.** The handler skips files missing either and logs a warning.
+- **`permissions` is optional.** Only add it when the command should be restricted. It maps directly to a `PermissionFlagsBits` flag.
 - **Always use `MessageFlags.Ephemeral`** for error and confirmation replies that shouldn't stay in chat.
 - **Use `interaction.deferReply()` + `interaction.editReply()`** for anything that may take longer than 3 seconds (API calls, database queries).
 - **Do not add a new category folder** unless your PR introduces at least 3 related commands that genuinely don't fit an existing category.
@@ -231,7 +231,7 @@ module.exports = model('Example', exampleSchema);
 
 ### General
 
-- Keep each file focused on one thing. A command file handles one command; an event file handles one event.
+- Keep each file focused on one thing. A command file handles one command, an event file handles one event.
 - Prefer `async/await` over `.then()/.catch()` chains.
 - Wrap anything that can fail with a try/catch or `.catch(() => {})`. Never let an uncaught promise rejection crash an interaction.
 - Follow the existing code style: semicolons, 4-space indentation, single quotes. Run `npm run lint` before committing.
@@ -253,13 +253,13 @@ module.exports = model('Example', exampleSchema);
 
 Run `npm test` to run the Jest suite. Tests live next to the code they cover, as `*.test.js` (e.g. `utils/punishments.test.js`).
 
-Not every file has tests yet — the suite is young. Pure functions in `utils/` (parsing, formatting, scheduling) are the best candidates for new coverage; add a test alongside your change if you touch one.
+Not every file has tests yet, the suite is young. Pure functions in `utils/` (parsing, formatting, scheduling) are the best candidates for new coverage. Add a test alongside your change if you touch one.
 
 ## Linting
 
-Run `npm run lint` to check for real issues: unused variables, missing awaits, undefined references, and similar. It doesn't enforce formatting — just correctness.
+Run `npm run lint` to check for real issues: unused variables, missing awaits, undefined references, and similar. It doesn't enforce formatting, just correctness.
 
-Most of the codebase predates this tooling, so don't be surprised if it flags files you didn't touch. Only fix warnings in files your change already modifies — don't do unrelated cleanup in the same PR.
+Most of the codebase predates this tooling, so don't be surprised if it flags files you didn't touch. Only fix warnings in files your change already modifies. Don't do unrelated cleanup in the same PR.
 
 ---
 

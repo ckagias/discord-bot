@@ -2,10 +2,13 @@
   "name": "discord-bot",
   "version": "0.1.0",
   "description": "",
-  "license": "ISC",
+  "license": "MIT",
   "author": "",
   "type": "commonjs",
   "main": "src/index.js",
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "start": "docker compose up -d",
     "stop": "docker compose down",
