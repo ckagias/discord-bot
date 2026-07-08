@@ -1,9 +1,9 @@
-jest.mock('../models/PunishmentSchema', () => ({
+jest.mock('../../models/PunishmentSchema', () => ({
     deleteOne: jest.fn().mockResolvedValue({}),
     find: jest.fn().mockResolvedValue([]),
 }));
 
-const { schedulePunishment } = require('./punishments');
+const { schedulePunishment } = require('../../utils/punishments');
 
 const MAX_TIMEOUT_MS = 2 ** 31 - 1;
 

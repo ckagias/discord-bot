@@ -1,5 +1,5 @@
 const { EventEmitter } = require('events');
-const { attachConnectionLogging } = require('./dbLogging');
+const { attachConnectionLogging } = require('../../utils/dbLogging');
 
 describe('attachConnectionLogging', () => {
     let consoleErrorSpy, consoleWarnSpy, consoleLogSpy, connection;

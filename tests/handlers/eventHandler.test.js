@@ -19,7 +19,7 @@ function loadEventHandler(files) {
     for (const [file, mod] of Object.entries(files)) {
         jest.doMock(file, () => mod, { virtual: true });
     }
-    return require('./eventHandler');
+    return require('../../handlers/eventHandler');
 }
 
 describe('eventHandler', () => {

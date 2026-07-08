@@ -1,4 +1,4 @@
-const { checkEnv } = require('./envCheck');
+const { checkEnv } = require('../../utils/envCheck');
 
 function makeLogger() {
     return { error: jest.fn(), warn: jest.fn(), info: jest.fn() };
