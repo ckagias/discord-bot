@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const EconomySchema = require('../../models/EconomySchema');
-const { getWallet, updateBalance, formatBalance } = require('../../utils/economy');
+const { getWallet, updateBalance, claimCooldown, formatBalance } = require('../../utils/economy');
 
 const ROB_COOLDOWN_MS = 3_600_000; // 1 hour
 const ROB_SUCCESS_CHANCE = 0.45;   // 45% success rate
@@ -28,19 +28,12 @@ module.exports = {
 
         await interaction.deferReply();
 
-        // Cooldown check
-        const robberWallet = await EconomySchema.findOneAndUpdate(
-            { userId: interaction.user.id, guildId: interaction.guild.id },
-            { $setOnInsert: { userId: interaction.user.id, guildId: interaction.guild.id } },
-            { upsert: true, returnDocument: 'after' }
-        );
-
-        const now = Date.now();
+        const robberWallet = await getWallet(interaction.user.id, interaction.guild.id);
         const lastRob = robberWallet.lastRobAt ? robberWallet.lastRobAt.getTime() : 0;
-        const remaining = ROB_COOLDOWN_MS - (now - lastRob);
+        const remaining = ROB_COOLDOWN_MS - (Date.now() - lastRob);
 
         if (remaining > 0) {
-            const availableAt = Math.floor((now + remaining) / 1000);
+            const availableAt = Math.floor((Date.now() + remaining) / 1000);
             return interaction.editReply({ content: `You're laying low after your last robbery. You can rob again <t:${availableAt}:R>.` });
         }
 
@@ -50,11 +43,13 @@ module.exports = {
             return interaction.editReply({ content: `**${target.username}** doesn't have enough credits to rob (minimum ${formatBalance(ROB_MIN_BALANCE)}).` });
         }
 
-        // Set cooldown before the outcome so spamming on error doesn't bypass it
-        await EconomySchema.updateOne(
-            { userId: interaction.user.id, guildId: interaction.guild.id },
-            { $set: { lastRobAt: new Date(now) } }
-        );
+        // Atomically re-check and stamp the cooldown so two concurrent /rob calls can't both pass.
+        const claimed = await claimCooldown(interaction.user.id, interaction.guild.id, 'lastRobAt', ROB_COOLDOWN_MS);
+        if (!claimed) {
+            const fresh = await EconomySchema.findOne({ userId: interaction.user.id, guildId: interaction.guild.id });
+            const availableAt = Math.floor((fresh.lastRobAt.getTime() + ROB_COOLDOWN_MS) / 1000);
+            return interaction.editReply({ content: `You're laying low after your last robbery. You can rob again <t:${availableAt}:R>.` });
+        }
 
         const success = Math.random() < ROB_SUCCESS_CHANCE;
 
@@ -83,7 +78,7 @@ module.exports = {
         } else {
             const fine = Math.floor(stealAmount * ROB_FINE_RATE);
             const fineResult = await updateBalance(interaction.user.id, interaction.guild.id, -fine);
-            const newBalance = fineResult ? fineResult.balance : robberWallet.balance;
+            const newBalance = fineResult ? fineResult.balance : claimed.balance;
 
             const embed = new EmbedBuilder()
                 .setColor(0xED4245)

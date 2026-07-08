@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const EconomySchema = require('../../models/EconomySchema');
-const { formatBalance, DAILY_COOLDOWN_MS, DAILY_STREAK_WINDOW_MS, dailyStreakAmount } = require('../../utils/economy');
+const { claimCooldown, formatBalance, DAILY_COOLDOWN_MS, DAILY_STREAK_WINDOW_MS, dailyStreakAmount } = require('../../utils/economy');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -39,15 +39,10 @@ module.exports = {
         // Atomic: stamp cooldown, update streak, and credit coins in one operation.
         // This prevents a crash between steps from locking the user out without paying them,
         // and closes the first-claim race where two concurrent calls both pass the cooldown check.
-        const updated = await EconomySchema.findOneAndUpdate(
-            {
-                userId: interaction.user.id,
-                guildId: interaction.guild.id,
-                $or: [{ lastDailyAt: null }, { lastDailyAt: { $lte: new Date(now - DAILY_COOLDOWN_MS) } }],
-            },
-            { $set: { lastDailyAt: new Date(now), dailyStreak: newStreak }, $inc: { balance: earned } },
-            { returnDocument: 'after' }
-        );
+        const updated = await claimCooldown(interaction.user.id, interaction.guild.id, 'lastDailyAt', DAILY_COOLDOWN_MS, {
+            $set: { dailyStreak: newStreak },
+            $inc: { balance: earned },
+        });
 
         if (!updated) {
             // Another concurrent claim beat us — re-fetch for the cooldown timestamp
