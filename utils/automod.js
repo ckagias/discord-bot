@@ -101,7 +101,7 @@ async function applyAction(message, guildData, filter) {
         if (member?.moderatable) {
             const durationSeconds = guildData.automodTimeoutSeconds ?? 300;
             const durationMs = durationSeconds * 1000;
-            const durationLabel = formatDuration(durationSeconds);
+            const durationLabel = formatDuration(durationMs);
 
             await member.timeout(durationMs, reason).catch(err => logger.error('Failed to timeout member:', err));
 

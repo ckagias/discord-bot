@@ -1,7 +1,8 @@
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { getGuildConfig } = require('../../utils/guildConfig');
 const PunishmentSchema = require('../../models/PunishmentSchema');
-const { parseDuration, formatDuration, schedulePunishment } = require('../../utils/punishments');
+const { parseDuration, schedulePunishment } = require('../../utils/punishments');
+const { formatDuration } = require('../../utils/duration');
 const { createCase } = require('../../utils/cases');
 
 module.exports = {

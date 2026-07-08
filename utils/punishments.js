@@ -13,14 +13,6 @@ function parseDuration(str) {
     return value * units[match[2].toLowerCase()];
 }
 
-function formatDuration(ms) {
-    const s = Math.round(ms / 1000);
-    if (s >= 86400) return `${Math.floor(s / 86400)}d ${Math.floor((s % 86400) / 3600)}h`;
-    if (s >= 3600)  return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
-    if (s >= 60)    return `${Math.floor(s / 60)}m`;
-    return `${s}s`;
-}
-
 async function liftMute(client, punishment) {
     try {
         const guild = await client.guilds.fetch(punishment.guildId).catch(() => null);
@@ -70,4 +62,4 @@ async function restorePunishments(client) {
     if (active.length) logger.info(`Restored ${active.length} active timed punishment(s).`);
 }
 
-module.exports = { parseDuration, formatDuration, schedulePunishment, restorePunishments };
+module.exports = { parseDuration, schedulePunishment, restorePunishments };

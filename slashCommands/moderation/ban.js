@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const PunishmentSchema = require('../../models/PunishmentSchema');
-const { parseDuration, formatDuration, schedulePunishment } = require('../../utils/punishments');
+const { parseDuration, schedulePunishment } = require('../../utils/punishments');
+const { formatDuration } = require('../../utils/duration');
 const { createCase } = require('../../utils/cases');
 const log = require('../../utils/log');
 const logger = log.scope('ban');
