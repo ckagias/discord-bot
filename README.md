@@ -256,7 +256,7 @@ If you find this useful, consider leaving a star.
 
 ### Requirements
 
-- Node.js 20.9 or later
+- Node.js 22 or later
 - Docker and Docker Compose (Option A), or a local MongoDB and Lavalink server (Option B)
 - Linux or macOS for the `.sh` scripts and `npm run restart`. On Windows, run them from WSL or Git Bash. `npm start` and `npm run stop` work in any shell since they call `docker compose` directly.
 
