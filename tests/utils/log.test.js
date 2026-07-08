@@ -14,7 +14,7 @@ describe('log', () => {
     });
 
     test('info/warn/error route to the matching console method with a timestamped, leveled prefix', () => {
-        const log = require('./log');
+        const log = require('../../utils/log');
 
         log.info('hello');
         log.warn('careful');
@@ -26,7 +26,7 @@ describe('log', () => {
     });
 
     test('log.scope(name) includes the scope in the prefix', () => {
-        const log = require('./log');
+        const log = require('../../utils/log');
         const scoped = log.scope('automod');
 
         scoped.error('failed to timeout member');
@@ -35,7 +35,7 @@ describe('log', () => {
     });
 
     test('debug is suppressed by default (info level)', () => {
-        const log = require('./log');
+        const log = require('../../utils/log');
 
         log.debug('verbose detail');
 
@@ -44,7 +44,7 @@ describe('log', () => {
 
     test('LOG_LEVEL=debug enables debug output', () => {
         process.env.LOG_LEVEL = 'debug';
-        const log = require('./log');
+        const log = require('../../utils/log');
 
         log.debug('verbose detail');
 
@@ -53,7 +53,7 @@ describe('log', () => {
 
     test('LOG_LEVEL=error suppresses warn and info', () => {
         process.env.LOG_LEVEL = 'error';
-        const log = require('./log');
+        const log = require('../../utils/log');
 
         log.warn('careful');
         log.info('hello');

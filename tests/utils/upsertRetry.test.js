@@ -1,4 +1,4 @@
-const { upsertWithRetry } = require('./upsertRetry');
+const { upsertWithRetry } = require('../../utils/upsertRetry');
 
 function duplicateKeyError() {
     const err = new Error('E11000 duplicate key error');

@@ -59,6 +59,7 @@ discord-bot/
 ├── models/                   # Mongoose schemas (one per collection)
 ├── utils/                    # Shared helpers (automod, embeds, logger, …)
 ├── data/                     # Static data (fun command response arrays, …)
+├── tests/                    # Jest tests, mirroring the source tree (see Testing)
 ├── dashboard/                # Optional Next.js web dashboard
 └── lavalink/                 # Lavalink server config (used by Docker)
 ```
@@ -251,9 +252,9 @@ module.exports = model('Example', exampleSchema);
 
 ## Testing
 
-Run `npm test` to run the Jest suite. Tests live next to the code they cover, as `*.test.js` (e.g. `utils/punishments.test.js`).
+Run `npm test` to run the Jest suite. Tests live under `tests/`, mirroring the source tree, as `*.test.js` (e.g. `tests/utils/punishments.test.js` covers `utils/punishments.js`).
 
-Not every file has tests yet, the suite is young. Pure functions in `utils/` (parsing, formatting, scheduling) are the best candidates for new coverage. Add a test alongside your change if you touch one.
+Not every file has tests yet, the suite is young. Pure functions in `utils/` (parsing, formatting, scheduling) are the best candidates for new coverage. If you touch a file, add or update the matching test under `tests/` at the same relative path.
 
 ## Linting
 

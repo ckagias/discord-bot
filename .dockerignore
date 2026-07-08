@@ -3,6 +3,7 @@ node_modules
 .git
 *.log
 dashboard
+tests
 *.test.js
 jest.config.js
 eslint.config.js
