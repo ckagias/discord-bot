@@ -1,9 +1,9 @@
 import { connectDB } from "@/lib/db";
-import { fetchGuildChannels } from "@/lib/discord";
+import { fetchGuildChannels, fetchGuildRoles } from "@/lib/discord";
 import Guild, { GuildDoc } from "@/lib/models/Guild";
 import SettingsCard from "@/components/SettingsCard";
 import SectionForm from "@/components/SectionForm";
-import { ChannelField } from "@/components/Field";
+import { ChannelField, RoleField } from "@/components/Field";
 import { updateGeneralSettings } from "./actions";
 
 const STYLES = {
@@ -20,13 +20,16 @@ export default async function GeneralSettingsPage({
   const { guildId } = await params;
   await connectDB();
 
-  const [guildDoc, channels] = await Promise.all([
+  const [guildDoc, channels, roles] = await Promise.all([
     Guild.findOne({ guildId }).lean<GuildDoc>(),
     fetchGuildChannels(guildId),
+    fetchGuildRoles(guildId),
   ]);
 
-  const guild: Pick<GuildDoc, "logChannelId"> = guildDoc ?? {
+  const guild: Pick<GuildDoc, "logChannelId" | "suggestChannelId" | "suggestApproverRoleId"> = guildDoc ?? {
     logChannelId: null,
+    suggestChannelId: null,
+    suggestApproverRoleId: null,
   };
   const textChannels = channels.filter((c) => c.type === TEXT_CHANNEL_TYPE);
 
@@ -40,6 +43,20 @@ export default async function GeneralSettingsPage({
             name="logChannelId"
             defaultValue={guild.logChannelId}
             channels={textChannels}
+          />
+        </SettingsCard>
+        <SettingsCard title="Suggestion box" description="Where suggestions are posted and who can review them.">
+          <ChannelField
+            label="Suggestion channel"
+            name="suggestChannelId"
+            defaultValue={guild.suggestChannelId}
+            channels={textChannels}
+          />
+          <RoleField
+            label="Approver role"
+            name="suggestApproverRoleId"
+            defaultValue={guild.suggestApproverRoleId}
+            roles={roles}
           />
         </SettingsCard>
       </SectionForm>

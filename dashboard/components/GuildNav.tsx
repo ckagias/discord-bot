@@ -32,6 +32,7 @@ const SECTIONS = [
   { slug: "tickets",        label: "Tickets" },
   { slug: "tempvc",         label: "Temp Voice Channels" },
   { slug: "giveaways",     label: "Giveaways" },
+  { slug: "suggestions",   label: "Suggestions" },
 ];
 
 export default function GuildNav({ guildId }: { guildId: string }) {

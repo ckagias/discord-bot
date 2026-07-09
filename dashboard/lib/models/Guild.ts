@@ -50,6 +50,8 @@ export interface GuildDoc {
   antiRaidAlertChannelId: string | null;
   antiRaidLocked: boolean;
   antiRaidLockedAt: Date | null;
+  suggestChannelId: string | null;
+  suggestApproverRoleId: string | null;
 }
 
 const guildSchema = new Schema<GuildDoc>({
@@ -109,6 +111,8 @@ const guildSchema = new Schema<GuildDoc>({
   antiRaidAlertChannelId:   { type: String,  default: null },
   antiRaidLocked:           { type: Boolean, default: false },
   antiRaidLockedAt:         { type: Date,    default: null },
+  suggestChannelId:      { type: String, default: null },
+  suggestApproverRoleId: { type: String, default: null },
 });
 
 export default models.Guild || model<GuildDoc>("Guild", guildSchema);
