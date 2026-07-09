@@ -256,7 +256,7 @@ module.exports = model('Example', exampleSchema);
 
 Run `npm test` to run the Jest suite. Tests live under `tests/`, mirroring the source tree, as `*.test.js` (e.g. `tests/utils/punishments.test.js` covers `utils/punishments.js`).
 
-Not every file has tests yet, the suite is young. Pure functions in `utils/` (parsing, formatting, scheduling) are the best candidates for new coverage. If you touch a file, add or update the matching test under `tests/` at the same relative path.
+`events/` and `slashCommands/` have full coverage. `utils/` and `handlers/` still have gaps, pure functions in `utils/` (parsing, formatting, scheduling) are the best candidates for new coverage. If you touch a file, add or update the matching test under `tests/` at the same relative path.
 
 ## Linting
 
