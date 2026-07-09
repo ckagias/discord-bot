@@ -16,7 +16,7 @@ If you find this useful, consider leaving a star.
 
 ## Features
 
-**85+** commands across **10** categories:
+**85+** commands across **11** categories:
 
 - **Fun:** `8ball`, `dare`, `truth`, `poll`, `pollend`
 - **Info:** `avatar`, `help`, `commands`, `weather`, `github` and 10 more
@@ -28,6 +28,7 @@ If you find this useful, consider leaving a star.
 - **Economy:** `balance`, `daily`, `work`, `rob`, `transfer` and 4 more
 - **Tickets:** `ticket setup`, `ticket panel`, `ticket close`, `ticket stats`, `ticket reset`
 - **Roles:** `reactionrole setup`, `reactionrole add`, `reactionrole remove`, `reactionrole list`
+- **Suggestions:** `suggest submit`, `suggest setup`, `suggest list`
 
 ### Highlights
 
@@ -41,7 +42,7 @@ If you find this useful, consider leaving a star.
 
 **Leveling:** Persistent XP with atomic writes. Admins map levels to roles, granted automatically on level-up. Top-20 leaderboard in the dashboard.
 
-**Community tools:** Tickets, starboard, reaction roles, giveaways, welcome/farewell messages, autorole, temp voice channels, a two-step embed builder, and personal reminders.
+**Community tools:** Tickets, starboard, reaction roles, giveaways, a suggestion box with staff review, welcome/farewell messages, autorole, temp voice channels, a two-step embed builder, and personal reminders.
 
 **Infrastructure:** AFK detection, Docker support with Lavalink and MongoDB, graceful shutdown for clean restarts.
 
@@ -242,6 +243,14 @@ If you find this useful, consider leaving a star.
 | `/autorole remove`     | Disable autorole                                                                                       |
 | `/autorole view`       | Show the current autorole setting                                                                      |
 
+### Suggestions
+
+| Command            | Description                                                                                                |
+| ------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `/suggest submit`  | Submit a suggestion, posted to the configured channel with up/down vote buttons and a Review button visible only to permitted reviewers                  |
+| `/suggest setup`   | Set the suggestion channel and the role that can approve/deny/implement suggestions (Manage Server)          |
+| `/suggest list`    | List pending suggestions in this server                                                                     |
+
 ### Settings
 
 | Command        | Description                              |
@@ -341,7 +350,7 @@ Sign in with Discord OAuth2, pick a server where you have Manage Server and the 
 
 | Section             | What you can manage                                                                                |
 | ------------------- | -------------------------------------------------------------------------------------------------- |
-| General             | Log channel                                                                                        |
+| General             | Log channel, suggestion box channel and approver role                                              |
 | Welcome & Farewell  | Join/leave channels and messages                                                                   |
 | Moderation          | Mute role, autorole                                                                                |
 | Auto-Mod            | Filters, action, banned word list                                                                  |
@@ -358,6 +367,7 @@ Sign in with Discord OAuth2, pick a server where you have Manage Server and the 
 | Tickets             | Category and support role setup, plus a live ticket list with open/closed filter                   |
 | Temp Voice Channels | Auto-VC channel and category                                                                       |
 | Giveaways           | Active giveaways with an End button, past giveaways with Reroll and Delete buttons                 |
+| Suggestions         | Pending suggestions with Approve/Deny/Implement/Delete buttons, resolved suggestions with Delete   |
 
 ### Enabling it
 

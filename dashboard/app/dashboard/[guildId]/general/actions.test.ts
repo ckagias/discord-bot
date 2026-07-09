@@ -25,23 +25,25 @@ describe("updateGeneralSettings", () => {
     expect(findOneAndUpdate).not.toHaveBeenCalled();
   });
 
-  it("persists logChannelId and revalidates the page", async () => {
+  it("persists logChannelId and the suggestion box settings, then revalidates the page", async () => {
     requireGuildAccess.mockResolvedValue(undefined);
     const formData = new FormData();
     formData.set("logChannelId", "12345");
+    formData.set("suggestChannelId", "67890");
+    formData.set("suggestApproverRoleId", "role1");
 
     await updateGeneralSettings("guild1", formData);
 
     expect(requireGuildAccess).toHaveBeenCalledWith("guild1");
     expect(findOneAndUpdate).toHaveBeenCalledWith(
       { guildId: "guild1" },
-      { logChannelId: "12345" },
+      { logChannelId: "12345", suggestChannelId: "67890", suggestApproverRoleId: "role1" },
       { upsert: true }
     );
     expect(revalidatePath).toHaveBeenCalledWith("/dashboard/guild1/general");
   });
 
-  it("stores null when logChannelId is empty", async () => {
+  it("stores null when fields are empty", async () => {
     requireGuildAccess.mockResolvedValue(undefined);
     const formData = new FormData();
 
@@ -49,7 +51,7 @@ describe("updateGeneralSettings", () => {
 
     expect(findOneAndUpdate).toHaveBeenCalledWith(
       { guildId: "guild1" },
-      { logChannelId: null },
+      { logChannelId: null, suggestChannelId: null, suggestApproverRoleId: null },
       { upsert: true }
     );
   });

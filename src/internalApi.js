@@ -1,7 +1,9 @@
 const http = require('node:http');
 const mongoose = require('mongoose');
 const { endGiveaway } = require('../slashCommands/utility/giveaway');
+const { applyStatus } = require('../slashCommands/utility/suggest');
 const GiveawaySchema = require('../models/GiveawaySchema');
+const SuggestionSchema = require('../models/SuggestionSchema');
 const log = require('../utils/log');
 const logger = log.scope('internal-api');
 
@@ -115,6 +117,25 @@ module.exports = function startInternalApi(client) {
                 send(res, 200, { ok: true });
             } catch (err) {
                 logger.error('/internal/giveaway/reroll error:', err);
+                send(res, 500, { error: 'Internal error' });
+            }
+            return;
+        }
+
+        if (req.method === 'POST' && url.pathname === '/internal/suggestion/status') {
+            try {
+                const raw = await readBody(req);
+                const { guildId, messageId, status, staffId } = JSON.parse(raw);
+                if (!guildId || !messageId || !status) return send(res, 400, { error: 'Missing guildId, messageId, or status' });
+                if (!['approved', 'denied', 'implemented'].includes(status)) return send(res, 400, { error: 'Invalid status' });
+
+                const suggestion = await SuggestionSchema.findOne({ guildId: String(guildId), messageId: String(messageId), status: 'pending' });
+                if (!suggestion) return send(res, 404, { error: 'Pending suggestion not found' });
+
+                await applyStatus(client, suggestion, status, staffId ?? null);
+                send(res, 200, { ok: true });
+            } catch (err) {
+                logger.error('/internal/suggestion/status error:', err);
                 send(res, 500, { error: 'Internal error' });
             }
             return;
