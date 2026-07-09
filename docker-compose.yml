@@ -43,6 +43,12 @@ services:
       INTERNAL_API_PORT: 4000
     networks:
       - bot-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:4000/internal/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   dashboard:
     build: ./dashboard
@@ -59,6 +65,12 @@ services:
       - "3000:3000"
     networks:
       - bot-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
 networks:
   bot-network:
