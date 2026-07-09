@@ -2,7 +2,7 @@
 
 ### A Discord bot built with [discord.js](https://github.com/discordjs/discord.js), Lavalink, and MongoDB
 
-[About](#about) • [Features](#features) • [Highlights](#highlights) • [Commands](#commands) • [Installation](#installation) • [Dashboard](#dashboard) • [Dependencies](#dependencies) • [Testing](#testing) • [Contributing](#contributing) • [Security](#security) • [License](#license)
+[About](#about) • [Features](#features) • [Highlights](#highlights) • [Commands](#commands) • [Installation](#installation) • [Dashboard](#dashboard) • [Dependencies](#dependencies) • [Testing](#testing) • [Contributing](#contributing) • [Changelog](#changelog) • [Security](#security) • [License](#license)
 
 ---
 
@@ -404,6 +404,12 @@ Run `npm test` to run the test suite (Jest).
 ## Contributing
 
 Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for how to get started. Participation is governed by our [Code of Conduct](CODE_OF_CONDUCT.md).
+
+---
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a history of notable changes.
 
 ---
 

@@ -36,6 +36,7 @@ module.exports = {
                 .setDescription('Reset the ticket counter to 0 and clear all records. (Administrator)')
         ),
 
+    // No shared `permissions` field on purpose, each subcommand needs a different check, so they're gated inline below.
     async execute(interaction) {
         const sub = interaction.options.getSubcommand();
 
