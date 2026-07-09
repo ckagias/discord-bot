@@ -1,4 +1,5 @@
 const http = require('node:http');
+const mongoose = require('mongoose');
 const { endGiveaway } = require('../slashCommands/utility/giveaway');
 const GiveawaySchema = require('../models/GiveawaySchema');
 const log = require('../utils/log');
@@ -33,11 +34,19 @@ function readBody(req) {
 
 module.exports = function startInternalApi(client) {
     const server = http.createServer(async (req, res) => {
+        const url = new URL(req.url, `http://localhost:${PORT}`);
+
+        if (req.method === 'GET' && url.pathname === '/internal/health') {
+            const healthy = client.isReady() && mongoose.connection.readyState === 1;
+            return send(res, healthy ? 200 : 503, {
+                discord: client.isReady() ? 'up' : 'down',
+                mongo: mongoose.connection.readyState === 1 ? 'up' : 'down',
+            });
+        }
+
         if (!SECRET || req.headers['x-internal-secret'] !== SECRET) {
             return send(res, 401, { error: 'Unauthorized' });
         }
-
-        const url = new URL(req.url, `http://localhost:${PORT}`);
 
         if (req.method === 'POST' && url.pathname === '/internal/giveaway/end') {
             try {
