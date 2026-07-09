@@ -8,6 +8,7 @@ describe('help command', () => {
                     username: 'TestBot',
                     displayAvatarURL: jest.fn().mockReturnValue('https://example.com/bot.png'),
                     createdAt: new Date('2020-01-01'),
+                    createdTimestamp: new Date('2020-01-01').getTime(),
                 },
             },
             user: { tag: 'User#0001', displayAvatarURL: jest.fn().mockReturnValue('https://example.com/user.png') },
