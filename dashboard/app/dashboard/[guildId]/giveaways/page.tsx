@@ -34,35 +34,21 @@ function formatDate(d: Date) {
   });
 }
 
-export default async function GiveawaysPage({
-  params,
+function jumpUrl(g: GiveawayDoc) {
+  return `https://discord.com/channels/${g.guildId}/${g.channelId}/${g.messageId}`;
+}
+
+function GiveawayTable({
+  guildId,
+  rows,
+  showActions,
 }: {
-  params: Promise<{ guildId: string }>;
+  guildId: string;
+  rows: GiveawayDoc[];
+  showActions: "end" | "reroll" | false;
 }) {
-  const { guildId } = await params;
-  await connectDB();
-
-  const giveaways = await Giveaway.find({ guildId })
-    .sort({ endsAt: -1 })
-    .limit(50)
-    .lean<GiveawayDoc[]>();
-
-  const active = giveaways.filter((g) => !g.ended);
-  const ended = giveaways.filter((g) => g.ended);
-
-  function jumpUrl(g: GiveawayDoc) {
-    return `https://discord.com/channels/${g.guildId}/${g.channelId}/${g.messageId}`;
-  }
-
-  function GiveawayTable({
-    rows,
-    showActions,
-  }: {
-    rows: GiveawayDoc[];
-    showActions: "end" | "reroll" | false;
-  }) {
-    if (rows.length === 0) return null;
-    return (
+  if (rows.length === 0) return null;
+  return (
       <table className={STYLES.table}>
         <thead className={STYLES.thead}>
           <tr>
@@ -125,7 +111,23 @@ export default async function GiveawaysPage({
         </tbody>
       </table>
     );
-  }
+}
+
+export default async function GiveawaysPage({
+  params,
+}: {
+  params: Promise<{ guildId: string }>;
+}) {
+  const { guildId } = await params;
+  await connectDB();
+
+  const giveaways = await Giveaway.find({ guildId })
+    .sort({ endsAt: -1 })
+    .limit(50)
+    .lean<GiveawayDoc[]>();
+
+  const active = giveaways.filter((g) => !g.ended);
+  const ended = giveaways.filter((g) => g.ended);
 
   return (
     <>
@@ -137,7 +139,7 @@ export default async function GiveawaysPage({
         {active.length === 0 ? (
           <p className={STYLES.empty}>No active giveaways.</p>
         ) : (
-          <GiveawayTable rows={active} showActions="end" />
+          <GiveawayTable guildId={guildId} rows={active} showActions="end" />
         )}
       </SettingsCard>
       <div className="mt-6">
@@ -148,7 +150,7 @@ export default async function GiveawaysPage({
           {ended.length === 0 ? (
             <p className={STYLES.empty}>No past giveaways.</p>
           ) : (
-            <GiveawayTable rows={ended} showActions="reroll" />
+            <GiveawayTable guildId={guildId} rows={ended} showActions="reroll" />
           )}
         </SettingsCard>
       </div>

@@ -8,7 +8,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
     "iron-session": "^8.0.4",
@@ -22,7 +24,12 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.3",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.10",
     "tailwindcss": "^4",
-    "typescript": "^6"
+    "typescript": "^6",
+    "typescript-eslint": "^8.63.0",
+    "vitest": "^4.1.10"
   }
 }
