@@ -1,0 +1,83 @@
+const BirthdaySchema = require('../models/BirthdaySchema');
+const GuildSchema = require('../models/GuildSchema');
+const { getGuildConfig } = require('./guildConfig');
+
+const DEFAULT_BIRTHDAY_MESSAGE = "Happy Birthday {user}! You turn {age} today! 🎉";
+
+function formatMessage(template, member, age = null) {
+    return template
+        .replace(/{user}/g, `<@${member.id}>`)
+        .replace(/{server}/g, member.guild.name)
+        .replace(/{age}/g, age !== null ? String(age) : 'another year older');
+}
+
+// Age turned today, based on the stored birth year. Null if no year was provided.
+function calculateAge(entry, year) {
+    if (!entry.year) return null;
+    return year - entry.year;
+}
+
+// Removes the birthday role from every member holding it, since it should only be worn on the
+// member's actual birthday and this runs before today's new birthdays are granted the role.
+async function clearBirthdayRoles(client, guild, roleId) {
+    const role = guild.roles.cache.get(roleId);
+    if (!role) return;
+
+    for (const member of role.members.values()) {
+        await member.roles.remove(role).catch(() => {});
+    }
+}
+
+// Runs once per day. For every guild with a birthday channel configured, clears yesterday's
+// birthday role holders, then finds members whose month/day matches today and haven't been
+// announced yet this year, posts the announcement, assigns the birthday role if configured, and
+// marks them as announced to avoid duplicate posts on restart.
+async function checkBirthdays(client) {
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+    const year = now.getFullYear();
+
+    const configuredGuilds = await GuildSchema.find({ birthdayChannelId: { $ne: null } }).catch(() => []);
+    for (const config of configuredGuilds) {
+        const guild = client.guilds.cache.get(config.guildId);
+        if (!guild || !config.birthdayRoleId) continue;
+        await clearBirthdayRoles(client, guild, config.birthdayRoleId);
+    }
+
+    const todays = await BirthdaySchema.find({ month, day, lastAnnounced: { $ne: year } });
+    if (!todays.length) return;
+
+    const byGuild = new Map();
+    for (const entry of todays) {
+        if (!byGuild.has(entry.guildId)) byGuild.set(entry.guildId, []);
+        byGuild.get(entry.guildId).push(entry);
+    }
+
+    for (const [guildId, entries] of byGuild) {
+        const guild = client.guilds.cache.get(guildId);
+        if (!guild) continue;
+
+        const guildConfig = await getGuildConfig(guildId).catch(() => null);
+        if (!guildConfig?.birthdayChannelId) continue;
+
+        const channel = guild.channels.cache.get(guildConfig.birthdayChannelId);
+        if (!channel) continue;
+
+        const template = guildConfig.birthdayMessage || DEFAULT_BIRTHDAY_MESSAGE;
+        const role = guildConfig.birthdayRoleId ? guild.roles.cache.get(guildConfig.birthdayRoleId) : null;
+
+        for (const entry of entries) {
+            const member = await guild.members.fetch(entry.userId).catch(() => null);
+            if (!member) continue;
+
+            const age = calculateAge(entry, year);
+            await channel.send({ content: formatMessage(template, member, age) }).catch(() => {});
+            if (role) await member.roles.add(role).catch(() => {});
+
+            await BirthdaySchema.updateOne({ _id: entry._id }, { $set: { lastAnnounced: year } });
+        }
+    }
+}
+
+module.exports = { formatMessage, checkBirthdays, DEFAULT_BIRTHDAY_MESSAGE };

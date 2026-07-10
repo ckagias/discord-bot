@@ -42,7 +42,7 @@ If you find this useful, consider leaving a star.
 
 **Leveling:** Persistent XP with atomic writes. Admins map levels to roles, granted automatically on level-up. Top-20 leaderboard in the dashboard.
 
-**Community tools:** Tickets, starboard, reaction roles, giveaways, a suggestion box with staff review, welcome/farewell messages, autorole, temp voice channels, a two-step embed builder, and personal reminders.
+**Community tools:** Tickets, starboard, reaction roles, giveaways, a suggestion box with staff review, welcome/farewell messages, birthday announcements, autorole, temp voice channels, a two-step embed builder, and personal reminders.
 
 **Infrastructure:** AFK detection, Docker support with Lavalink and MongoDB, graceful shutdown for clean restarts.
 
@@ -135,6 +135,9 @@ If you find this useful, consider leaving a star.
 | `/remind set`      | Set a personal reminder with a duration and message, persisting across bot restarts                                           |
 | `/remind list`     | List your active reminders                                                                                                    |
 | `/remind cancel`   | Cancel one of your active reminders by ID                                                                                     |
+| `/birthday set`    | Set your birthday (month/day, optional year) for this server                                                                  |
+| `/birthday view`   | View your saved birthday for this server                                                                                      |
+| `/birthday unset`  | Remove your saved birthday for this server                                                                                    |
 
 ### Minigames
 
@@ -204,6 +207,8 @@ If you find this useful, consider leaving a star.
 | `/welcome unset`        | Disable welcome messages for this server (Manage Server)                                                           |
 | `/farewell set`         | Set the channel and optional message for member leave announcements (Manage Server)                                |
 | `/farewell unset`       | Disable farewell messages for this server (Manage Server)                                                          |
+| `/birthdayconfig set`   | Set the channel, optional message, and optional role for birthday announcements (Manage Server)                    |
+| `/birthdayconfig unset` | Disable birthday announcements for this server (Manage Server)                                                     |
 | `/lockdown lock`        | Prevent everyone from sending messages in the current channel, with an optional reason (Manage Channels)           |
 | `/lockdown remove`      | Restore normal messaging permissions in the current channel (Manage Channels)                                      |
 | `/antiraid setrole`     | Set the quarantine role assigned to new members during a lockdown, applying overwrites immediately (Manage Server) |

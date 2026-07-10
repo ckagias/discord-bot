@@ -10,6 +10,7 @@ const HeistSchema = require('../models/HeistSchema');
 const { updateBalance } = require('../utils/economy');
 const ReminderSchema = require('../models/ReminderSchema');
 const { sendReminder, scheduleReminder } = require('../slashCommands/utility/remind');
+const { checkBirthdays } = require('../utils/birthday');
 const log = require('../utils/log');
 const logger = log.scope('clientReady');
 const giveawayLogger = log.scope('giveaway');
@@ -17,6 +18,7 @@ const pollLogger = log.scope('poll');
 const remindLogger = log.scope('remind');
 const heistLogger = log.scope('heist');
 const autoroleLogger = log.scope('autorole');
+const birthdayLogger = log.scope('birthday');
 
 module.exports = {
     name: 'clientReady',
@@ -73,8 +75,26 @@ module.exports = {
         await restorePunishments(client);
         await restoreLockdowns(client);
         await restoreAutoroles(client);
+        scheduleBirthdayCheck(client);
     }
 };
+
+// Runs the birthday check once now (covers birthdays missed while offline), then re-aligns
+// to fire once every local midnight.
+function scheduleBirthdayCheck(client) {
+    const runAndReschedule = async () => {
+        await checkBirthdays(client).catch(err => birthdayLogger.error('Birthday check failed:', err));
+        setTimeout(runAndReschedule, msUntilNextMidnight());
+    };
+
+    runAndReschedule();
+}
+
+function msUntilNextMidnight() {
+    const now = new Date();
+    const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
+    return nextMidnight.getTime() - now.getTime();
+}
 
 // Cancel any heists that were in-flight when the bot restarted and refund all entry fees.
 // The in-memory setTimeout is lost on restart so these would never resolve otherwise.

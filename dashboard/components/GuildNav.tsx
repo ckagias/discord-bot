@@ -17,6 +17,7 @@ const STYLES = {
 const SECTIONS = [
   { slug: "general",        label: "General" },
   { slug: "welcome",        label: "Welcome & Farewell" },
+  { slug: "birthdays",      label: "Birthdays" },
   { slug: "moderation",     label: "Moderation" },
   { slug: "automod",        label: "Auto-Mod" },
   { slug: "anti-raid",      label: "Anti-Raid" },

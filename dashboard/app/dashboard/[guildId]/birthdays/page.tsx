@@ -1,0 +1,68 @@
+import { connectDB } from "@/lib/db";
+import { fetchGuildChannels, fetchGuildRoles } from "@/lib/discord";
+import Guild, { GuildDoc } from "@/lib/models/Guild";
+import SettingsCard from "@/components/SettingsCard";
+import SectionForm from "@/components/SectionForm";
+import { ChannelField, RoleField, TextField } from "@/components/Field";
+import { updateBirthdaySettings } from "./actions";
+
+const STYLES = {
+  heading: "mb-6 text-2xl font-semibold text-black dark:text-zinc-50",
+};
+
+const TEXT_CHANNEL_TYPE = 0;
+
+export default async function BirthdaySettingsPage({
+  params,
+}: {
+  params: Promise<{ guildId: string }>;
+}) {
+  const { guildId } = await params;
+  await connectDB();
+
+  const [guildDoc, channels, roles] = await Promise.all([
+    Guild.findOne({ guildId }).lean<GuildDoc>(),
+    fetchGuildChannels(guildId),
+    fetchGuildRoles(guildId),
+  ]);
+
+  const guild: Pick<GuildDoc, "birthdayChannelId" | "birthdayMessage" | "birthdayRoleId"> = guildDoc ?? {
+    birthdayChannelId: null,
+    birthdayMessage: null,
+    birthdayRoleId: null,
+  };
+  const textChannels = channels.filter((c) => c.type === TEXT_CHANNEL_TYPE);
+  const assignableRoles = roles.filter((r) => r.id !== guildId && !r.managed);
+
+  return (
+    <>
+      <h1 className={STYLES.heading}>Birthdays</h1>
+      <SectionForm action={updateBirthdaySettings.bind(null, guildId)}>
+        <SettingsCard
+          title="Birthday Announcements"
+          description="Members set their birthday with /birthday set. Announcements post daily for anyone whose birthday matches."
+        >
+          <ChannelField
+            label="Announcement channel"
+            name="birthdayChannelId"
+            defaultValue={guild.birthdayChannelId}
+            channels={textChannels}
+          />
+          <TextField
+            label="Announcement message"
+            description="Use {user} to mention the member, {server} for the server name, and {age} for the age they're turning (if they gave a birth year)."
+            name="birthdayMessage"
+            defaultValue={guild.birthdayMessage}
+          />
+          <RoleField
+            label="Birthday role"
+            description="Optional. Granted for the day and automatically removed the next day."
+            name="birthdayRoleId"
+            defaultValue={guild.birthdayRoleId}
+            roles={assignableRoles}
+          />
+        </SettingsCard>
+      </SectionForm>
+    </>
+  );
+}
