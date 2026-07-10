@@ -1,26 +1,77 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ── Tokens (shared identity with the mcpatras sister project) ────────────── */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+:root {
+  --bg-dark:      oklch(0.96 0    0);
+  --bg:           oklch(1    0    0);
+  --bg-light:     oklch(1    0    0);
+  --text:         oklch(0.13 0    0);
+  --text-muted:   oklch(0.46 0    0);
+  --highlight:    oklch(0.80 0    0);
+  --border:       oklch(0.74 0    0);
+  --border-muted: oklch(0.84 0    0);
+  --primary:      oklch(0.4  0.1  340);
+  --secondary:    oklch(0.4  0.1  160);
+  --danger:       oklch(0.42 0.12  25);
+  --warning:      oklch(0.5  0.05 100);
+  --success:      oklch(0.5  0.05 160);
+  --info:         oklch(0.5  0.05 260);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg-dark:      oklch(0.16 0    0);
+    --bg:           oklch(0.20 0    0);
+    --bg-light:     oklch(0.25 0    0);
+    --text:         oklch(0.96 0    0);
+    --text-muted:   oklch(0.60 0    0);
+    --highlight:    oklch(0.5  0    0);
+    --border:       oklch(0.28 0    0);
+    --border-muted: oklch(0.22 0    0);
+    --primary:      oklch(0.76 0.1  340);
+    --secondary:    oklch(0.76 0.1  160);
+    --danger:       oklch(0.7  0.05  30);
+    --warning:      oklch(0.7  0.05 100);
+    --success:      oklch(0.7  0.05 160);
+    --info:         oklch(0.7  0.05 260);
   }
 }
 
+@theme inline {
+  --color-bg-dark:      var(--bg-dark);
+  --color-bg:           var(--bg);
+  --color-bg-light:     var(--bg-light);
+  --color-text:         var(--text);
+  --color-text-muted:   var(--text-muted);
+  --color-highlight:    var(--highlight);
+  --color-border:       var(--border);
+  --color-border-muted: var(--border-muted);
+  --color-primary:      var(--primary);
+  --color-secondary:    var(--secondary);
+  --color-danger:       var(--danger);
+  --color-warning:      var(--warning);
+  --color-success:      var(--success);
+  --color-info:         var(--info);
+  --color-background:   var(--bg-dark);
+  --color-foreground:   var(--text);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg-dark);
+  color: var(--text);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
+
+::selection {
+  background: color-mix(in oklch, var(--primary) 20%, transparent);
+  color: var(--primary);
+}
+
+::-webkit-scrollbar       { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }

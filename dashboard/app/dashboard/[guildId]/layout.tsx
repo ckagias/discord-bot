@@ -1,26 +1,16 @@
 import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
 import { ForbiddenError, requireGuildAccess } from "@/lib/authorize";
 import { fetchUserGuilds } from "@/lib/discord";
 import { getSession } from "@/lib/session";
 import GuildNav from "@/components/GuildNav";
+import DashboardTopbar from "@/components/DashboardTopbar";
 
 const STYLES = {
-  page: "flex flex-1 bg-zinc-50 font-sans dark:bg-black",
+  shell: "flex h-screen flex-col overflow-hidden bg-[var(--bg-dark)] font-sans",
+  page: "flex flex-1 min-h-0",
   sidebar:
-    "flex w-64 shrink-0 flex-col gap-6 border-r border-zinc-200 px-4 py-6 dark:border-zinc-800",
-  backLink:
-    "flex items-center gap-1.5 px-3 text-xs font-medium text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-zinc-50",
-  backIcon: "h-3.5 w-3.5",
-  guildHeader: "flex items-center gap-3 px-3",
-  guildIcon: "h-9 w-9 shrink-0 rounded-full object-cover",
-  guildIconFallback:
-    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#5865F2] text-sm font-semibold text-white",
-  guildName: "truncate text-sm font-semibold text-black dark:text-zinc-50",
-  spacer: "flex-1",
-  logoutButton:
-    "cursor-pointer px-3 text-left text-sm font-medium text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-zinc-50",
-  main: "flex-1 px-10 py-10",
+    "flex w-56 shrink-0 flex-col overflow-y-auto border-r border-[var(--border-muted)] px-4 pt-4 pb-6",
+  main: "flex-1 overflow-y-auto px-10 pt-6 pb-10",
   mainInner: "max-w-2xl",
 };
 
@@ -57,44 +47,24 @@ export default async function GuildLayout({
   const guild = userGuilds.find((g) => g.id === guildId);
   const iconUrl = guild ? guildIconUrl(guild.id, guild.icon) : null;
   const initial = guild?.name?.charAt(0).toUpperCase() ?? "?";
+  const username = session.username ?? "Account";
 
   return (
-    <div className={STYLES.page}>
-      <aside className={STYLES.sidebar}>
-        <Link href="/dashboard" className={STYLES.backLink}>
-          <svg
-            viewBox="0 0 20 20"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={STYLES.backIcon}
-          >
-            <path d="M12.5 15 7.5 10l5-5" />
-          </svg>
-          All servers
-        </Link>
-        <div className={STYLES.guildHeader}>
-          {iconUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={iconUrl} alt="" className={STYLES.guildIcon} />
-          ) : (
-            <span className={STYLES.guildIconFallback}>{initial}</span>
-          )}
-          <span className={STYLES.guildName}>{guild?.name ?? "Server"}</span>
-        </div>
-        <GuildNav guildId={guildId} />
-        <div className={STYLES.spacer} />
-        <form action="/api/auth/logout" method="POST">
-          <button type="submit" className={STYLES.logoutButton}>
-            Log out
-          </button>
-        </form>
-      </aside>
-      <main className={STYLES.main}>
-        <div className={STYLES.mainInner}>{children}</div>
-      </main>
+    <div className={STYLES.shell}>
+      <DashboardTopbar
+        userId={session.userId ?? ""}
+        username={username}
+        avatar={session.avatar ?? null}
+        guild={{ name: guild?.name ?? "Server", iconUrl, initial }}
+      />
+      <div className={STYLES.page}>
+        <aside className={STYLES.sidebar}>
+          <GuildNav guildId={guildId} />
+        </aside>
+        <main className={STYLES.main}>
+          <div className={STYLES.mainInner}>{children}</div>
+        </main>
+      </div>
     </div>
   );
 }

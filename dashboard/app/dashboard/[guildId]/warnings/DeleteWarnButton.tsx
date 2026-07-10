@@ -5,7 +5,7 @@ import { deleteWarn } from "./actions";
 
 const STYLES = {
   button:
-    "cursor-pointer rounded px-2 py-1 text-xs font-medium text-zinc-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-40 dark:hover:bg-red-950/40 dark:hover:text-red-400",
+    "cursor-pointer rounded px-2 py-1 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] disabled:opacity-40",
 };
 
 export default function DeleteWarnButton({

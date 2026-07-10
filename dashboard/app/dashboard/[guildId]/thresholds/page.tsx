@@ -3,7 +3,7 @@ import Guild, { GuildDoc, WarnThreshold } from "@/lib/models/Guild";
 import ThresholdsForm from "./ThresholdsForm";
 
 const STYLES = {
-  heading: "mb-6 text-2xl font-semibold text-black dark:text-zinc-50",
+  heading: "mb-6 text-2xl font-semibold text-[var(--text)]",
 };
 
 export default async function ThresholdsPage({

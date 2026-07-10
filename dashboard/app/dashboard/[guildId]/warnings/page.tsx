@@ -6,20 +6,20 @@ import WarnSearch from "./WarnSearch";
 import DeleteWarnButton from "./DeleteWarnButton";
 
 const STYLES = {
-  heading: "mb-6 text-2xl font-semibold text-black dark:text-zinc-50",
-  table: "w-full text-sm",
-  thead: "border-b border-zinc-200 dark:border-zinc-800",
-  th: "pb-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400",
+  heading: "mb-6 text-2xl font-semibold text-[var(--text)]",
+  table: "text-sm",
+  thead: "border-b border-[var(--border-muted)]",
+  th: "pb-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]",
   thRight:
-    "pb-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400",
+    "pb-3 text-right text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]",
   thSortable:
-    "cursor-pointer select-none pb-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-zinc-50",
-  tr: "border-b border-zinc-100 last:border-0 dark:border-zinc-800/60",
-  td: "py-3 text-black dark:text-zinc-100",
-  tdMuted: "py-3 text-zinc-500 dark:text-zinc-400",
-  tdRight: "py-3 text-right text-black dark:text-zinc-100",
-  code: "rounded bg-zinc-100 px-1.5 py-0.5 text-xs dark:bg-zinc-800",
-  empty: "text-sm text-zinc-500 dark:text-zinc-400",
+    "cursor-pointer select-none pb-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] hover:text-[var(--text)]",
+  tr: "border-b border-[var(--border-muted)] last:border-0",
+  td: "py-3 text-[var(--text)]",
+  tdMuted: "py-3 text-[var(--text-muted)]",
+  tdRight: "py-3 text-right text-[var(--text)]",
+  code: "rounded bg-[var(--bg-light)] px-1.5 py-0.5 text-xs",
+  empty: "text-sm text-[var(--text-muted)]",
 };
 
 function formatDate(d: Date) {
@@ -60,50 +60,52 @@ export default async function WarningsPage({
   return (
     <>
       <h1 className={STYLES.heading}>Warnings</h1>
-      <SettingsCard
-        title="Warnings"
-        description="All warnings issued in this server. Filter by user ID to view a member's history."
-      >
-        <WarnSearch defaultValue={userId ?? ""} order={order ?? "desc"} />
-        {warns.length === 0 ? (
-          <p className={STYLES.empty}>
-            {userId ? `No warnings found for user ID ${userId}.` : "No warnings issued yet."}
-          </p>
-        ) : (
-          <table className={STYLES.table}>
-            <thead className={STYLES.thead}>
-              <tr>
-                <th className={STYLES.th}>User</th>
-                <th className={STYLES.th}>Moderator</th>
-                <th className={STYLES.th}>Reason</th>
-                <th className={STYLES.thSortable}>
-                  <Link href={toggleOrderHref()}>
-                    Date {sortAsc ? "↑" : "↓"}
-                  </Link>
-                </th>
-                <th className={STYLES.th}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {warns.map((w) => (
-                <tr key={String(w._id)} className={STYLES.tr}>
-                  <td className={STYLES.td}>
-                    <code className={STYLES.code}>{w.userId}</code>
-                  </td>
-                  <td className={STYLES.tdMuted}>
-                    <code className={STYLES.code}>{w.moderatorId}</code>
-                  </td>
-                  <td className={STYLES.td}>{w.reason}</td>
-                  <td className={STYLES.tdRight}>{formatDate(w.createdAt)}</td>
-                  <td className="py-3 pl-3 text-right">
-                    <DeleteWarnButton guildId={guildId} warnId={String(w._id)} />
-                  </td>
+      <div className="max-w-xl">
+        <SettingsCard
+          title="Warnings"
+          description="Every warning issued, searchable by user ID."
+        >
+          <WarnSearch defaultValue={userId ?? ""} order={order ?? "desc"} />
+          {warns.length === 0 ? (
+            <p className={STYLES.empty}>
+              {userId ? `No warnings found for user ID ${userId}.` : "No warnings issued yet."}
+            </p>
+          ) : (
+            <table className={STYLES.table}>
+              <thead className={STYLES.thead}>
+                <tr>
+                  <th className={STYLES.th}>User</th>
+                  <th className={STYLES.th}>Moderator</th>
+                  <th className={STYLES.th}>Reason</th>
+                  <th className={STYLES.thSortable}>
+                    <Link href={toggleOrderHref()}>
+                      Date {sortAsc ? "↑" : "↓"}
+                    </Link>
+                  </th>
+                  <th className={STYLES.th}></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </SettingsCard>
+              </thead>
+              <tbody>
+                {warns.map((w) => (
+                  <tr key={String(w._id)} className={STYLES.tr}>
+                    <td className={STYLES.td}>
+                      <code className={STYLES.code}>{w.userId}</code>
+                    </td>
+                    <td className={STYLES.tdMuted}>
+                      <code className={STYLES.code}>{w.moderatorId}</code>
+                    </td>
+                    <td className={STYLES.td}>{w.reason}</td>
+                    <td className={STYLES.tdRight}>{formatDate(w.createdAt)}</td>
+                    <td className="py-3 pl-3 text-right">
+                      <DeleteWarnButton guildId={guildId} warnId={String(w._id)} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </SettingsCard>
+      </div>
     </>
   );
 }

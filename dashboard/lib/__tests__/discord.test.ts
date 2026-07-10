@@ -156,6 +156,38 @@ describe("discord lib", () => {
       await expect(fetchGuildChannels("guild1")).resolves.toEqual(channels);
     });
 
+    it("fetchGuildChannels serves cached channels on a subsequent call without refetching", async () => {
+      process.env.Token = "bot-token";
+      const channels = [{ id: "1", name: "general", type: 0 }];
+      vi.mocked(fetch).mockResolvedValue(jsonResponse(channels));
+
+      const { fetchGuildChannels } = await import("@/lib/discord");
+      await fetchGuildChannels("guild-cache");
+      await fetchGuildChannels("guild-cache");
+
+      expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("fetchGuildChannels serves stale cached data on a 429 instead of throwing", async () => {
+      process.env.Token = "bot-token";
+      const channels = [{ id: "1", name: "general", type: 0 }];
+      vi.mocked(fetch)
+        .mockResolvedValueOnce(jsonResponse(channels))
+        .mockResolvedValueOnce(jsonResponse({}, 429));
+
+      const { fetchGuildChannels } = await import("@/lib/discord");
+      await fetchGuildChannels("guild-429");
+      await expect(fetchGuildChannels("guild-429")).resolves.toEqual(channels);
+    });
+
+    it("fetchGuildChannels throws on a 429 with no cached data", async () => {
+      process.env.Token = "bot-token";
+      vi.mocked(fetch).mockResolvedValue(jsonResponse({ message: "rate limited" }, 429));
+
+      const { fetchGuildChannels } = await import("@/lib/discord");
+      await expect(fetchGuildChannels("guild-429-empty")).rejects.toThrow(/429/);
+    });
+
     it("fetchGuildRoles returns roles using the bot token", async () => {
       process.env.Token = "bot-token";
       const roles = [{ id: "1", name: "admin", managed: false }];
@@ -163,6 +195,38 @@ describe("discord lib", () => {
 
       const { fetchGuildRoles } = await import("@/lib/discord");
       await expect(fetchGuildRoles("guild1")).resolves.toEqual(roles);
+    });
+
+    it("fetchGuildRoles serves cached roles on a subsequent call without refetching", async () => {
+      process.env.Token = "bot-token";
+      const roles = [{ id: "1", name: "admin", managed: false }];
+      vi.mocked(fetch).mockResolvedValue(jsonResponse(roles));
+
+      const { fetchGuildRoles } = await import("@/lib/discord");
+      await fetchGuildRoles("guild-role-cache");
+      await fetchGuildRoles("guild-role-cache");
+
+      expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("fetchGuildRoles serves stale cached data on a 429 instead of throwing", async () => {
+      process.env.Token = "bot-token";
+      const roles = [{ id: "1", name: "admin", managed: false }];
+      vi.mocked(fetch)
+        .mockResolvedValueOnce(jsonResponse(roles))
+        .mockResolvedValueOnce(jsonResponse({}, 429));
+
+      const { fetchGuildRoles } = await import("@/lib/discord");
+      await fetchGuildRoles("guild-role-429");
+      await expect(fetchGuildRoles("guild-role-429")).resolves.toEqual(roles);
+    });
+
+    it("fetchGuildRoles throws on a 429 with no cached data", async () => {
+      process.env.Token = "bot-token";
+      vi.mocked(fetch).mockResolvedValue(jsonResponse({ message: "rate limited" }, 429));
+
+      const { fetchGuildRoles } = await import("@/lib/discord");
+      await expect(fetchGuildRoles("guild-role-429-empty")).rejects.toThrow(/429/);
     });
 
     it("fetchBotGuildIds paginates until a short page is returned", async () => {

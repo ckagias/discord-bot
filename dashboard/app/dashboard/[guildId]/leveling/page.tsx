@@ -9,19 +9,19 @@ import { updateLevelingSettings } from "./actions";
 import LevelRolesForm from "./LevelRolesForm";
 
 const STYLES = {
-  heading: "mb-6 text-2xl font-semibold text-black dark:text-zinc-50",
+  heading: "mb-6 text-2xl font-semibold text-[var(--text)]",
   stack: "flex flex-col gap-8 max-w-xl",
-  table: "w-full text-sm",
-  thead: "border-b border-zinc-200 dark:border-zinc-800",
-  th: "pb-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400",
-  thRight: "pb-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400",
-  tr: "border-b border-zinc-100 last:border-0 dark:border-zinc-800/60",
-  td: "py-3 text-black dark:text-zinc-100",
-  tdRight: "py-3 text-right tabular-nums text-black dark:text-zinc-100",
-  tdMuted: "py-3 text-zinc-500 dark:text-zinc-400",
-  rank: "font-semibold text-zinc-400 dark:text-zinc-500 w-8",
+  table: "text-sm",
+  thead: "border-b border-[var(--border-muted)]",
+  th: "pb-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]",
+  thRight: "pb-3 text-right text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]",
+  tr: "border-b border-[var(--border-muted)] last:border-0",
+  td: "py-3 text-[var(--text)]",
+  tdRight: "py-3 text-right tabular-nums text-[var(--text)]",
+  tdMuted: "py-3 text-[var(--text-muted)]",
+  rank: "font-semibold text-[var(--text-muted)] w-8",
   medal: "text-base w-8",
-  empty: "text-sm text-zinc-500 dark:text-zinc-400",
+  empty: "text-sm text-[var(--text-muted)]",
 };
 
 const MEDALS = ["🥇", "🥈", "🥉"];
@@ -76,10 +76,7 @@ export default async function LevelingPage({
           </SettingsCard>
         </SectionForm>
         <LevelRolesForm guildId={guildId} initial={guild.levelRoles} roles={roles} />
-        <SettingsCard
-          title="Leaderboard"
-          description="Top 20 members by level and XP in this server. Updates live from the database."
-        >
+        <SettingsCard title="Leaderboard" description="Top 20 by level and XP.">
           {top.length === 0 ? (
             <p className={STYLES.empty}>
               No one has earned XP yet. Members gain XP by chatting.
@@ -103,7 +100,7 @@ export default async function LevelingPage({
                       </span>
                     </td>
                     <td className={STYLES.td}>
-                      <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs dark:bg-zinc-800">
+                      <code className="rounded bg-[var(--bg-light)] px-1.5 py-0.5 text-xs">
                         {entry.userId}
                       </code>
                     </td>

@@ -5,7 +5,7 @@ import type { ShopDoc } from "@/lib/models/Shop";
 import ShopForm from "./ShopForm";
 
 const STYLES = {
-  heading: "mb-6 text-2xl font-semibold text-black dark:text-zinc-50",
+  heading: "mb-6 text-2xl font-semibold text-[var(--text)]",
 };
 
 export default async function ShopPage({

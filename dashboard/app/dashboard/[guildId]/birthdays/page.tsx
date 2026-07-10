@@ -7,10 +7,12 @@ import { ChannelField, RoleField, TextField } from "@/components/Field";
 import { updateBirthdaySettings } from "./actions";
 
 const STYLES = {
-  heading: "mb-6 text-2xl font-semibold text-black dark:text-zinc-50",
+  heading: "mb-6 text-2xl font-semibold text-[var(--text)]",
 };
 
 const TEXT_CHANNEL_TYPE = 0;
+// Keep in sync with utils/birthday.js's DEFAULT_BIRTHDAY_MESSAGE.
+const DEFAULT_BIRTHDAY_MESSAGE = "Happy Birthday {user}! You turn {age} today! 🎉";
 
 export default async function BirthdaySettingsPage({
   params,
@@ -50,9 +52,9 @@ export default async function BirthdaySettingsPage({
           />
           <TextField
             label="Announcement message"
-            description="Use {user} to mention the member, {server} for the server name, and {age} for the age they're turning (if they gave a birth year)."
+            description="Supports {user}, {server}, and {age} (if a birth year was given)."
             name="birthdayMessage"
-            defaultValue={guild.birthdayMessage}
+            defaultValue={guild.birthdayMessage ?? DEFAULT_BIRTHDAY_MESSAGE}
           />
           <RoleField
             label="Birthday role"

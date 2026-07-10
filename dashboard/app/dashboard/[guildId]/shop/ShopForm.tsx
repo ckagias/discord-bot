@@ -14,30 +14,30 @@ const STYLES = {
   form: "flex flex-col gap-6 max-w-2xl",
   footer: "flex items-center gap-3",
   submitButton:
-    "cursor-pointer self-start rounded-full bg-[#5865F2] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#4752c4] disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:text-zinc-500 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-600",
-  savedText: "text-sm text-green-600 dark:text-green-400",
-  errorText: "text-sm text-red-600 dark:text-red-400",
-  row: "flex flex-col gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800",
+    "cursor-pointer self-start rounded-[8px] bg-[var(--primary)] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:bg-[var(--border)] disabled:text-[var(--text-muted)] disabled:opacity-100",
+  savedText: "text-sm text-[var(--success)]",
+  errorText: "text-sm text-[var(--danger)]",
+  row: "flex flex-col gap-3 rounded-lg border border-[var(--border-muted)] p-4",
   rowHeader: "flex items-center justify-between gap-3",
-  rowTitle: "text-sm font-semibold text-black dark:text-zinc-50",
+  rowTitle: "text-sm font-semibold text-[var(--text)]",
   rowFields: "grid grid-cols-1 gap-3 sm:grid-cols-2",
   rowFieldFull: "flex flex-col gap-1.5 sm:col-span-2",
   rowField: "flex flex-col gap-1.5",
-  label: "text-sm font-medium text-black dark:text-zinc-50",
+  label: "text-sm font-medium text-[var(--text)]",
   input:
-    "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-black outline-none transition-colors focus:border-[#5865F2] dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50",
+    "w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--primary)]",
   numberInput:
-    "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-black outline-none transition-colors focus:border-[#5865F2] dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+    "w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--primary)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
   select:
-    "cursor-pointer w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-black outline-none transition-colors focus:border-[#5865F2] dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50",
+    "cursor-pointer w-full appearance-none rounded-lg border border-[var(--border)] bg-[var(--bg)] bg-[url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20stroke%3D%22%23888%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M5%207.5%2010%2012.5%2015%207.5%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:12px] bg-[right_1rem_center] pl-3 pr-9 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--primary)]",
   checkboxRow: "flex items-center gap-2",
-  checkbox: "h-4 w-4 cursor-pointer accent-[#5865F2]",
-  checkboxLabel: "text-sm text-black dark:text-zinc-50",
+  checkbox: "h-4 w-4 cursor-pointer accent-[var(--primary)]",
+  checkboxLabel: "text-sm text-[var(--text)]",
   removeButton:
-    "cursor-pointer shrink-0 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs text-zinc-500 transition-colors hover:border-red-300 hover:text-red-500 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-red-800 dark:hover:text-red-400",
+    "cursor-pointer shrink-0 rounded-lg border border-[var(--border-muted)] px-3 py-1.5 text-xs text-[var(--text-muted)] transition-colors hover:border-[var(--danger)] hover:text-[var(--danger)]",
   addButton:
-    "cursor-pointer self-start rounded-lg border border-dashed border-zinc-300 px-4 py-2 text-sm text-zinc-500 transition-colors hover:border-[#5865F2] hover:text-[#5865F2] dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-[#5865F2] dark:hover:text-[#5865F2]",
-  empty: "text-sm text-zinc-500 dark:text-zinc-400",
+    "cursor-pointer self-start rounded-lg border border-dashed border-[var(--border)] px-4 py-2 text-sm text-[var(--text-muted)] transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)]",
+  empty: "text-sm text-[var(--text-muted)]",
 };
 
 function blankRow(key: number, firstRoleId: string): Row {
@@ -132,7 +132,7 @@ export default function ShopForm({
     <form onSubmit={handleSubmit} className={STYLES.form}>
       <SettingsCard
         title="Shop Items"
-        description="Add, edit, or remove items players can buy with coins. Role items grant a Discord role on purchase; badge items add an emoji to the buyer's /profile."
+        description="Role items grant a Discord role on purchase; badge items add an emoji to /profile."
       >
         {rows.length === 0 ? (
           <p className={STYLES.empty}>No items in the shop yet. Add one below.</p>
@@ -141,7 +141,7 @@ export default function ShopForm({
             <div key={row.key} className={STYLES.row}>
               <div className={STYLES.rowHeader}>
                 <span className={STYLES.rowTitle}>
-                  {row.name || <span className="italic text-zinc-400">Untitled item</span>}
+                  {row.name || <span className="italic text-[var(--text-muted)]">Untitled item</span>}
                 </span>
                 <button
                   type="button"
@@ -177,8 +177,8 @@ export default function ShopForm({
                     }
                     className={STYLES.select}
                   >
-                    <option value="role">Role — grants a Discord role</option>
-                    <option value="badge">Badge — emoji on /profile</option>
+                    <option value="role">Role (grants a Discord role)</option>
+                    <option value="badge">Badge (emoji on /profile)</option>
                   </select>
                 </div>
 

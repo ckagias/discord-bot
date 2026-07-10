@@ -2,21 +2,21 @@ import type { DiscordChannel, DiscordRole } from "@/lib/discord";
 
 const STYLES = {
   field: "flex flex-col gap-1.5",
-  label: "text-sm font-medium text-black dark:text-zinc-50",
-  description: "text-sm text-zinc-500 dark:text-zinc-400",
+  label: "text-sm font-medium text-[var(--text)]",
+  description: "text-sm text-[var(--text-muted)]",
   select:
-    "cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-black outline-none transition-colors focus:border-[#5865F2] dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50",
+    "cursor-pointer appearance-none rounded-lg border border-[var(--border)] bg-[var(--bg-light)] bg-[url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20stroke%3D%22%23888%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M5%207.5%2010%2012.5%2015%207.5%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:12px] bg-[right_1rem_center] pl-3 pr-9 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--primary)]",
   input:
-    "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-black outline-none transition-colors focus:border-[#5865F2] dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50",
+    "rounded-lg border border-[var(--border)] bg-[var(--bg-light)] px-3 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--primary)]",
   textarea:
-    "min-h-24 resize-y rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-black outline-none transition-colors focus:border-[#5865F2] dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50",
+    "min-h-24 resize-y rounded-lg border border-[var(--border)] bg-[var(--bg-light)] px-3 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--primary)]",
   checkboxRow: "flex items-center justify-between gap-4",
   checkboxText: "flex flex-col gap-1",
   toggleLabel: "relative inline-flex h-6 w-11 shrink-0 cursor-pointer",
   toggleTrack:
-    "absolute inset-0 rounded-full bg-zinc-300 transition-colors peer-checked:bg-[#5865F2] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#5865F2] dark:bg-zinc-700",
+    "absolute inset-0 rounded-full bg-[var(--border)] transition-colors peer-checked:bg-[var(--primary)] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--primary)]",
   toggleKnob:
-    "pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 translate-x-0 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5",
+    "pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 translate-x-0 rounded-full bg-[var(--bg)] shadow transition-transform peer-checked:translate-x-5",
   toggleInput: "peer sr-only",
 };
 
@@ -25,13 +25,13 @@ function FieldShell({
   description,
   children,
 }: {
-  label: string;
+  label?: string;
   description?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className={STYLES.field}>
-      <label className={STYLES.label}>{label}</label>
+      {label && <label className={STYLES.label}>{label}</label>}
       {description && <p className={STYLES.description}>{description}</p>}
       {children}
     </div>
@@ -46,7 +46,7 @@ export function ChannelField({
   channels,
   onChange,
 }: {
-  label: string;
+  label?: string;
   description?: string;
   name: string;
   defaultValue: string | null;
@@ -58,6 +58,7 @@ export function ChannelField({
       <select
         key={defaultValue ?? ""}
         name={name}
+        aria-label={label ?? name}
         defaultValue={defaultValue ?? ""}
         className={STYLES.select}
         onChange={onChange ? (e) => onChange(e.target.value) : undefined}
@@ -81,7 +82,7 @@ export function RoleField({
   roles,
   onChange,
 }: {
-  label: string;
+  label?: string;
   description?: string;
   name: string;
   defaultValue: string | null;
@@ -93,6 +94,7 @@ export function RoleField({
       <select
         key={defaultValue ?? ""}
         name={name}
+        aria-label={label ?? name}
         defaultValue={defaultValue ?? ""}
         className={STYLES.select}
         onChange={onChange ? (e) => onChange(e.target.value) : undefined}

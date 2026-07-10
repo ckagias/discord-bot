@@ -7,18 +7,18 @@ import { ChannelField, RoleField, TextField, ToggleField } from "@/components/Fi
 import { updateAntiRaidSettings } from "./actions";
 
 const STYLES = {
-  heading: "mb-6 text-2xl font-semibold text-black dark:text-zinc-50",
+  heading: "mb-6 text-2xl font-semibold text-[var(--text)]",
   stack: "flex flex-col gap-8 max-w-xl",
   lockdownBadge: (locked: boolean) =>
     [
       "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
       locked
-        ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-        : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
+        ? "bg-[var(--danger)]/10 text-[var(--danger)]"
+        : "bg-[var(--bg-light)] text-[var(--text-muted)]",
     ].join(" "),
   lockdownRow: "flex items-center gap-3",
-  lockdownLabel: "text-sm font-medium text-black dark:text-zinc-50",
-  lockdownHint: "mt-1 text-sm text-zinc-500 dark:text-zinc-400",
+  lockdownLabel: "text-sm font-medium text-[var(--text)]",
+  lockdownHint: "mt-1 text-sm text-[var(--text-muted)]",
 };
 
 const TEXT_CHANNEL_TYPE = 0;
@@ -75,7 +75,7 @@ export default async function AntiRaidPage({
         {/* Lockdown status — read-only, managed via /antiraid lock/unlock in Discord */}
         <SettingsCard
           title="Lockdown Status"
-          description="Use /antiraid lock and /antiraid unlock in Discord. Unlocking automatically releases all quarantined members and posts a summary."
+          description="Managed with /antiraid lock and /antiraid unlock in Discord."
         >
           <div className={STYLES.lockdownRow}>
             <span className={STYLES.lockdownLabel}>Current state</span>
@@ -107,14 +107,14 @@ export default async function AntiRaidPage({
           >
             <RoleField
               label="Quarantine role"
-              description="Role assigned to new members during a lockdown. The bot will deny it access to all channels. Set this up in Discord first with /antiraid setrole so overwrites are applied immediately."
+              description="Set up with /antiraid setrole so overwrites apply immediately."
               name="antiRaidQuarantineRoleId"
               defaultValue={guild.antiRaidQuarantineRoleId}
               roles={assignableRoles}
             />
             <ChannelField
               label="Alert channel"
-              description="Where lockdown alerts and surge notices are sent. Falls back to the server log channel if not set."
+              description="Falls back to the server log channel if not set."
               name="antiRaidAlertChannelId"
               defaultValue={guild.antiRaidAlertChannelId}
               channels={textChannels}

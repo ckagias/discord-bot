@@ -20,8 +20,8 @@ module.exports = {
                 .addStringOption(opt =>
                     opt.setName('type').setDescription('Item type').setRequired(true)
                         .addChoices(
-                            { name: 'Role — grants a Discord role', value: 'role' },
-                            { name: 'Badge — emoji shown on /profile', value: 'badge' },
+                            { name: 'Role (grants a Discord role)', value: 'role' },
+                            { name: 'Badge (emoji shown on /profile)', value: 'badge' },
                         ))
                 .addStringOption(opt =>
                     opt.setName('description').setDescription('Short description shown in the shop').setRequired(false))

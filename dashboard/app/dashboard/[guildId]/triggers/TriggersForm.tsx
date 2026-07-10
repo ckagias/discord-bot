@@ -13,22 +13,22 @@ const STYLES = {
   form: "flex flex-col gap-6 max-w-xl",
   footer: "flex items-center gap-3",
   submitButton:
-    "cursor-pointer self-start rounded-full bg-[#5865F2] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#4752c4] disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:text-zinc-500 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-600",
-  savedText: "text-sm text-green-600 dark:text-green-400",
-  errorText: "text-sm text-red-600 dark:text-red-400",
-  row: "flex flex-col gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800",
+    "cursor-pointer self-start rounded-[8px] bg-[var(--primary)] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:bg-[var(--border)] disabled:text-[var(--text-muted)] disabled:opacity-100",
+  savedText: "text-sm text-[var(--success)]",
+  errorText: "text-sm text-[var(--danger)]",
+  row: "flex flex-col gap-3 rounded-lg border border-[var(--border-muted)] p-4",
   rowHeader: "flex items-center justify-between gap-3",
   rowField: "flex flex-col gap-1.5",
-  label: "text-sm font-medium text-black dark:text-zinc-50",
+  label: "text-sm font-medium text-[var(--text)]",
   input:
-    "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-black outline-none transition-colors focus:border-[#5865F2] dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50",
+    "w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--primary)]",
   textarea:
-    "w-full min-h-20 resize-y rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-black outline-none transition-colors focus:border-[#5865F2] dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50",
+    "w-full min-h-20 resize-y rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--primary)]",
   removeButton:
-    "cursor-pointer shrink-0 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs text-zinc-500 transition-colors hover:border-red-300 hover:text-red-500 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-red-800 dark:hover:text-red-400",
+    "cursor-pointer shrink-0 rounded-lg border border-[var(--border-muted)] px-3 py-1.5 text-xs text-[var(--text-muted)] transition-colors hover:border-[var(--danger)] hover:text-[var(--danger)]",
   addButton:
-    "cursor-pointer self-start rounded-lg border border-dashed border-zinc-300 px-4 py-2 text-sm text-zinc-500 transition-colors hover:border-[#5865F2] hover:text-[#5865F2] dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-[#5865F2] dark:hover:text-[#5865F2]",
-  empty: "text-sm text-zinc-500 dark:text-zinc-400",
+    "cursor-pointer self-start rounded-lg border border-dashed border-[var(--border)] px-4 py-2 text-sm text-[var(--text-muted)] transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)]",
+  empty: "text-sm text-[var(--text-muted)]",
 };
 
 export default function TriggersForm({
@@ -99,7 +99,7 @@ export default function TriggersForm({
     <form onSubmit={handleSubmit} className={STYLES.form}>
       <SettingsCard
         title="Keyword Triggers"
-        description="When a message contains a keyword, the bot replies with the configured response. Triggers are case-insensitive and match whole words."
+        description="Case-insensitive, whole-word matches only."
       >
         {rows.length === 0 ? (
           <p className={STYLES.empty}>No triggers configured. Add one below.</p>

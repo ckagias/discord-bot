@@ -4,25 +4,25 @@ import SettingsCard from "@/components/SettingsCard";
 import { EndGiveawayButton, RerollGiveawayButton, DeleteGiveawayButton } from "./GiveawayActions";
 
 const STYLES = {
-  heading: "mb-6 text-2xl font-semibold text-black dark:text-zinc-50",
-  table: "w-full text-sm",
-  thead: "border-b border-zinc-200 dark:border-zinc-800",
-  th: "pb-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400",
+  heading: "mb-6 text-2xl font-semibold text-[var(--text)]",
+  table: "text-sm",
+  thead: "border-b border-[var(--border-muted)]",
+  th: "pb-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]",
   thRight:
-    "pb-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400",
-  tr: "border-b border-zinc-100 last:border-0 dark:border-zinc-800/60",
-  td: "py-3 text-black dark:text-zinc-100",
-  tdMuted: "py-3 text-zinc-500 dark:text-zinc-400",
-  tdRight: "py-3 text-right text-black dark:text-zinc-100",
+    "pb-3 text-right text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]",
+  tr: "border-b border-[var(--border-muted)] last:border-0",
+  td: "py-3 text-[var(--text)]",
+  tdMuted: "py-3 text-[var(--text-muted)]",
+  tdRight: "py-3 text-right text-[var(--text)]",
   badge: (ended: boolean) =>
     [
       "inline-block rounded px-1.5 py-0.5 text-xs font-semibold",
       ended
-        ? "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
-        : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+        ? "bg-[var(--bg-light)] text-[var(--text-muted)]"
+        : "bg-[var(--warning)]/10 text-[var(--warning)]",
     ].join(" "),
-  code: "rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-mono dark:bg-zinc-800",
-  empty: "text-sm text-zinc-500 dark:text-zinc-400",
+  code: "rounded bg-[var(--bg-light)] px-1.5 py-0.5 text-xs font-mono",
+  empty: "text-sm text-[var(--text-muted)]",
   actions: "flex items-center justify-end gap-1",
 };
 
@@ -132,27 +132,26 @@ export default async function GiveawaysPage({
   return (
     <>
       <h1 className={STYLES.heading}>Giveaways</h1>
-      <SettingsCard
-        title="Active"
-        description="Giveaways currently running in this server. Click End to close one early."
-      >
-        {active.length === 0 ? (
-          <p className={STYLES.empty}>No active giveaways.</p>
-        ) : (
-          <GiveawayTable guildId={guildId} rows={active} showActions="end" />
-        )}
-      </SettingsCard>
-      <div className="mt-6">
-        <SettingsCard
-          title="Past Giveaways"
-          description="Ended giveaways. Use Reroll to pick new winners from the original entrant pool."
-        >
-          {ended.length === 0 ? (
-            <p className={STYLES.empty}>No past giveaways.</p>
+      <div className="max-w-xl">
+        <SettingsCard title="Active" description="Click End to close one early.">
+          {active.length === 0 ? (
+            <p className={STYLES.empty}>No active giveaways.</p>
           ) : (
-            <GiveawayTable guildId={guildId} rows={ended} showActions="reroll" />
+            <GiveawayTable guildId={guildId} rows={active} showActions="end" />
           )}
         </SettingsCard>
+        <div className="mt-6">
+          <SettingsCard
+            title="Past Giveaways"
+            description="Reroll picks new winners from the original entrants."
+          >
+            {ended.length === 0 ? (
+              <p className={STYLES.empty}>No past giveaways.</p>
+            ) : (
+              <GiveawayTable guildId={guildId} rows={ended} showActions="reroll" />
+            )}
+          </SettingsCard>
+        </div>
       </div>
     </>
   );

@@ -4,10 +4,10 @@ import { useEffect } from "react";
 
 const STYLES = {
   page: "flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6 text-center",
-  heading: "text-xl font-semibold text-black dark:text-zinc-50",
-  message: "max-w-md text-sm text-zinc-500 dark:text-zinc-400",
+  heading: "text-xl font-semibold text-[var(--text)]",
+  message: "max-w-md text-sm text-[var(--text-muted)]",
   button:
-    "mt-2 rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-black hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-700",
+    "mt-2 rounded-lg bg-[var(--bg-light)] px-4 py-2 text-sm font-medium text-[var(--text)] hover:bg-[var(--border)]",
 };
 
 export default function GuildError({
