@@ -8,10 +8,10 @@ const STYLES = {
     [
       "cursor-pointer rounded px-2 py-1 text-xs font-medium disabled:opacity-40 transition-colors",
       variant === "danger"
-        ? "text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400"
-        : "text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200",
+        ? "text-[var(--text-muted)] hover:bg-[var(--danger)]/10 hover:text-[var(--danger)]"
+        : "text-[var(--text-muted)] hover:bg-[var(--bg-light)] hover:text-[var(--text)]",
     ].join(" "),
-  error: "mt-1 text-xs text-red-500 dark:text-red-400",
+  error: "mt-1 text-xs text-[var(--danger)]",
   wrap: "flex flex-col items-end",
   row: "flex items-center gap-1",
 };

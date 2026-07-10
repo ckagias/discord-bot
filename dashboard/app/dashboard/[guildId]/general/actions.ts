@@ -12,8 +12,6 @@ export async function updateGeneralSettings(guildId: string, formData: FormData)
 
   const update = {
     logChannelId: emptyToNull(formData.get("logChannelId")),
-    suggestChannelId: emptyToNull(formData.get("suggestChannelId")),
-    suggestApproverRoleId: emptyToNull(formData.get("suggestApproverRoleId")),
   };
 
   await Guild.findOneAndUpdate({ guildId }, update, { upsert: true });

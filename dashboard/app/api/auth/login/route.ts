@@ -1,10 +1,11 @@
 import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { buildAuthorizeUrl } from "@/lib/discord";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const state = randomBytes(16).toString("hex");
+  const switchAccount = req.nextUrl.searchParams.get("switch") === "1";
 
   const cookieStore = await cookies();
   cookieStore.set("oauth_state", state, {
@@ -14,5 +15,5 @@ export async function GET() {
     maxAge: 600,
   });
 
-  return NextResponse.redirect(buildAuthorizeUrl(state));
+  return NextResponse.redirect(buildAuthorizeUrl(state, switchAccount));
 }

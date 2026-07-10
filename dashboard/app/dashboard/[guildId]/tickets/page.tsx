@@ -9,38 +9,38 @@ import { ChannelField, RoleField } from "@/components/Field";
 import { updateTicketSettings } from "./actions";
 
 const STYLES = {
-  heading: "mb-6 text-2xl font-semibold text-black dark:text-zinc-50",
-  stack: "flex flex-col gap-8",
-  table: "w-full text-sm",
-  thead: "border-b border-zinc-200 dark:border-zinc-800",
-  th: "pb-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400",
+  heading: "mb-6 text-2xl font-semibold text-[var(--text)]",
+  stack: "flex flex-col gap-8 max-w-xl",
+  table: "text-sm",
+  thead: "border-b border-[var(--border-muted)]",
+  th: "pb-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]",
   thRight:
-    "pb-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400",
+    "pb-3 text-right text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]",
   thSortable:
-    "cursor-pointer select-none pb-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-zinc-50",
-  tr: "border-b border-zinc-100 last:border-0 dark:border-zinc-800/60",
-  td: "py-3 text-black dark:text-zinc-100",
-  tdMuted: "py-3 text-zinc-500 dark:text-zinc-400",
-  tdRight: "py-3 text-right text-black dark:text-zinc-100",
+    "cursor-pointer select-none pb-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] hover:text-[var(--text)]",
+  tr: "border-b border-[var(--border-muted)] last:border-0",
+  td: "py-3 text-[var(--text)]",
+  tdMuted: "py-3 text-[var(--text-muted)]",
+  tdRight: "py-3 text-right text-[var(--text)]",
   statusBadge: (status: string) => {
     const map: Record<string, string> = {
-      open:   "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-      closed: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+      open:   "bg-[var(--success)]/10 text-[var(--success)]",
+      closed: "bg-[var(--bg-light)] text-[var(--text-muted)]",
     };
     return [
       "inline-block rounded px-1.5 py-0.5 text-xs font-semibold capitalize",
-      map[status] ?? "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+      map[status] ?? "bg-[var(--bg-light)] text-[var(--text-muted)]",
     ].join(" ");
   },
-  code: "rounded bg-zinc-100 px-1.5 py-0.5 text-xs dark:bg-zinc-800",
-  empty: "text-sm text-zinc-500 dark:text-zinc-400",
+  code: "rounded bg-[var(--bg-light)] px-1.5 py-0.5 text-xs",
+  empty: "text-sm text-[var(--text-muted)]",
   filterBar: "mb-6 flex gap-2",
   filterLink: (active: boolean) =>
     [
       "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
       active
-        ? "bg-[#5865F2]/10 text-[#5865F2] dark:bg-[#5865F2]/15"
-        : "border border-zinc-200 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800",
+        ? "bg-[var(--primary)]/10 text-[var(--primary)]"
+        : "border border-[var(--border-muted)] text-[var(--text-muted)] hover:bg-[var(--bg-light)]",
     ].join(" "),
 };
 
@@ -120,10 +120,7 @@ export default async function TicketSettingsPage({
             />
           </SettingsCard>
         </SectionForm>
-        <SettingsCard
-          title="Open & recent tickets"
-          description="Last 50 tickets in this server, newest first. Use the status filter to narrow by open or closed."
-        >
+        <SettingsCard title="Open & recent tickets" description="Last 50, newest first.">
           <div className={STYLES.filterBar}>
             <Link href={statusFilterHref()} className={STYLES.filterLink(!status)}>All</Link>
             <Link href={statusFilterHref("open")} className={STYLES.filterLink(status === "open")}>Open</Link>

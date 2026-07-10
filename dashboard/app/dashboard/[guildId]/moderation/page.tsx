@@ -7,7 +7,7 @@ import { RoleField } from "@/components/Field";
 import { updateModerationSettings } from "./actions";
 
 const STYLES = {
-  heading: "mb-6 text-2xl font-semibold text-black dark:text-zinc-50",
+  heading: "mb-6 text-2xl font-semibold text-[var(--text)]",
   stack: "flex flex-col gap-8 max-w-xl",
 };
 
@@ -41,7 +41,6 @@ export default async function ModerationSettingsPage({
             description="Role applied to members muted by moderation commands."
           >
             <RoleField
-              label="Mute role"
               name="muteRoleId"
               defaultValue={guild.muteRoleId}
               roles={roles}
@@ -52,7 +51,6 @@ export default async function ModerationSettingsPage({
             description="Role automatically assigned to every new member when they join."
           >
             <RoleField
-              label="Autorole"
               name="autoroleId"
               defaultValue={guild.autoroleId}
               roles={assignableRoles}

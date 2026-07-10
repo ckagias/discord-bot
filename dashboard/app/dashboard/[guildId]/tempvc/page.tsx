@@ -7,7 +7,7 @@ import { ChannelField } from "@/components/Field";
 import { updateTempVcSettings } from "./actions";
 
 const STYLES = {
-  heading: "mb-6 text-2xl font-semibold text-black dark:text-zinc-50",
+  heading: "mb-6 text-2xl font-semibold text-[var(--text)]",
   stack: "flex flex-col gap-8",
 };
 
@@ -38,10 +38,9 @@ export default async function TempVcPage({
         <SectionForm action={updateTempVcSettings.bind(null, guildId)}>
           <SettingsCard
             title="Channel category"
-            description="The category where temporary voice channels are created. If unset, channels are placed in the same category as the caller's current voice channel."
+            description="If unset, uses the same category as the member's current voice channel."
           >
             <ChannelField
-              label="Temp VC category"
               name="tempVcCategoryId"
               defaultValue={guild.tempVcCategoryId}
               channels={categories}

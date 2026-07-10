@@ -7,7 +7,7 @@ import { ChannelField, TextField } from "@/components/Field";
 import { updateWelcomeSettings } from "./actions";
 
 const STYLES = {
-  heading: "mb-6 text-2xl font-semibold text-black dark:text-zinc-50",
+  heading: "mb-6 text-2xl font-semibold text-[var(--text)]",
 };
 
 const TEXT_CHANNEL_TYPE = 0;

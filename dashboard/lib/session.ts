@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 export interface SessionData {
   userId?: string;
   accessToken?: string;
+  username?: string;
+  avatar?: string | null;
 }
 
 function getSessionOptions(): SessionOptions {

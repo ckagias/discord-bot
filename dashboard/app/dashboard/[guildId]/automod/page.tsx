@@ -6,7 +6,7 @@ import { SelectField, TextAreaField, TextField, ToggleField } from "@/components
 import { updateAutomodSettings } from "./actions";
 
 const STYLES = {
-  heading: "mb-6 text-2xl font-semibold text-black dark:text-zinc-50",
+  heading: "mb-6 text-2xl font-semibold text-[var(--text)]",
 };
 
 const ACTION_OPTIONS = [
@@ -68,7 +68,7 @@ export default async function AutomodSettingsPage({
       <SectionForm action={updateAutomodSettings.bind(null, guildId)}>
         <SettingsCard
           title="Auto-Moderation"
-          description="Automatically act on messages that break your rules. Admins and moderators are never affected."
+          description="Automatically act on messages that break your rules."
         >
           <ToggleField
             label="Enable auto-moderation"

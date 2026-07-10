@@ -1,7 +1,7 @@
 const STYLES = {
-  card: "rounded-2xl border border-zinc-200 bg-white px-6 py-6 dark:border-zinc-800 dark:bg-zinc-900",
-  title: "text-base font-semibold text-black dark:text-zinc-50",
-  description: "mt-1 text-sm text-zinc-500 dark:text-zinc-400",
+  card: "rounded-2xl border border-[var(--border-muted)] bg-[var(--bg)] px-6 py-6",
+  title: "text-base font-semibold text-[var(--text)]",
+  description: "mt-1 text-sm text-[var(--text-muted)]",
   body: "mt-6 flex flex-col gap-6",
 };
 

@@ -4,12 +4,14 @@ const { requireGuildAccess } = vi.hoisted(() => ({ requireGuildAccess: vi.fn() }
 const { connectDB } = vi.hoisted(() => ({ connectDB: vi.fn() }));
 const { revalidatePath } = vi.hoisted(() => ({ revalidatePath: vi.fn() }));
 const { findOneAndDelete } = vi.hoisted(() => ({ findOneAndDelete: vi.fn() }));
+const { findOneAndUpdate } = vi.hoisted(() => ({ findOneAndUpdate: vi.fn() }));
 const { getSession } = vi.hoisted(() => ({ getSession: vi.fn() }));
 
 vi.mock("@/lib/authorize", () => ({ requireGuildAccess }));
 vi.mock("@/lib/db", () => ({ connectDB }));
 vi.mock("next/cache", () => ({ revalidatePath }));
 vi.mock("@/lib/models/Suggestion", () => ({ default: { findOneAndDelete } }));
+vi.mock("@/lib/models/Guild", () => ({ default: { findOneAndUpdate } }));
 vi.mock("@/lib/session", () => ({ getSession }));
 
 function jsonResponse(status: number, body: unknown = {}) {
@@ -111,6 +113,47 @@ describe("suggestion actions", () => {
 
       expect(result.error).toBe("db down");
       expect(revalidatePath).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("updateSuggestionSettings", () => {
+    it("checks guild access before writing", async () => {
+      requireGuildAccess.mockRejectedValue(new Error("forbidden"));
+      const { updateSuggestionSettings } = await import("./actions");
+      const formData = new FormData();
+
+      await expect(updateSuggestionSettings("guild1", formData)).rejects.toThrow("forbidden");
+      expect(findOneAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it("persists the suggestion channel and approver role, then revalidates the page", async () => {
+      const formData = new FormData();
+      formData.set("suggestChannelId", "67890");
+      formData.set("suggestApproverRoleId", "role1");
+      const { updateSuggestionSettings } = await import("./actions");
+
+      await updateSuggestionSettings("guild1", formData);
+
+      expect(requireGuildAccess).toHaveBeenCalledWith("guild1");
+      expect(findOneAndUpdate).toHaveBeenCalledWith(
+        { guildId: "guild1" },
+        { suggestChannelId: "67890", suggestApproverRoleId: "role1" },
+        { upsert: true }
+      );
+      expect(revalidatePath).toHaveBeenCalledWith("/dashboard/guild1/suggestions");
+    });
+
+    it("stores null when fields are empty", async () => {
+      const formData = new FormData();
+      const { updateSuggestionSettings } = await import("./actions");
+
+      await updateSuggestionSettings("guild1", formData);
+
+      expect(findOneAndUpdate).toHaveBeenCalledWith(
+        { guildId: "guild1" },
+        { suggestChannelId: null, suggestApproverRoleId: null },
+        { upsert: true }
+      );
     });
   });
 });

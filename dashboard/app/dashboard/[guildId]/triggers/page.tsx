@@ -4,7 +4,7 @@ import type { TriggerDoc } from "@/lib/models/Trigger";
 import TriggersForm from "./TriggersForm";
 
 const STYLES = {
-  heading: "mb-6 text-2xl font-semibold text-black dark:text-zinc-50",
+  heading: "mb-6 text-2xl font-semibold text-[var(--text)]",
 };
 
 export default async function TriggersPage({

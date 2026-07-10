@@ -3,8 +3,24 @@
 import { revalidatePath } from "next/cache";
 import { requireGuildAccess } from "@/lib/authorize";
 import { connectDB } from "@/lib/db";
+import { emptyToNull } from "@/lib/forms";
+import Guild from "@/lib/models/Guild";
 import Suggestion from "@/lib/models/Suggestion";
 import { getSession } from "@/lib/session";
+
+export async function updateSuggestionSettings(guildId: string, formData: FormData) {
+  await requireGuildAccess(guildId);
+  await connectDB();
+
+  const update = {
+    suggestChannelId: emptyToNull(formData.get("suggestChannelId")),
+    suggestApproverRoleId: emptyToNull(formData.get("suggestApproverRoleId")),
+  };
+
+  await Guild.findOneAndUpdate({ guildId }, update, { upsert: true });
+
+  revalidatePath(`/dashboard/${guildId}/suggestions`);
+}
 
 const BOT_URL = process.env.BOT_INTERNAL_URL ?? "http://bot:4000";
 const SECRET = process.env.INTERNAL_API_SECRET ?? "";
