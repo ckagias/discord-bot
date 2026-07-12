@@ -2,36 +2,20 @@
 
 import { useEffect, useState, useTransition } from "react";
 import SettingsCard from "@/components/SettingsCard";
-import { updateWarnThresholds } from "./actions";
-import type { WarnThreshold } from "@/lib/models/Guild";
+import { ChannelField, ToggleField } from "@/components/Field";
+import { updateLevelingSettings } from "./actions";
+import type { LevelRole } from "@/lib/models/Guild";
+import type { DiscordChannel, DiscordRole } from "@/lib/discord";
 
-type Action = "timeout" | "kick" | "ban";
-
-interface Row extends WarnThreshold {
+interface Row extends LevelRole {
   key: number;
 }
 
-const ACTION_OPTIONS: { value: Action; label: string }[] = [
-  { value: "timeout", label: "Timeout" },
-  { value: "kick",    label: "Kick" },
-  { value: "ban",     label: "Ban" },
-];
-
-const DURATION_OPTIONS: { value: number; label: string }[] = [
-  { value: 60,      label: "1 minute" },
-  { value: 300,     label: "5 minutes" },
-  { value: 600,     label: "10 minutes" },
-  { value: 1800,    label: "30 minutes" },
-  { value: 3600,    label: "1 hour" },
-  { value: 21600,   label: "6 hours" },
-  { value: 86400,   label: "1 day" },
-  { value: 604800,  label: "1 week" },
-  { value: 2419200, label: "28 days" },
-];
-
 const STYLES = {
-  form: "flex flex-col gap-6 max-w-xl",
-  footer: "flex items-center gap-3 -mt-3",
+  form: "flex flex-col lg:h-full",
+  card: "flex flex-col rounded-2xl border border-[var(--border-muted)] bg-[var(--bg)] px-6 py-6 lg:h-full shadow-[0_3px_6px_rgba(0,0,0,0.16),0_3px_6px_rgba(0,0,0,0.23)]",
+  body: "mt-6 flex flex-1 min-h-0 flex-col gap-6",
+  footer: "flex items-center gap-3",
   submitButton:
     "cursor-pointer self-start rounded-[8px] bg-[var(--primary)] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:bg-[var(--border)] disabled:text-[var(--text-muted)] disabled:opacity-100",
   savedText: "text-sm text-[var(--success)]",
@@ -50,20 +34,31 @@ const STYLES = {
     "cursor-pointer flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-muted)] transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)]",
   addIcon: "h-4 w-4",
   empty: "text-sm text-[var(--text-muted)]",
-  rowsScroll: "flex max-h-[30rem] flex-col gap-4 overflow-y-auto overflow-x-hidden pr-3 -mr-3",
+  rowsScroll: "flex flex-1 min-h-0 flex-col gap-4 overflow-y-auto overflow-x-hidden pr-3 -mr-3",
+  divider: "border-t border-[var(--border-muted)]",
+  sectionHeader: "flex items-center justify-between gap-3",
+  sectionTitle: "text-sm font-semibold text-[var(--text)]",
 };
 
-export default function ThresholdsForm({
+export default function LevelingSettingsForm({
   guildId,
-  initial,
+  levelingEnabled,
+  levelUpChannelId,
+  textChannels,
+  initialLevelRoles,
+  roles,
 }: {
   guildId: string;
-  initial: WarnThreshold[];
+  levelingEnabled: boolean;
+  levelUpChannelId: string | null;
+  textChannels: DiscordChannel[];
+  initialLevelRoles: LevelRole[];
+  roles: DiscordRole[];
 }) {
   const [rows, setRows] = useState<Row[]>(() =>
-    initial.map((t, i) => ({ ...t, key: i }))
+    initialLevelRoles.map((lr, i) => ({ ...lr, key: i }))
   );
-  const [nextKey, setNextKey] = useState(initial.length);
+  const [nextKey, setNextKey] = useState(initialLevelRoles.length);
   const [dirty, setDirty] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [status, setStatus] = useState<"idle" | "saved" | "error">("idle");
@@ -81,9 +76,10 @@ export default function ThresholdsForm({
   }
 
   function addRow() {
+    const defaultRoleId = roles[0]?.id ?? "";
     setRows((prev) => {
-      const maxCount = prev.reduce((max, r) => Math.max(max, r.count), 0);
-      return [...prev, { key: nextKey, count: maxCount + 1, action: "timeout", duration: 300 }];
+      const maxLevel = prev.reduce((max, r) => Math.max(max, r.level), 0);
+      return [...prev, { key: nextKey, level: maxLevel + 1, roleId: defaultRoleId }];
     });
     setNextKey((k) => k + 1);
     mark();
@@ -96,13 +92,7 @@ export default function ThresholdsForm({
 
   function updateRow(key: number, patch: Partial<Omit<Row, "key">>) {
     setRows((prev) =>
-      prev.map((r) => {
-        if (r.key !== key) return r;
-        const next = { ...r, ...patch };
-        if (next.action !== "timeout") next.duration = null;
-        if (next.action === "timeout" && next.duration === null) next.duration = 300;
-        return next;
-      })
+      prev.map((r) => (r.key !== key ? r : { ...r, ...patch }))
     );
     mark();
   }
@@ -110,13 +100,13 @@ export default function ThresholdsForm({
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus("idle");
-    const payload = rows.map(({ key: _key, ...t }) => t);
-    const fd = new FormData();
-    fd.set("warnThresholds", JSON.stringify(payload));
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    fd.set("levelRoles", JSON.stringify(rows.map(({ key: _key, ...lr }) => lr)));
 
     startTransition(async () => {
       try {
-        await updateWarnThresholds(guildId, fd);
+        await updateLevelingSettings(guildId, fd);
         setStatus("saved");
         setDirty(false);
       } catch (err) {
@@ -127,79 +117,81 @@ export default function ThresholdsForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className={STYLES.form}>
+    <form onSubmit={handleSubmit} onChange={mark} className={STYLES.form}>
       <SettingsCard
-        title="Warning Thresholds"
-        description="Each threshold fires once, the moment a member hits that warning count."
-        headerAction={
+        title="Settings"
+        description="Configure the XP leveling system for this server."
+        className={STYLES.card}
+        bodyClassName={STYLES.body}
+      >
+        <ToggleField
+          label="Enable leveling"
+          name="levelingEnabled"
+          defaultChecked={levelingEnabled}
+        />
+        <ChannelField
+          label="Level-up channel"
+          description="Where level-up announcements are posted. Leave as None to post in the channel where the member chatted."
+          name="levelUpChannelId"
+          defaultValue={levelUpChannelId}
+          channels={textChannels}
+        />
+
+        <div className={STYLES.divider} />
+
+        <div className={STYLES.sectionHeader}>
+          <span className={STYLES.sectionTitle}>Level Roles</span>
           <button
             type="button"
             onClick={addRow}
             className={STYLES.addIconButton}
-            aria-label="Add threshold"
-            title="Add threshold"
+            aria-label="Add level role"
+            title="Add level role"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={STYLES.addIcon}>
               <path d="M12 5v14" />
               <path d="M5 12h14" />
             </svg>
           </button>
-        }
-      >
+        </div>
+
         {rows.length === 0 ? (
-          <p className={STYLES.empty}>No thresholds configured. Add one below.</p>
+          <p className={STYLES.empty}>No level roles configured. Add one below.</p>
         ) : (
           <div className={STYLES.rowsScroll}>
             {rows.map((row) => (
               <div key={row.key} className={STYLES.row}>
                 <div className={STYLES.rowField}>
-                  <label className={STYLES.label}>Warnings</label>
+                  <label className={STYLES.label}>Level</label>
                   <input
                     type="number"
                     min={1}
-                    value={row.count}
+                    value={row.level}
                     onChange={(e) =>
-                      updateRow(row.key, { count: Math.max(1, parseInt(e.target.value) || 1) })
+                      updateRow(row.key, { level: Math.max(1, parseInt(e.target.value) || 1) })
                     }
                     className={STYLES.input}
                   />
                 </div>
 
                 <div className={STYLES.rowField}>
-                  <label className={STYLES.label}>Action</label>
+                  <label className={STYLES.label}>Role</label>
                   <select
-                    value={row.action}
-                    onChange={(e) => updateRow(row.key, { action: e.target.value as Action })}
+                    value={row.roleId}
+                    onChange={(e) => updateRow(row.key, { roleId: e.target.value })}
                     className={STYLES.select}
                   >
-                    {ACTION_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
+                    {roles.map((r) => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
                     ))}
                   </select>
                 </div>
-
-                {row.action === "timeout" && (
-                  <div className={STYLES.rowField}>
-                    <label className={STYLES.label}>Duration</label>
-                    <select
-                      value={row.duration ?? 300}
-                      onChange={(e) =>
-                        updateRow(row.key, { duration: parseInt(e.target.value) })
-                      }
-                      className={STYLES.select}
-                    >
-                      {DURATION_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
 
                 <button
                   type="button"
                   onClick={() => removeRow(row.key)}
                   className={STYLES.removeButton}
-                  aria-label="Remove threshold"
+                  aria-label="Remove level role"
                   title="Remove"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={STYLES.removeIcon}>

@@ -351,28 +351,28 @@ See `.env.example` for the full list with inline comments. Summary:
 
 An optional self-hosted web dashboard (`[dashboard/](dashboard)`) lets you manage your server's bot settings from the browser. It's built with Next.js, runs as an additional Docker Compose service, and shares the bot's MongoDB database. There's no centralized backend. Every self-hoster's dashboard is fully isolated to their own stack.
 
-Sign in with Discord OAuth2, pick a server where you have Manage Server and the bot is present, and manage settings from a sidebar of independently-saved sections:
+Sign in with Discord OAuth2, pick a server where you have Manage Server and the bot is present, and manage settings from a sidebar of independently-saved sections. Every page also shows a right-hand **Server stats** panel: member/online/boost counts, verification level, channel/role counts, server and bot-join dates, live bot ping/uptime, and a 7-day message activity chart with top members and open-item counts.
 
 | Section             | What you can manage                                                                                |
 | ------------------- | -------------------------------------------------------------------------------------------------- |
-| General             | Log channel, suggestion box channel and approver role                                              |
+| Overview            | Open ticket, pending suggestion, case, and warning counts, a 14-day message activity chart, top-6 XP leaderboard, a recent activity feed, and a community stats card (coins in circulation, active giveaways, shop items, reaction role messages, triggers, approved suggestions, warn thresholds) |
 | Welcome & Farewell  | Join/leave channels and messages                                                                   |
-| Moderation          | Mute role, autorole                                                                                |
+| Birthdays           | Announcement channel/message and an optional birthday role                                         |
+| Moderation          | Log channel, mute role, autorole                                                                    |
 | Auto-Mod            | Filters, action, banned word list                                                                  |
 | Anti-Raid           | Quarantine role, alert channel, join threshold/window, auto-detection toggle, live lockdown status |
 | Warn Thresholds     | Auto-escalation rules                                                                              |
-| Warnings            | Full warning history, filterable by user ID, with per-warning deletion                             |
-| Leveling            | Enable toggle, level-up channel, level→role mappings, top-20 XP leaderboard                        |
+| Warnings & Case Log | Full warning and mod action history side by side, both filterable by user ID with per-entry deletion |
+| Leveling            | Enable toggle, level-up channel, level→role mappings, and top-20 XP leaderboard in one section     |
 | Starboard           | Channel, emoji, threshold, NSFW exclusion                                                          |
 | Reaction Roles      | Add/remove emoji→role bindings per message                                                         |
 | Triggers            | Keyword→response pairs                                                                             |
-| Case Log            | Full mod action history, filterable by user ID, with per-case deletion                             |
 | Economy             | Credit leaderboard                                                                                 |
 | Shop                | Add/edit/remove role and badge items with price, description, visibility                           |
 | Tickets             | Category and support role setup, plus a live ticket list with open/closed filter                   |
 | Temp Voice Channels | Auto-VC channel and category                                                                       |
 | Giveaways           | Active giveaways with an End button, past giveaways with Reroll and Delete buttons                 |
-| Suggestions         | Pending suggestions with Approve/Deny/Implement/Delete buttons, resolved suggestions with Delete   |
+| Suggestions         | Suggestion channel and approver role, pending suggestions with Approve/Deny/Implement/Delete buttons, resolved suggestions with Delete |
 
 ### Enabling it
 

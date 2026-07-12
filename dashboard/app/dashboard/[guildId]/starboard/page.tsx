@@ -1,13 +1,12 @@
 import { connectDB } from "@/lib/db";
 import { fetchGuildChannels } from "@/lib/discord";
 import Guild, { GuildDoc } from "@/lib/models/Guild";
-import SettingsCard from "@/components/SettingsCard";
-import SectionForm from "@/components/SectionForm";
+import SettingsCardForm from "@/components/SettingsCardForm";
 import { ChannelField, TextField, ToggleField } from "@/components/Field";
 import { updateStarboardSettings } from "./actions";
 
 const STYLES = {
-  heading: "mb-6 text-2xl font-semibold text-[var(--text)]",
+  heading: "mb-4 text-2xl font-semibold text-[var(--text)]",
   stack: "flex flex-col gap-8 max-w-xl",
 };
 
@@ -47,43 +46,42 @@ export default async function StarboardPage({
     <>
       <h1 className={STYLES.heading}>Starboard</h1>
       <div className={STYLES.stack}>
-        <SectionForm action={updateStarboardSettings.bind(null, guildId)}>
-          <SettingsCard
-            title="Settings"
-            description="Starred messages that reach the threshold are reposted to the starboard channel."
-          >
-            <ToggleField
-              label="Enable starboard"
-              name="starboardEnabled"
-              defaultChecked={guild.starboardEnabled}
-            />
-            <ChannelField
-              label="Starboard channel"
-              description="The channel where starred messages will be reposted."
-              name="starboardChannelId"
-              defaultValue={guild.starboardChannelId}
-              channels={textChannels}
-            />
-            <TextField
-              label="Star emoji"
-              description="The emoji members react with to star a message. Default: ⭐"
-              name="starboardEmoji"
-              defaultValue={guild.starboardEmoji ?? "⭐"}
-            />
-            <TextField
-              label="Threshold"
-              description="Minimum number of star reactions needed to post to the starboard."
-              name="starboardThreshold"
-              defaultValue={String(guild.starboardThreshold ?? 3)}
-            />
-            <ToggleField
-              label="Ignore NSFW channels"
-              description="Messages from NSFW-marked channels will not appear on the starboard."
-              name="starboardIgnoreNsfw"
-              defaultChecked={guild.starboardIgnoreNsfw ?? true}
-            />
-          </SettingsCard>
-        </SectionForm>
+        <SettingsCardForm
+          action={updateStarboardSettings.bind(null, guildId)}
+          title="Settings"
+          description="Starred messages that reach the threshold are reposted to the starboard channel."
+        >
+          <ToggleField
+            label="Enable starboard"
+            name="starboardEnabled"
+            defaultChecked={guild.starboardEnabled}
+          />
+          <ChannelField
+            label="Starboard channel"
+            description="The channel where starred messages will be reposted."
+            name="starboardChannelId"
+            defaultValue={guild.starboardChannelId}
+            channels={textChannels}
+          />
+          <TextField
+            label="Star emoji"
+            description="The emoji members react with to star a message. Default: ⭐"
+            name="starboardEmoji"
+            defaultValue={guild.starboardEmoji ?? "⭐"}
+          />
+          <TextField
+            label="Threshold"
+            description="Minimum number of star reactions needed to post to the starboard."
+            name="starboardThreshold"
+            defaultValue={String(guild.starboardThreshold ?? 3)}
+          />
+          <ToggleField
+            label="Ignore NSFW channels"
+            description="Messages from NSFW-marked channels will not appear on the starboard."
+            name="starboardIgnoreNsfw"
+            defaultChecked={guild.starboardIgnoreNsfw ?? true}
+          />
+        </SettingsCardForm>
       </div>
     </>
   );

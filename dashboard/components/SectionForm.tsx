@@ -15,9 +15,11 @@ const STYLES = {
 interface Props {
   action: (formData: FormData) => Promise<void>;
   children: React.ReactNode;
+  className?: string;
+  contentClassName?: string;
 }
 
-export default function SectionForm({ action, children }: Props) {
+export default function SectionForm({ action, children, className, contentClassName }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [status, setStatus] = useState<"idle" | "saved" | "error">("idle");
@@ -54,9 +56,9 @@ export default function SectionForm({ action, children }: Props) {
         setDirty(true);
         setStatus("idle");
       }}
-      className={STYLES.form}
+      className={className ?? STYLES.form}
     >
-      <div className="flex flex-col gap-6">{children}</div>
+      <div className={contentClassName ?? "flex flex-col gap-6"}>{children}</div>
       <div className={STYLES.footer}>
         <button
           type="submit"

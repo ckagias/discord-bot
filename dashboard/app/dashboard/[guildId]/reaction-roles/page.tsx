@@ -5,7 +5,7 @@ import type { ReactionRoleDoc } from "@/lib/models/ReactionRole";
 import ReactionRolesForm from "./ReactionRolesForm";
 
 const STYLES = {
-  heading: "mb-6 text-2xl font-semibold text-[var(--text)]",
+  heading: "mb-4 text-2xl font-semibold text-[var(--text)]",
 };
 
 export default async function ReactionRolesPage({

@@ -140,6 +140,15 @@ export interface DiscordRole {
   managed: boolean;
 }
 
+export interface GuildStats {
+  memberCount: number;
+  onlineCount: number | null;
+  boostCount: number;
+  boostTier: number;
+  verificationLevel: number;
+  createdAt: string;
+}
+
 // Nearly every settings page fetches channels and/or roles for the same guild
 // on every navigation. Rapid tab-switching can fire several of these within
 // the same second and trip Discord's per-route rate limit, which previously
@@ -148,7 +157,56 @@ export interface DiscordRole {
 // if we have it instead of failing the request.
 const guildChannelsCache = new Map<string, { channels: DiscordChannel[]; expiresAt: number }>();
 const guildRolesCache = new Map<string, { roles: DiscordRole[]; expiresAt: number }>();
+const guildStatsCache = new Map<string, { stats: GuildStats; expiresAt: number }>();
 const GUILD_RESOURCE_CACHE_MS = 5_000;
+
+function snowflakeToDate(id: string): string {
+  const DISCORD_EPOCH = BigInt(1420070400000);
+  const timestampMs = (BigInt(id) >> BigInt(22)) + DISCORD_EPOCH;
+  return new Date(Number(timestampMs)).toISOString();
+}
+
+// Uses the bot token — server-only, never sent to the browser.
+export async function fetchGuildStats(guildId: string): Promise<GuildStats> {
+  const cached = guildStatsCache.get(guildId);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.stats;
+  }
+
+  const res = await fetch(`${API_BASE}/guilds/${guildId}?with_counts=true`, {
+    headers: { Authorization: `Bot ${requireEnv("Token")}` },
+  });
+
+  if (res.status === 429) {
+    if (cached) return cached.stats;
+    const body = await res.text();
+    throw new Error(`Failed to fetch guild stats: 429 ${body}`);
+  }
+
+  if (!res.ok) throw new Error(`Failed to fetch guild stats: ${res.status}`);
+
+  const data = await res.json();
+  const stats: GuildStats = {
+    memberCount: data.approximate_member_count ?? 0,
+    onlineCount: data.approximate_presence_count ?? null,
+    boostCount: data.premium_subscription_count ?? 0,
+    boostTier: data.premium_tier ?? 0,
+    verificationLevel: data.verification_level ?? 0,
+    createdAt: snowflakeToDate(guildId),
+  };
+  guildStatsCache.set(guildId, { stats, expiresAt: Date.now() + GUILD_RESOURCE_CACHE_MS });
+  return stats;
+}
+
+// Uses the bot token — server-only, never sent to the browser.
+export async function fetchBotJoinedAt(guildId: string): Promise<string | null> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/members/@me`, {
+    headers: { Authorization: `Bot ${requireEnv("Token")}` },
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.joined_at ?? null;
+}
 
 // Uses the bot token — server-only, never sent to the browser.
 export async function fetchGuildChannels(guildId: string): Promise<DiscordChannel[]> {
@@ -196,4 +254,34 @@ export async function fetchGuildRoles(guildId: string): Promise<DiscordRole[]> {
   const roles: DiscordRole[] = await res.json();
   guildRolesCache.set(guildId, { roles, expiresAt: Date.now() + GUILD_RESOURCE_CACHE_MS });
   return roles;
+}
+
+// Discord has no bulk "get members by ID" endpoint, so resolving display names for a
+// list (e.g. suggestion authors) means one request per unique user. Cached per
+// guild+user to keep repeat lookups (and repeat page loads) cheap; a miss or 429
+// returns null so callers can fall back to showing the raw ID instead of failing.
+const guildMemberCache = new Map<string, { name: string | null; expiresAt: number }>();
+
+// Uses the bot token — server-only, never sent to the browser.
+export async function fetchGuildMemberName(guildId: string, userId: string): Promise<string | null> {
+  const cacheKey = `${guildId}:${userId}`;
+  const cached = guildMemberCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.name;
+  }
+
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/members/${userId}`, {
+    headers: { Authorization: `Bot ${requireEnv("Token")}` },
+  });
+
+  if (!res.ok) {
+    if (cached) return cached.name;
+    guildMemberCache.set(cacheKey, { name: null, expiresAt: Date.now() + GUILD_RESOURCE_CACHE_MS });
+    return null;
+  }
+
+  const data = await res.json();
+  const name: string | null = data.nick ?? data.user?.global_name ?? data.user?.username ?? null;
+  guildMemberCache.set(cacheKey, { name, expiresAt: Date.now() + GUILD_RESOURCE_CACHE_MS });
+  return name;
 }

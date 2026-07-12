@@ -5,6 +5,31 @@ import { requireGuildAccess } from "@/lib/authorize";
 import { connectDB } from "@/lib/db";
 import Guild from "@/lib/models/Guild";
 import { emptyToNull } from "@/lib/forms";
+import { getSession } from "@/lib/session";
+
+const BOT_URL = process.env.BOT_INTERNAL_URL ?? "http://bot:4000";
+const SECRET = process.env.INTERNAL_API_SECRET ?? "";
+
+async function callBot(path: string, body: object): Promise<string | null> {
+  try {
+    const res = await fetch(`${BOT_URL}${path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-internal-secret": SECRET,
+      },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      return `Bot returned ${res.status}: ${text}`;
+    }
+    return null;
+  } catch (err) {
+    return `Could not reach bot: ${err instanceof Error ? err.message : String(err)}`;
+  }
+}
 
 function parsePositiveInt(value: FormDataEntryValue | null, fallback: number): number {
   const n = parseInt((value ?? "").toString(), 10);
@@ -31,4 +56,22 @@ export async function updateAntiRaidSettings(guildId: string, formData: FormData
   );
 
   revalidatePath(`/dashboard/${guildId}/anti-raid`);
+}
+
+export async function lockServer(guildId: string): Promise<{ error?: string }> {
+  await requireGuildAccess(guildId);
+  const { username } = await getSession();
+  const error = await callBot("/internal/antiraid/lock", { guildId, username });
+  if (error) return { error };
+  revalidatePath(`/dashboard/${guildId}/anti-raid`);
+  return {};
+}
+
+export async function unlockServer(guildId: string): Promise<{ error?: string }> {
+  await requireGuildAccess(guildId);
+  const { username } = await getSession();
+  const error = await callBot("/internal/antiraid/unlock", { guildId, username });
+  if (error) return { error };
+  revalidatePath(`/dashboard/${guildId}/anti-raid`);
+  return {};
 }

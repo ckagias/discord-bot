@@ -5,10 +5,13 @@ import SettingsCard from "@/components/SettingsCard";
 import SectionForm from "@/components/SectionForm";
 import { ChannelField, RoleField, TextField, ToggleField } from "@/components/Field";
 import { updateAntiRaidSettings } from "./actions";
+import LockdownActions from "./LockdownActions";
 
 const STYLES = {
-  heading: "mb-6 text-2xl font-semibold text-[var(--text)]",
-  stack: "flex flex-col gap-8 max-w-xl",
+  heading: "mb-4 text-2xl font-semibold text-[var(--text)]",
+  form: "flex flex-col gap-6",
+  cross: "grid grid-cols-1 gap-6 lg:grid-cols-2",
+  crossCard: "h-full rounded-2xl border border-[var(--border-muted)] bg-[var(--bg)] px-6 py-6 shadow-[0_3px_6px_rgba(0,0,0,0.16),0_3px_6px_rgba(0,0,0,0.23)]",
   lockdownBadge: (locked: boolean) =>
     [
       "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
@@ -19,6 +22,13 @@ const STYLES = {
   lockdownRow: "flex items-center gap-3",
   lockdownLabel: "text-sm font-medium text-[var(--text)]",
   lockdownHint: "mt-1 text-sm text-[var(--text-muted)]",
+  ruleSummary: "text-sm text-[var(--text-muted)]",
+  stepList: "flex flex-col gap-3",
+  step: "flex items-start gap-3",
+  stepNum:
+    "flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--primary)]/10 text-xs font-semibold text-[var(--primary)]",
+  stepText: "text-sm text-[var(--text-muted)]",
+  stepTextStrong: "font-medium text-[var(--text)]",
 };
 
 const TEXT_CHANNEL_TYPE = 0;
@@ -71,75 +81,122 @@ export default async function AntiRaidPage({
   return (
     <>
       <h1 className={STYLES.heading}>Anti-Raid</h1>
-      <div className={STYLES.stack}>
-        {/* Lockdown status — read-only, managed via /antiraid lock/unlock in Discord */}
+      <SectionForm
+        action={updateAntiRaidSettings.bind(null, guildId)}
+        className={STYLES.form}
+        contentClassName={STYLES.cross}
+      >
         <SettingsCard
-          title="Lockdown Status"
-          description="Managed with /antiraid lock and /antiraid unlock in Discord."
+          title="Auto-Detection"
+          description="Automatically lock down when a join-rate spike is detected."
+          className={STYLES.crossCard}
         >
-          <div className={STYLES.lockdownRow}>
-            <span className={STYLES.lockdownLabel}>Current state</span>
-            <span className={STYLES.lockdownBadge(guild.antiRaidLocked)}>
-              {guild.antiRaidLocked ? "🔒 LOCKED" : "🔓 Normal"}
-            </span>
+          {/* Lockdown status — read-only, managed via /antiraid lock/unlock in Discord */}
+          <div>
+            <div className={STYLES.lockdownRow}>
+              <span className={STYLES.lockdownLabel}>Current state</span>
+              <span className={STYLES.lockdownBadge(guild.antiRaidLocked)}>
+                {guild.antiRaidLocked ? "🔒 LOCKED" : "🔓 Normal"}
+              </span>
+            </div>
+            <p className={STYLES.lockdownHint}>
+              {lockedAt ? `Lockdown started ${lockedAt}` : "No lockdown is currently active."}
+            </p>
           </div>
-          {lockedAt && (
-            <p className={STYLES.lockdownHint}>Lockdown started {lockedAt}</p>
-          )}
+          <ToggleField
+            label="Enable automatic raid detection"
+            description="Triggers a lockdown when the join threshold is exceeded within the configured window."
+            name="antiRaidEnabled"
+            defaultChecked={guild.antiRaidEnabled}
+          />
+          <LockdownActions guildId={guildId} locked={guild.antiRaidLocked} />
+          <p className={STYLES.ruleSummary}>
+            Auto-locks after {guild.antiRaidJoinThreshold} joins within {guild.antiRaidJoinWindow}s.
+          </p>
         </SettingsCard>
 
-        <SectionForm action={updateAntiRaidSettings.bind(null, guildId)}>
-          <SettingsCard
-            title="Auto-Detection"
-            description="Automatically lock down when a join-rate spike is detected."
-          >
-            <ToggleField
-              label="Enable automatic raid detection"
-              description="Triggers a lockdown when the join threshold is exceeded within the configured window."
-              name="antiRaidEnabled"
-              defaultChecked={guild.antiRaidEnabled}
-            />
-          </SettingsCard>
+        <SettingsCard
+          title="Quarantine Setup"
+          description="Configure the holding role and where lockdown alerts are sent."
+          className={STYLES.crossCard}
+        >
+          <RoleField
+            label="Quarantine role"
+            description="Set up with /antiraid setrole so overwrites apply immediately."
+            name="antiRaidQuarantineRoleId"
+            defaultValue={guild.antiRaidQuarantineRoleId}
+            roles={assignableRoles}
+          />
+          <ChannelField
+            label="Alert channel"
+            description="Falls back to the server log channel if not set."
+            name="antiRaidAlertChannelId"
+            defaultValue={guild.antiRaidAlertChannelId}
+            channels={textChannels}
+          />
+        </SettingsCard>
 
-          <SettingsCard
-            title="Quarantine Setup"
-            description="Configure the holding role and where lockdown alerts are sent."
-          >
-            <RoleField
-              label="Quarantine role"
-              description="Set up with /antiraid setrole so overwrites apply immediately."
-              name="antiRaidQuarantineRoleId"
-              defaultValue={guild.antiRaidQuarantineRoleId}
-              roles={assignableRoles}
-            />
-            <ChannelField
-              label="Alert channel"
-              description="Falls back to the server log channel if not set."
-              name="antiRaidAlertChannelId"
-              defaultValue={guild.antiRaidAlertChannelId}
-              channels={textChannels}
-            />
-          </SettingsCard>
+        <SettingsCard
+          title="How it works"
+          description="The anti-raid flow, start to finish."
+          className={STYLES.crossCard}
+        >
+          <ol className={STYLES.stepList}>
+            <li className={STYLES.step}>
+              <span className={STYLES.stepNum}>1</span>
+              <span className={STYLES.stepText}>
+                <span className={STYLES.stepTextStrong}>Detect:</span> When people join
+                faster than your threshold allows, the bot locks the server on its own.
+                This only happens while Auto-Detection is on.
+              </span>
+            </li>
+            <li className={STYLES.step}>
+              <span className={STYLES.stepNum}>2</span>
+              <span className={STYLES.stepText}>
+                <span className={STYLES.stepTextStrong}>Quarantine:</span> New joiners get
+                the quarantine role, which hides every channel so they wait outside the
+                server.
+              </span>
+            </li>
+            <li className={STYLES.step}>
+              <span className={STYLES.stepNum}>3</span>
+              <span className={STYLES.stepText}>
+                <span className={STYLES.stepTextStrong}>Alert:</span> The bot posts a
+                notice in your alert channel, falling back to the server log channel
+                when none is set.
+              </span>
+            </li>
+            <li className={STYLES.step}>
+              <span className={STYLES.stepNum}>4</span>
+              <span className={STYLES.stepText}>
+                <span className={STYLES.stepTextStrong}>Recover:</span> Once staff have
+                had a look, run <code>/antiraid unlock</code> in Discord to reopen the
+                server. You can also run <code>/antiraid lock</code> to trigger a
+                lockdown yourself.
+              </span>
+            </li>
+          </ol>
+        </SettingsCard>
 
-          <SettingsCard
-            title="Thresholds"
-            description="How many joins within how many seconds triggers an automatic lockdown."
-          >
-            <TextField
-              label="Join threshold"
-              description="Number of new members joining within the window that triggers a lockdown."
-              name="antiRaidJoinThreshold"
-              defaultValue={String(guild.antiRaidJoinThreshold)}
-            />
-            <TextField
-              label="Window (seconds)"
-              description="The time window in seconds for counting joins. Default: 10."
-              name="antiRaidJoinWindow"
-              defaultValue={String(guild.antiRaidJoinWindow)}
-            />
-          </SettingsCard>
-        </SectionForm>
-      </div>
+        <SettingsCard
+          title="Thresholds"
+          description="How many joins within how many seconds triggers an automatic lockdown."
+          className={STYLES.crossCard}
+        >
+          <TextField
+            label="Join threshold"
+            description="Number of new members joining within the window that triggers a lockdown."
+            name="antiRaidJoinThreshold"
+            defaultValue={String(guild.antiRaidJoinThreshold)}
+          />
+          <TextField
+            label="Window (seconds)"
+            description="The time window in seconds for counting joins. Default: 10."
+            name="antiRaidJoinWindow"
+            defaultValue={String(guild.antiRaidJoinWindow)}
+          />
+        </SettingsCard>
+      </SectionForm>
     </>
   );
 }

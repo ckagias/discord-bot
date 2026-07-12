@@ -6,23 +6,24 @@ A Next.js 16 web dashboard for managing the [Discord Bot](../README.md). Shares 
 
 | Section | What you can manage |
 | --- | --- |
-| General | Log channel |
+| Overview | Open ticket, pending suggestion, case, and warning counts, a 14-day message activity chart, top-6 XP leaderboard, a recent activity feed, and a community stats card |
 | Welcome & Farewell | Join/leave channels and messages |
-| Moderation | Mute role, autorole |
+| Birthdays | Announcement channel/message and an optional birthday role |
+| Moderation | Log channel, mute role, autorole |
 | Auto-Mod | Filters, action, banned word list |
 | Anti-Raid | Quarantine role, alert channel, join threshold/window, auto-detection |
 | Warn Thresholds | Auto-escalation rules |
-| Warnings | View and delete member warnings |
-| Leveling | Level-up channel, level→role mappings |
+| Warnings & Case Log | View and delete member warnings and mod cases, side by side |
+| Leveling | Enable toggle, level-up channel, level→role mappings, top-20 XP leaderboard |
 | Starboard | Channel, emoji, and star threshold |
 | Reaction Roles | Emoji→role mappings |
 | Triggers | Keyword→reply mappings |
-| Case Log | View and delete mod cases |
 | Economy | Credit leaderboard (top 20) |
 | Shop | Add, edit, remove shop items (role grants and profile badges) |
 | Tickets | Ticket category and support role |
 | Temp Voice Channels | Auto-VC channel and category |
 | Giveaways | View, end, and reroll giveaways |
+| Suggestions | Suggestion channel/approver role, review pending suggestions, view resolved |
 
 ## Auth
 

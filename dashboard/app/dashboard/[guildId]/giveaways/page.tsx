@@ -1,10 +1,12 @@
 import { connectDB } from "@/lib/db";
+import { fetchGuildMemberName } from "@/lib/discord";
 import Giveaway, { GiveawayDoc } from "@/lib/models/Giveaway";
 import SettingsCard from "@/components/SettingsCard";
+import CopyOnClick from "@/components/CopyOnClick";
 import { EndGiveawayButton, RerollGiveawayButton, DeleteGiveawayButton } from "./GiveawayActions";
 
 const STYLES = {
-  heading: "mb-6 text-2xl font-semibold text-[var(--text)]",
+  heading: "mb-4 text-2xl font-semibold text-[var(--text)]",
   table: "text-sm",
   thead: "border-b border-[var(--border-muted)]",
   th: "pb-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]",
@@ -42,10 +44,12 @@ function GiveawayTable({
   guildId,
   rows,
   showActions,
+  memberNames,
 }: {
   guildId: string;
   rows: GiveawayDoc[];
   showActions: "end" | "reroll" | false;
+  memberNames: Map<string, string | null>;
 }) {
   if (rows.length === 0) return null;
   return (
@@ -80,15 +84,17 @@ function GiveawayTable({
                 {g.ended
                   ? g.winners.length > 0
                     ? g.winners.map((id) => (
-                        <span key={id} className={STYLES.code}>
-                          {id}
-                        </span>
+                        <CopyOnClick key={id} value={id} truncate={!!memberNames.get(id)} title={`Click to copy ID: ${id}`} className={STYLES.code}>
+                          {memberNames.get(id) ?? "Unknown user"}
+                        </CopyOnClick>
                       ))
                     : "—"
                   : g.winnerCount}
               </td>
               <td className={STYLES.tdMuted}>
-                <span className={STYLES.code}>{g.hostId}</span>
+                <CopyOnClick value={g.hostId} truncate={!!memberNames.get(g.hostId)} title={`Click to copy ID: ${g.hostId}`} className={STYLES.code}>
+                  {memberNames.get(g.hostId) ?? "Unknown user"}
+                </CopyOnClick>
               </td>
               <td className={STYLES.tdRight}>{formatDate(g.endsAt)}</td>
               {showActions && (
@@ -129,6 +135,12 @@ export default async function GiveawaysPage({
   const active = giveaways.filter((g) => !g.ended);
   const ended = giveaways.filter((g) => g.ended);
 
+  const uniqueUserIds = [...new Set(giveaways.flatMap((g) => [g.hostId, ...g.winners]))];
+  const nameEntries = await Promise.all(
+    uniqueUserIds.map(async (id) => [id, await fetchGuildMemberName(guildId, id)] as const)
+  );
+  const memberNames = new Map(nameEntries);
+
   return (
     <>
       <h1 className={STYLES.heading}>Giveaways</h1>
@@ -137,7 +149,7 @@ export default async function GiveawaysPage({
           {active.length === 0 ? (
             <p className={STYLES.empty}>No active giveaways.</p>
           ) : (
-            <GiveawayTable guildId={guildId} rows={active} showActions="end" />
+            <GiveawayTable guildId={guildId} rows={active} showActions="end" memberNames={memberNames} />
           )}
         </SettingsCard>
         <div className="mt-6">
@@ -148,7 +160,7 @@ export default async function GiveawaysPage({
             {ended.length === 0 ? (
               <p className={STYLES.empty}>No past giveaways.</p>
             ) : (
-              <GiveawayTable guildId={guildId} rows={ended} showActions="reroll" />
+              <GiveawayTable guildId={guildId} rows={ended} showActions="reroll" memberNames={memberNames} />
             )}
           </SettingsCard>
         </div>

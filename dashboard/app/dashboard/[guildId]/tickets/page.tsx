@@ -1,23 +1,26 @@
 import Link from "next/link";
 import { connectDB } from "@/lib/db";
-import { fetchGuildChannels, fetchGuildRoles } from "@/lib/discord";
+import { fetchGuildChannels, fetchGuildMemberName, fetchGuildRoles } from "@/lib/discord";
 import Guild, { GuildDoc } from "@/lib/models/Guild";
 import Ticket, { TicketDoc } from "@/lib/models/Ticket";
 import SettingsCard from "@/components/SettingsCard";
-import SectionForm from "@/components/SectionForm";
+import SettingsCardForm from "@/components/SettingsCardForm";
+import CopyOnClick from "@/components/CopyOnClick";
 import { ChannelField, RoleField } from "@/components/Field";
 import { updateTicketSettings } from "./actions";
 
 const STYLES = {
-  heading: "mb-6 text-2xl font-semibold text-[var(--text)]",
-  stack: "flex flex-col gap-8 max-w-xl",
+  heading: "mb-4 text-2xl font-semibold text-[var(--text)]",
+  grid: "grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start",
+  leftCol: "flex flex-col gap-6",
+  ticketsCard: "rounded-2xl border border-[var(--border-muted)] bg-[var(--bg)] px-6 py-6 shadow-[0_3px_6px_rgba(0,0,0,0.16),0_3px_6px_rgba(0,0,0,0.23)]",
   table: "text-sm",
   thead: "border-b border-[var(--border-muted)]",
   th: "pb-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]",
-  thRight:
-    "pb-3 text-right text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]",
   thSortable:
     "cursor-pointer select-none pb-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] hover:text-[var(--text)]",
+  thSortableRight:
+    "cursor-pointer select-none pb-3 text-right text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] hover:text-[var(--text)]",
   tr: "border-b border-[var(--border-muted)] last:border-0",
   td: "py-3 text-[var(--text)]",
   tdMuted: "py-3 text-[var(--text-muted)]",
@@ -32,7 +35,6 @@ const STYLES = {
       map[status] ?? "bg-[var(--bg-light)] text-[var(--text-muted)]",
     ].join(" ");
   },
-  code: "rounded bg-[var(--bg-light)] px-1.5 py-0.5 text-xs",
   empty: "text-sm text-[var(--text-muted)]",
   filterBar: "mb-6 flex gap-2",
   filterLink: (active: boolean) =>
@@ -82,6 +84,12 @@ export default async function TicketSettingsPage({
     ticketSupportRoleId: null,
   };
 
+  const uniqueUserIds = [...new Set(tickets.map((t) => t.userId))];
+  const nameEntries = await Promise.all(
+    uniqueUserIds.map(async (id) => [id, await fetchGuildMemberName(guildId, id)] as const)
+  );
+  const memberNames = new Map(nameEntries);
+
   function toggleOrderHref() {
     const p = new URLSearchParams();
     if (status) p.set("status", status);
@@ -100,9 +108,10 @@ export default async function TicketSettingsPage({
   return (
     <>
       <h1 className={STYLES.heading}>Tickets</h1>
-      <div className={STYLES.stack}>
-        <SectionForm action={updateTicketSettings.bind(null, guildId)}>
-          <SettingsCard
+      <div className={STYLES.grid}>
+        <div className={STYLES.leftCol}>
+          <SettingsCardForm
+            action={updateTicketSettings.bind(null, guildId)}
             title="Ticket setup"
             description="Where new ticket channels are created and who can see them."
           >
@@ -118,9 +127,9 @@ export default async function TicketSettingsPage({
               defaultValue={guild.ticketSupportRoleId}
               roles={roles}
             />
-          </SettingsCard>
-        </SectionForm>
-        <SettingsCard title="Open & recent tickets" description="Last 50, newest first.">
+          </SettingsCardForm>
+        </div>
+        <SettingsCard title="Open & recent tickets" description="Last 50, newest first." className={STYLES.ticketsCard}>
           <div className={STYLES.filterBar}>
             <Link href={statusFilterHref()} className={STYLES.filterLink(!status)}>All</Link>
             <Link href={statusFilterHref("open")} className={STYLES.filterLink(status === "open")}>Open</Link>
@@ -141,7 +150,11 @@ export default async function TicketSettingsPage({
                   </th>
                   <th className={STYLES.th}>User</th>
                   <th className={STYLES.th}>Status</th>
-                  <th className={STYLES.thRight}>Date</th>
+                  <th className={STYLES.thSortableRight}>
+                    <Link href={toggleOrderHref()}>
+                      Date {sortAsc ? "↑" : "↓"}
+                    </Link>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -149,7 +162,9 @@ export default async function TicketSettingsPage({
                   <tr key={t.ticketNumber} className={STYLES.tr}>
                     <td className={STYLES.tdMuted}>#{t.ticketNumber}</td>
                     <td className={STYLES.td}>
-                      <code className={STYLES.code}>{t.userId}</code>
+                      <CopyOnClick value={t.userId} truncate={!!memberNames.get(t.userId)} title={`Click to copy ID: ${t.userId}`}>
+                        {memberNames.get(t.userId) ?? "Unknown user"}
+                      </CopyOnClick>
                     </td>
                     <td className={STYLES.td}>
                       <span className={STYLES.statusBadge(t.status)}>{t.status}</span>
