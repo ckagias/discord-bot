@@ -18,13 +18,16 @@ module.exports = {
         if (!category)
             return interaction.editReply({ content: 'The configured ticket category no longer exists. Ask an admin to run `/ticket setup` again.' });
 
-        const existing = await TicketSchema.findOne({ guildId: interaction.guild.id, userId: interaction.user.id, status: 'open' });
-        if (existing) {
-            const channel = await interaction.guild.channels.fetch(existing.channelId).catch(() => null);
-            if (!channel) {
-                await TicketSchema.deleteOne({ _id: existing._id });
-            } else {
-                return interaction.editReply({ content: `You already have an open ticket: ${channel}.` });
+        const isStaff = interaction.member.permissions.has(PermissionFlagsBits.ManageChannels);
+        if (!isStaff) {
+            const existing = await TicketSchema.findOne({ guildId: interaction.guild.id, userId: interaction.user.id, status: 'open' });
+            if (existing) {
+                const channel = await interaction.guild.channels.fetch(existing.channelId).catch(() => null);
+                if (!channel) {
+                    await TicketSchema.deleteOne({ _id: existing._id });
+                } else {
+                    return interaction.editReply({ content: `You already have an open ticket: ${channel}.` });
+                }
             }
         }
 

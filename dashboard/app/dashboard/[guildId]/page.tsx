@@ -6,7 +6,7 @@ import Economy from "@/lib/models/Economy";
 import Giveaway from "@/lib/models/Giveaway";
 import Guild, { GuildDoc } from "@/lib/models/Guild";
 import Level, { LevelDoc } from "@/lib/models/Level";
-import MessageActivity from "@/lib/models/MessageActivity";
+import MessageActivity, { MessageActivityDoc } from "@/lib/models/MessageActivity";
 import ReactionRole from "@/lib/models/ReactionRole";
 import Shop from "@/lib/models/Shop";
 import Suggestion from "@/lib/models/Suggestion";
@@ -23,7 +23,6 @@ const STYLES = {
   cardValue: "text-2xl font-semibold text-[var(--text)]",
   cardLabel: "text-sm text-[var(--text-muted)]",
   section: "mt-8",
-  sectionTitle: "mb-4 text-sm font-medium text-[var(--text-muted)]",
   panelsGrid: "grid grid-cols-1 gap-6 lg:grid-cols-[1fr_16rem]",
   chartCard:
     "flex flex-col rounded-2xl border border-[var(--border-muted)] bg-[var(--bg)] px-6 py-6 shadow-[0_3px_6px_rgba(0,0,0,0.16),0_3px_6px_rgba(0,0,0,0.23)]",
@@ -126,7 +125,7 @@ export default async function GuildOverviewPage({
     Case.countDocuments({ guildId }),
     Warn.countDocuments({ guildId }),
     MessageActivity.find({ guildId, date: { $in: recentDates(ACTIVITY_DAYS) } })
-      .lean<{ date: string; count: number }[]>(),
+      .lean<MessageActivityDoc[]>(),
     Level.find({ guildId, level: { $gte: 1 } })
       .sort({ level: -1, xp: -1 })
       .limit(TOP_MEMBERS_LIMIT)

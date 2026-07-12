@@ -5,26 +5,24 @@ import Warn, { WarnDoc } from "@/lib/models/Warn";
 import Case, { CaseDoc } from "@/lib/models/Case";
 import SettingsCard from "@/components/SettingsCard";
 import CopyOnClick from "@/components/CopyOnClick";
-import WarnSearch from "./WarnSearch";
-import DeleteWarnButton from "./DeleteWarnButton";
-import CaseSearch from "../cases/CaseSearch";
-import DeleteCaseButton from "../cases/DeleteCaseButton";
+import UserIdSearch from "@/components/UserIdSearch";
+import DeleteIconButton from "@/components/DeleteIconButton";
+import { deleteWarn } from "./actions";
+import { deleteCase } from "../cases/actions";
 
 const STYLES = {
   heading: "mb-4 text-2xl font-semibold text-[var(--text)]",
-  // Each card sizes to its own content instead of a forced 50/50 split — Case Log has more columns
-  // (# and Type) than Warnings, so a fixed grid-cols-2 squeezed Warnings to make room for it.
   grid: "flex w-full flex-col gap-6 lg:flex-row lg:items-start",
-  warningsCard: "rounded-2xl border border-[var(--border-muted)] bg-[var(--bg)] px-6 py-6 lg:min-w-0 lg:basis-0 lg:grow shadow-[0_3px_6px_rgba(0,0,0,0.16),0_3px_6px_rgba(0,0,0,0.23)]",
+  warningsCard: "rounded-2xl border border-[var(--border-muted)] bg-[var(--bg)] px-6 py-6 lg:min-w-0 lg:basis-0 lg:grow-[1.4] shadow-[0_3px_6px_rgba(0,0,0,0.16),0_3px_6px_rgba(0,0,0,0.23)]",
   casesCard: "rounded-2xl border border-[var(--border-muted)] bg-[var(--bg)] px-6 py-6 lg:min-w-0 lg:basis-0 lg:grow-[1.4] shadow-[0_3px_6px_rgba(0,0,0,0.16),0_3px_6px_rgba(0,0,0,0.23)]",
-  tableScroll: "overflow-x-auto",
+  tableScroll: "max-h-[34.3rem] overflow-y-auto overflow-x-auto pr-3 -mr-3",
   table: "w-full text-sm",
-  thead: "border-b border-[var(--border-muted)]",
+  theadSticky: "sticky top-0 border-b border-[var(--border-muted)] bg-[var(--bg)]",
   th: "px-2 pb-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] first:pl-0",
   thSortable:
-    "px-2 cursor-pointer select-none pb-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] hover:text-[var(--text)] first:pl-0",
+    "w-px cursor-pointer select-none whitespace-nowrap px-2 pb-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] hover:text-[var(--text)] first:pl-0",
   thSortableRight:
-    "px-2 cursor-pointer select-none pb-3 text-right text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] hover:text-[var(--text)] last:pr-0",
+    "cursor-pointer select-none whitespace-nowrap px-2 pb-3 text-right text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] hover:text-[var(--text)] last:pr-0",
   tr: "border-b border-[var(--border-muted)] last:border-0",
   td: "px-2 py-3 text-[var(--text)] first:pl-0",
   tdMuted: "px-2 py-3 text-[var(--text-muted)] first:pl-0",
@@ -69,8 +67,7 @@ export default async function WarningsPage({
   const caseSortAsc = caseOrder === "asc";
   await connectDB();
 
-  // Fetch by guild only — filtering by the search term (ID or username) happens in-memory below,
-  // once member names are resolved, so a typed username can match rows a Mongo userId query can't.
+  // Fetch by guild only — search-term filtering happens in-memory below once member names are resolved.
   const [allWarns, allCases] = await Promise.all([
     Warn.find({ guildId })
       .sort({ createdAt: warnSortAsc ? 1 : -1 })
@@ -93,9 +90,7 @@ export default async function WarningsPage({
   );
   const memberNames = new Map(nameEntries);
 
-  // Matches the search term against a row's raw user/moderator IDs or their resolved usernames,
-  // so typing either an ID or a (partial, case-insensitive) username returns the right rows.
-  // Scoped to the 50 most-recently-fetched rows above, same recency window as before.
+  // Matches a row's raw user/moderator IDs or their resolved usernames, case-insensitively.
   function matchesSearch(term: string, ...ids: string[]) {
     const needle = term.trim().toLowerCase();
     if (!needle) return true;
@@ -140,7 +135,7 @@ export default async function WarningsPage({
           description="Every warning issued, searchable by username or user ID."
           className={STYLES.warningsCard}
         >
-          <WarnSearch
+          <UserIdSearch
             defaultValue={warnUserId ?? ""}
             order={warnOrder ?? "desc"}
             paramName="warnUserId"
@@ -153,7 +148,7 @@ export default async function WarningsPage({
           ) : (
             <div className={STYLES.tableScroll}>
               <table className={STYLES.table}>
-                <thead className={STYLES.thead}>
+                <thead className={STYLES.theadSticky}>
                   <tr>
                     <th className={STYLES.thSortable}>
                       <Link href={toggleWarnOrderHref()}>
@@ -185,10 +180,14 @@ export default async function WarningsPage({
                           {memberNames.get(w.moderatorId) ?? "Unknown user"}
                         </CopyOnClick>
                       </td>
-                      <td className={STYLES.td}>{w.reason}</td>
+                      <td className={STYLES.td}>
+                        <CopyOnClick value={w.reason} truncate title={`Click to copy: ${w.reason}`}>
+                          {w.reason}
+                        </CopyOnClick>
+                      </td>
                       <td className={STYLES.tdRight}>{formatDate(w.createdAt)}</td>
                       <td className="py-3 pl-2 text-right">
-                        <DeleteWarnButton guildId={guildId} warnId={String(w._id)} />
+                        <DeleteIconButton onDelete={deleteWarn.bind(null, guildId, String(w._id))} label="Delete warning" />
                       </td>
                     </tr>
                   ))}
@@ -202,7 +201,7 @@ export default async function WarningsPage({
           description="Every moderation action, searchable by username or user ID."
           className={STYLES.casesCard}
         >
-          <CaseSearch
+          <UserIdSearch
             defaultValue={caseUserId ?? ""}
             order={caseOrder ?? "desc"}
             paramName="caseUserId"
@@ -215,7 +214,7 @@ export default async function WarningsPage({
           ) : (
             <div className={STYLES.tableScroll}>
               <table className={STYLES.table}>
-                <thead className={STYLES.thead}>
+                <thead className={STYLES.theadSticky}>
                   <tr>
                     <th className={STYLES.thSortable}>
                       <Link href={toggleCaseOrderHref()}>
@@ -256,10 +255,14 @@ export default async function WarningsPage({
                           {memberNames.get(c.moderatorId) ?? "Unknown user"}
                         </CopyOnClick>
                       </td>
-                      <td className={STYLES.td}>{c.reason}</td>
+                      <td className={STYLES.td}>
+                        <CopyOnClick value={c.reason} truncate title={`Click to copy: ${c.reason}`}>
+                          {c.reason}
+                        </CopyOnClick>
+                      </td>
                       <td className={STYLES.tdRight}>{formatDate(c.createdAt)}</td>
                       <td className="py-3 pl-2 text-right">
-                        <DeleteCaseButton guildId={guildId} caseId={c.caseId} />
+                        <DeleteIconButton onDelete={deleteCase.bind(null, guildId, c.caseId)} label="Delete case" />
                       </td>
                     </tr>
                   ))}

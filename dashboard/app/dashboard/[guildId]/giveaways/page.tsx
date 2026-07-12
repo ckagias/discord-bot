@@ -7,8 +7,8 @@ import { EndGiveawayButton, RerollGiveawayButton, DeleteGiveawayButton } from ".
 
 const STYLES = {
   heading: "mb-4 text-2xl font-semibold text-[var(--text)]",
-  table: "text-sm",
-  thead: "border-b border-[var(--border-muted)]",
+  table: "w-full text-sm",
+  theadSticky: "sticky top-0 border-b border-[var(--border-muted)] bg-[var(--bg)]",
   th: "pb-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]",
   thRight:
     "pb-3 text-right text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]",
@@ -16,16 +16,10 @@ const STYLES = {
   td: "py-3 text-[var(--text)]",
   tdMuted: "py-3 text-[var(--text-muted)]",
   tdRight: "py-3 text-right text-[var(--text)]",
-  badge: (ended: boolean) =>
-    [
-      "inline-block rounded px-1.5 py-0.5 text-xs font-semibold",
-      ended
-        ? "bg-[var(--bg-light)] text-[var(--text-muted)]"
-        : "bg-[var(--warning)]/10 text-[var(--warning)]",
-    ].join(" "),
   code: "rounded bg-[var(--bg-light)] px-1.5 py-0.5 text-xs font-mono",
   empty: "text-sm text-[var(--text-muted)]",
   actions: "flex items-center justify-end gap-1",
+  tableScroll: "max-h-[16.3rem] overflow-y-auto overflow-x-auto pr-3 -mr-3",
 };
 
 function formatDate(d: Date) {
@@ -54,7 +48,7 @@ function GiveawayTable({
   if (rows.length === 0) return null;
   return (
       <table className={STYLES.table}>
-        <thead className={STYLES.thead}>
+        <thead className={STYLES.theadSticky}>
           <tr>
             <th className={STYLES.th}>Prize</th>
             <th className={STYLES.th}>Entries</th>
@@ -149,7 +143,9 @@ export default async function GiveawaysPage({
           {active.length === 0 ? (
             <p className={STYLES.empty}>No active giveaways.</p>
           ) : (
-            <GiveawayTable guildId={guildId} rows={active} showActions="end" memberNames={memberNames} />
+            <div className={STYLES.tableScroll}>
+              <GiveawayTable guildId={guildId} rows={active} showActions="end" memberNames={memberNames} />
+            </div>
           )}
         </SettingsCard>
         <div className="mt-6">
@@ -160,7 +156,9 @@ export default async function GiveawaysPage({
             {ended.length === 0 ? (
               <p className={STYLES.empty}>No past giveaways.</p>
             ) : (
-              <GiveawayTable guildId={guildId} rows={ended} showActions="reroll" memberNames={memberNames} />
+              <div className={STYLES.tableScroll}>
+                <GiveawayTable guildId={guildId} rows={ended} showActions="reroll" memberNames={memberNames} />
+              </div>
             )}
           </SettingsCard>
         </div>

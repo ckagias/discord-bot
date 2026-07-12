@@ -13,7 +13,6 @@ const STYLES = {
     ].join(" "),
   error: "mt-1 text-xs text-[var(--danger)]",
   wrap: "flex flex-col items-end",
-  row: "flex items-center gap-1",
   iconBtn:
     "cursor-pointer rounded p-1 text-[var(--danger)]/70 hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] disabled:opacity-40 transition-colors",
   icon: "h-4 w-4",

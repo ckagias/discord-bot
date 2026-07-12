@@ -1,7 +1,6 @@
 "use client";
 
 import { useTransition } from "react";
-import { deleteWarn } from "./actions";
 
 const STYLES = {
   button:
@@ -9,21 +8,21 @@ const STYLES = {
   icon: "h-4 w-4",
 };
 
-export default function DeleteWarnButton({
-  guildId,
-  warnId,
+export default function DeleteIconButton({
+  onDelete,
+  label,
 }: {
-  guildId: string;
-  warnId: string;
+  onDelete: () => void | Promise<void>;
+  label: string;
 }) {
   const [pending, startTransition] = useTransition();
 
   function handleClick() {
-    startTransition(() => deleteWarn(guildId, warnId));
+    startTransition(onDelete);
   }
 
   return (
-    <button onClick={handleClick} disabled={pending} className={STYLES.button} aria-label="Delete warning" title="Delete">
+    <button onClick={handleClick} disabled={pending} className={STYLES.button} aria-label={label} title="Delete">
       {pending ? (
         "…"
       ) : (

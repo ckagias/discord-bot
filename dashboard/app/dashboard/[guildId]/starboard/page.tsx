@@ -2,8 +2,8 @@ import { connectDB } from "@/lib/db";
 import { fetchGuildChannels } from "@/lib/discord";
 import Guild, { GuildDoc } from "@/lib/models/Guild";
 import SettingsCardForm from "@/components/SettingsCardForm";
-import { ChannelField, TextField, ToggleField } from "@/components/Field";
 import { updateStarboardSettings } from "./actions";
+import StarboardFields from "./StarboardFields";
 
 const STYLES = {
   heading: "mb-4 text-2xl font-semibold text-[var(--text)]",
@@ -51,35 +51,13 @@ export default async function StarboardPage({
           title="Settings"
           description="Starred messages that reach the threshold are reposted to the starboard channel."
         >
-          <ToggleField
-            label="Enable starboard"
-            name="starboardEnabled"
-            defaultChecked={guild.starboardEnabled}
-          />
-          <ChannelField
-            label="Starboard channel"
-            description="The channel where starred messages will be reposted."
-            name="starboardChannelId"
-            defaultValue={guild.starboardChannelId}
-            channels={textChannels}
-          />
-          <TextField
-            label="Star emoji"
-            description="The emoji members react with to star a message. Default: ⭐"
-            name="starboardEmoji"
-            defaultValue={guild.starboardEmoji ?? "⭐"}
-          />
-          <TextField
-            label="Threshold"
-            description="Minimum number of star reactions needed to post to the starboard."
-            name="starboardThreshold"
-            defaultValue={String(guild.starboardThreshold ?? 3)}
-          />
-          <ToggleField
-            label="Ignore NSFW channels"
-            description="Messages from NSFW-marked channels will not appear on the starboard."
-            name="starboardIgnoreNsfw"
-            defaultChecked={guild.starboardIgnoreNsfw ?? true}
+          <StarboardFields
+            starboardEnabled={guild.starboardEnabled}
+            starboardChannelId={guild.starboardChannelId}
+            starboardEmoji={guild.starboardEmoji ?? "⭐"}
+            starboardThreshold={guild.starboardThreshold ?? 3}
+            starboardIgnoreNsfw={guild.starboardIgnoreNsfw ?? true}
+            textChannels={textChannels}
           />
         </SettingsCardForm>
       </div>

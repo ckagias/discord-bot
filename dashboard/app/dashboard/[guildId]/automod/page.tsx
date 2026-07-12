@@ -2,8 +2,9 @@ import { connectDB } from "@/lib/db";
 import Guild, { GuildDoc } from "@/lib/models/Guild";
 import SettingsCard from "@/components/SettingsCard";
 import SectionForm from "@/components/SectionForm";
-import { SelectField, TextAreaField, TextField, ToggleField } from "@/components/Field";
+import { SelectField, TextAreaField } from "@/components/Field";
 import { updateAutomodSettings } from "./actions";
+import AutomodFilters from "./AutomodFilters";
 
 const STYLES = {
   heading: "mb-4 text-2xl font-semibold text-[var(--text)]",
@@ -50,9 +51,7 @@ export default async function AutomodSettingsPage({
 
   const guildDoc = await Guild.findOne({ guildId }).lean<GuildDoc>();
 
-  // guildDoc may predate the automod fields being added to the schema —
-  // Mongoose defaults only apply to documents created after the schema changed,
-  // so merge field-by-field instead of an all-or-nothing fallback.
+  // guildDoc may predate these fields — Mongoose defaults only apply to new documents, so merge field-by-field.
   const guild: AutomodFields = {
     automodEnabled: guildDoc?.automodEnabled ?? false,
     automodBannedWords: guildDoc?.automodBannedWords ?? false,
@@ -74,49 +73,14 @@ export default async function AutomodSettingsPage({
         contentClassName={STYLES.grid}
       >
         <div className={STYLES.leftCol}>
-          <SettingsCard
-            title="Auto-Moderation"
-            description="Automatically act on messages that break your rules."
-          >
-            <ToggleField
-              label="Enable auto-moderation"
-              name="automodEnabled"
-              defaultChecked={guild.automodEnabled}
-            />
-          </SettingsCard>
-
-          <SettingsCard title="Filters" description="Choose which checks run on every message.">
-            <ToggleField
-              label="Banned words"
-              description="Block messages containing words from your list below."
-              name="automodBannedWords"
-              defaultChecked={guild.automodBannedWords}
-            />
-            <ToggleField
-              label="Spam / flood"
-              description="Catch members sending messages too quickly."
-              name="automodSpam"
-              defaultChecked={guild.automodSpam}
-            />
-            <ToggleField
-              label="Excessive mentions"
-              description="Catch messages that mention too many users or roles at once."
-              name="automodMentions"
-              defaultChecked={guild.automodMentions}
-            />
-            <TextField
-              label="Mention limit"
-              description="Maximum mentions allowed in a single message."
-              name="automodMentionLimit"
-              defaultValue={String(guild.automodMentionLimit)}
-            />
-            <ToggleField
-              label="Invite links"
-              description="Block Discord invite links from non-staff members."
-              name="automodInvites"
-              defaultChecked={guild.automodInvites}
-            />
-          </SettingsCard>
+          <AutomodFilters
+            automodEnabled={guild.automodEnabled}
+            automodBannedWords={guild.automodBannedWords}
+            automodSpam={guild.automodSpam}
+            automodMentions={guild.automodMentions}
+            automodMentionLimit={guild.automodMentionLimit}
+            automodInvites={guild.automodInvites}
+          />
         </div>
 
         <div className={STYLES.leftCol}>

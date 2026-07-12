@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState } from "react";
 import SettingsCard from "@/components/SettingsCard";
+import AddIconButton from "@/components/AddIconButton";
+import RemoveIconButton from "@/components/RemoveIconButton";
+import { useRowListForm } from "@/lib/useRowListForm";
 import { updateShop } from "./actions";
 import type { ShopDoc } from "@/lib/models/Shop";
 import type { DiscordRole } from "@/lib/discord";
@@ -42,7 +45,7 @@ const STYLES = {
   addIcon: "h-4 w-4",
   empty: "text-sm text-[var(--text-muted)]",
   rowsScroll:
-    "grid max-h-[32rem] grid-cols-1 gap-4 overflow-y-auto overflow-x-hidden pr-3 -mr-3 lg:grid-cols-2 lg:items-start",
+    "grid max-h-[36.5rem] grid-cols-1 gap-4 overflow-y-auto overflow-x-hidden pr-3 -mr-3 lg:grid-cols-2 lg:items-start",
 };
 
 function blankRow(key: number, firstRoleId: string): Row {
@@ -68,70 +71,37 @@ export default function ShopForm({
   initial: Omit<ShopDoc, "guildId">[];
   roles: DiscordRole[];
 }) {
-  const [rows, setRows] = useState<Row[]>(() =>
-    initial.map((item, i) => ({ ...item, key: i }))
-  );
-  const [nextKey, setNextKey] = useState(initial.length);
-  const [dirty, setDirty] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const [status, setStatus] = useState<"idle" | "saved" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
-
-  useEffect(() => {
-    if (!dirty) return;
-    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [dirty]);
-
-  function mark() {
-    setDirty(true);
-    setStatus("idle");
-  }
-
-  function addRow() {
-    setRows((prev) => [...prev, blankRow(nextKey, roles[0]?.id ?? "")]);
-    setNextKey((k) => k + 1);
-    mark();
-  }
-
-  function removeRow(key: number) {
-    setRows((prev) => prev.filter((r) => r.key !== key));
-    mark();
-  }
-
-  function updateRow(key: number, patch: Partial<Omit<Row, "key">>) {
-    setRows((prev) =>
-      prev.map((r) => (r.key !== key ? r : { ...r, ...patch }))
-    );
-    mark();
-  }
-
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setStatus("idle");
-    setErrorMsg("");
-
-    const payload = rows.map(({ key: _key, ...item }) => ({
-      ...item,
-      // Send empty itemId as undefined so actions.ts treats it as new
-      itemId: item.itemId || undefined,
-    }));
-    const fd = new FormData();
-    fd.set("shop", JSON.stringify(payload));
-
-    startTransition(async () => {
+  const {
+    rows,
+    dirty,
+    isPending,
+    status,
+    rowsScrollRef,
+    addRow,
+    removeRow,
+    updateRow,
+    handleSubmit,
+  } = useRowListForm<Row>({
+    initial,
+    makeRow: (key) => blankRow(key, roles[0]?.id ?? ""),
+    submit: async (rows) => {
+      setErrorMsg("");
+      const payload = rows.map(({ key: _key, ...item }) => ({
+        ...item,
+        // Send empty itemId as undefined so actions.ts treats it as new
+        itemId: item.itemId || undefined,
+      }));
+      const fd = new FormData();
+      fd.set("shop", JSON.stringify(payload));
       try {
         await updateShop(guildId, fd);
-        setStatus("saved");
-        setDirty(false);
       } catch (err) {
-        console.error(err);
         setErrorMsg(err instanceof Error ? err.message : "Unknown error");
-        setStatus("error");
+        throw err;
       }
-    });
-  }
+    },
+  });
 
   return (
     <form onSubmit={handleSubmit} className={STYLES.form}>
@@ -139,45 +109,30 @@ export default function ShopForm({
         title="Shop Items"
         description="Role items grant a Discord role on purchase; badge items add an emoji to /profile."
         headerAction={
-          <button
-            type="button"
+          <AddIconButton
             onClick={addRow}
+            label="Add item"
             className={STYLES.addIconButton}
-            aria-label="Add item"
-            title="Add item"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={STYLES.addIcon}>
-              <path d="M12 5v14" />
-              <path d="M5 12h14" />
-            </svg>
-          </button>
+            iconClassName={STYLES.addIcon}
+          />
         }
       >
         {rows.length === 0 ? (
           <p className={STYLES.empty}>No items in the shop yet. Add one below.</p>
         ) : (
-          <div className={STYLES.rowsScroll}>
+          <div ref={rowsScrollRef} className={STYLES.rowsScroll}>
             {rows.map((row) => (
               <div key={row.key} className={STYLES.row}>
                 <div className={STYLES.rowHeader}>
                   <span className={STYLES.rowTitle}>
                     {row.name || <span className={STYLES.rowTitlePlaceholder}>Untitled item</span>}
                   </span>
-                  <button
-                    type="button"
+                  <RemoveIconButton
                     onClick={() => removeRow(row.key)}
+                    label="Remove item"
                     className={STYLES.removeButton}
-                    aria-label="Remove item"
-                    title="Remove"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={STYLES.removeIcon}>
-                      <path d="M3 6h18" />
-                      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                      <path d="M10 11v6" />
-                      <path d="M14 11v6" />
-                    </svg>
-                  </button>
+                    iconClassName={STYLES.removeIcon}
+                  />
                 </div>
 
                 <div className={STYLES.rowFields}>

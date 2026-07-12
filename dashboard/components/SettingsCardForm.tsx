@@ -22,10 +22,7 @@ interface Props {
   bodyClassName?: string;
 }
 
-// Fuses a <form> with a single SettingsCard so the Save button lives inside
-// the card's own flex layout instead of being injected across component
-// boundaries — sidesteps the cloneElement/gap issues SectionForm had when
-// retrofitted with a footerInCard option.
+// Fuses a <form> with a single SettingsCard so the Save button lives inside the card's own flex layout.
 export default function SettingsCardForm({
   action,
   title,

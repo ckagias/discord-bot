@@ -69,9 +69,7 @@ export async function updateShop(guildId: string, formData: FormData) {
   const newRows      = rows.filter((r) => !r.itemId);
   const keptItemIds  = existingRows.map((r) => r.itemId as string);
 
-  // Check for duplicate names: new items must not collide with any existing DB
-  // item; existing items must not collide with each other or other DB items
-  // (exclude their own itemId from the match to allow renaming to same name).
+  // Names must be unique; exclude each row's own itemId so renaming to its own current name is allowed.
   const allNames = rows.map((r) => r.name.toLowerCase());
   const hasDuplicateInPayload = allNames.length !== new Set(allNames).size;
   if (hasDuplicateInPayload) {
@@ -88,7 +86,7 @@ export async function updateShop(guildId: string, formData: FormData) {
     );
   }
 
-  // Upsert existing items (preserves itemId so inventory ownership is intact)
+  // Preserves itemId so inventory ownership is intact.
   await Promise.all(
     existingRows.map((r) =>
       Shop.updateOne(
@@ -108,7 +106,6 @@ export async function updateShop(guildId: string, formData: FormData) {
     )
   );
 
-  // Insert brand-new items and track their assigned IDs
   const newItemIds: string[] = [];
   if (newRows.length > 0) {
     const docs = newRows.map((r) => ({ ...r, itemId: randomUUID(), guildId }));
