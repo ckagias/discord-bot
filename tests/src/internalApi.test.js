@@ -24,10 +24,12 @@ describe('internal API /internal/health', () => {
         client = { isReady: jest.fn(), ws: { ping: 42 }, uptime: 12345 };
 
         // Force the server onto an ephemeral port so tests don't collide, and capture the instance/port once bound.
+        // Handles both listen(port, cb) and listen(port, host, cb) since callers may bind to a specific host or not.
         const originalListen = http.Server.prototype.listen;
-        http.Server.prototype.listen = function (_port, host, cb) {
+        http.Server.prototype.listen = function (_port, hostOrCb, maybeCb) {
+            const cb = typeof hostOrCb === 'function' ? hostOrCb : maybeCb;
             server = this;
-            return originalListen.call(this, 0, host, () => {
+            return originalListen.call(this, 0, () => {
                 port = this.address().port;
                 http.Server.prototype.listen = originalListen;
                 cb();
