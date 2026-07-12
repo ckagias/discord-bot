@@ -2,6 +2,8 @@ const http = require('node:http');
 const mongoose = require('mongoose');
 const { endGiveaway } = require('../slashCommands/utility/giveaway');
 const { applyStatus } = require('../slashCommands/utility/suggest');
+const { startLockdown, endLockdown } = require('../utils/antiRaid');
+const { getGuildConfig } = require('../utils/guildConfig');
 const GiveawaySchema = require('../models/GiveawaySchema');
 const SuggestionSchema = require('../models/SuggestionSchema');
 const log = require('../utils/log');
@@ -43,6 +45,8 @@ module.exports = function startInternalApi(client) {
             return send(res, healthy ? 200 : 503, {
                 discord: client.isReady() ? 'up' : 'down',
                 mongo: mongoose.connection.readyState === 1 ? 'up' : 'down',
+                ping: client.isReady() ? client.ws.ping : null,
+                uptime: client.isReady() ? client.uptime : null,
             });
         }
 
@@ -141,8 +145,60 @@ module.exports = function startInternalApi(client) {
             return;
         }
 
+        if (req.method === 'POST' && url.pathname === '/internal/antiraid/lock') {
+            try {
+                const raw = await readBody(req);
+                const { guildId, username } = JSON.parse(raw);
+                if (!guildId) return send(res, 400, { error: 'Missing guildId' });
+
+                const guild = await client.guilds.fetch(guildId).catch(() => null);
+                if (!guild) return send(res, 404, { error: 'Guild not found' });
+
+                const guildData = await getGuildConfig(guildId);
+                if (!guildData?.antiRaidQuarantineRoleId) {
+                    return send(res, 400, { error: 'No quarantine role configured. Set one in Quarantine Setup and save first.' });
+                }
+                if (guildData.antiRaidLocked) {
+                    return send(res, 409, { error: 'A lockdown is already active.' });
+                }
+                if (!guild.roles.cache.has(guildData.antiRaidQuarantineRoleId)) {
+                    return send(res, 400, { error: 'Quarantine role no longer exists.' });
+                }
+
+                await startLockdown(guild, guildData, { auto: false, triggeredBy: username ? { username } : null });
+                send(res, 200, { ok: true });
+            } catch (err) {
+                logger.error('/internal/antiraid/lock error:', err);
+                send(res, 500, { error: 'Internal error' });
+            }
+            return;
+        }
+
+        if (req.method === 'POST' && url.pathname === '/internal/antiraid/unlock') {
+            try {
+                const raw = await readBody(req);
+                const { guildId, username } = JSON.parse(raw);
+                if (!guildId) return send(res, 400, { error: 'Missing guildId' });
+
+                const guild = await client.guilds.fetch(guildId).catch(() => null);
+                if (!guild) return send(res, 404, { error: 'Guild not found' });
+
+                const guildData = await getGuildConfig(guildId);
+                if (!guildData?.antiRaidLocked) {
+                    return send(res, 409, { error: 'There is no active lockdown.' });
+                }
+
+                const { released } = await endLockdown(guild, guildData, { by: username ? { username } : null });
+                send(res, 200, { ok: true, released: released?.length ?? 0 });
+            } catch (err) {
+                logger.error('/internal/antiraid/unlock error:', err);
+                send(res, 500, { error: 'Internal error' });
+            }
+            return;
+        }
+
         send(res, 404, { error: 'Not found' });
     });
 
-    server.listen(PORT, '127.0.0.1', () => logger.info(`Listening on port ${PORT}`));
+    server.listen(PORT, () => logger.info(`Listening on port ${PORT}`));
 };

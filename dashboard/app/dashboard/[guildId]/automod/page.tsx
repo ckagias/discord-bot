@@ -6,7 +6,10 @@ import { SelectField, TextAreaField, TextField, ToggleField } from "@/components
 import { updateAutomodSettings } from "./actions";
 
 const STYLES = {
-  heading: "mb-6 text-2xl font-semibold text-[var(--text)]",
+  heading: "mb-4 text-2xl font-semibold text-[var(--text)]",
+  form: "flex flex-col gap-6",
+  grid: "grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start",
+  leftCol: "flex flex-col gap-6",
 };
 
 const ACTION_OPTIONS = [
@@ -65,74 +68,83 @@ export default async function AutomodSettingsPage({
   return (
     <>
       <h1 className={STYLES.heading}>Auto-Mod</h1>
-      <SectionForm action={updateAutomodSettings.bind(null, guildId)}>
-        <SettingsCard
-          title="Auto-Moderation"
-          description="Automatically act on messages that break your rules."
-        >
-          <ToggleField
-            label="Enable auto-moderation"
-            name="automodEnabled"
-            defaultChecked={guild.automodEnabled}
-          />
-        </SettingsCard>
+      <SectionForm
+        action={updateAutomodSettings.bind(null, guildId)}
+        className={STYLES.form}
+        contentClassName={STYLES.grid}
+      >
+        <div className={STYLES.leftCol}>
+          <SettingsCard
+            title="Auto-Moderation"
+            description="Automatically act on messages that break your rules."
+          >
+            <ToggleField
+              label="Enable auto-moderation"
+              name="automodEnabled"
+              defaultChecked={guild.automodEnabled}
+            />
+          </SettingsCard>
 
-        <SettingsCard title="Filters" description="Choose which checks run on every message.">
-          <ToggleField
-            label="Banned words"
-            description="Block messages containing words from your list below."
-            name="automodBannedWords"
-            defaultChecked={guild.automodBannedWords}
-          />
-          <ToggleField
-            label="Spam / flood"
-            description="Catch members sending messages too quickly."
-            name="automodSpam"
-            defaultChecked={guild.automodSpam}
-          />
-          <ToggleField
-            label="Excessive mentions"
-            description="Catch messages that mention too many users or roles at once."
-            name="automodMentions"
-            defaultChecked={guild.automodMentions}
-          />
-          <TextField
-            label="Mention limit"
-            description="Maximum mentions allowed in a single message."
-            name="automodMentionLimit"
-            defaultValue={String(guild.automodMentionLimit)}
-          />
-          <ToggleField
-            label="Invite links"
-            description="Block Discord invite links from non-staff members."
-            name="automodInvites"
-            defaultChecked={guild.automodInvites}
-          />
-        </SettingsCard>
+          <SettingsCard title="Filters" description="Choose which checks run on every message.">
+            <ToggleField
+              label="Banned words"
+              description="Block messages containing words from your list below."
+              name="automodBannedWords"
+              defaultChecked={guild.automodBannedWords}
+            />
+            <ToggleField
+              label="Spam / flood"
+              description="Catch members sending messages too quickly."
+              name="automodSpam"
+              defaultChecked={guild.automodSpam}
+            />
+            <ToggleField
+              label="Excessive mentions"
+              description="Catch messages that mention too many users or roles at once."
+              name="automodMentions"
+              defaultChecked={guild.automodMentions}
+            />
+            <TextField
+              label="Mention limit"
+              description="Maximum mentions allowed in a single message."
+              name="automodMentionLimit"
+              defaultValue={String(guild.automodMentionLimit)}
+            />
+            <ToggleField
+              label="Invite links"
+              description="Block Discord invite links from non-staff members."
+              name="automodInvites"
+              defaultChecked={guild.automodInvites}
+            />
+          </SettingsCard>
+        </div>
 
-        <SettingsCard title="Banned words" description="Comma or newline separated.">
-          <TextAreaField
-            label="Word list"
-            name="automodBannedWordList"
-            defaultValue={guild.automodBannedWordList.join("\n")}
-          />
-        </SettingsCard>
+        <div className={STYLES.leftCol}>
+          <SettingsCard title="Banned words" description="Comma or newline separated.">
+            <TextAreaField
+              label="Word list"
+              name="automodBannedWordList"
+              defaultValue={guild.automodBannedWordList.join("\n")}
+              minHeightClassName="min-h-55.5"
+            />
+          </SettingsCard>
 
-        <SettingsCard title="Action" description="What happens when a filter is triggered.">
-          <SelectField
-            label="Action"
-            name="automodAction"
-            defaultValue={guild.automodAction}
-            options={ACTION_OPTIONS}
-          />
-          <SelectField
-            label="Timeout duration"
-            description="Used when the action above is set to Delete + timeout."
-            name="automodTimeoutSeconds"
-            defaultValue={String(guild.automodTimeoutSeconds)}
-            options={TIMEOUT_OPTIONS}
-          />
-        </SettingsCard>
+          <SettingsCard title="Action" description="What happens when a filter is triggered.">
+            <SelectField
+              label="Action"
+              name="automodAction"
+              defaultValue={guild.automodAction}
+              options={ACTION_OPTIONS}
+            />
+            <SelectField
+              label="Timeout duration"
+              description="Used when the action above is set to Delete + timeout."
+              name="automodTimeoutSeconds"
+              defaultValue={String(guild.automodTimeoutSeconds)}
+              options={TIMEOUT_OPTIONS}
+            />
+          </SettingsCard>
+        </div>
       </SectionForm>
     </>
   );

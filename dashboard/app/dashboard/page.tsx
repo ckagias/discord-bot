@@ -10,7 +10,7 @@ const STYLES = {
   sectionTitle: "text-sm font-medium text-[var(--text-muted)] mb-4",
   grid: "grid grid-cols-1 sm:grid-cols-2 gap-4",
   guildCard:
-    "flex items-center gap-3 rounded-2xl border border-[var(--border-muted)] bg-[var(--bg)] px-5 py-4 transition-colors hover:border-[var(--primary)]/40",
+    "flex items-center gap-3 rounded-2xl border border-[var(--border-muted)] bg-[var(--bg)] px-5 py-4 transition-all duration-200 hover:border-[var(--primary)]/40 hover:shadow-[0_3px_6px_rgba(0,0,0,0.16),0_3px_6px_rgba(0,0,0,0.23)]",
   guildIcon: "h-10 w-10 shrink-0 rounded-full object-cover",
   guildIconFallback:
     "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] text-base font-semibold text-[var(--bg-dark)]",

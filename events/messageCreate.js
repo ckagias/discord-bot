@@ -1,6 +1,7 @@
 const LevelSchema = require('../models/LevelSchema');
 const AfkSchema = require('../models/AfkSchema');
 const TriggerSchema = require('../models/TriggerSchema');
+const MessageActivitySchema = require('../models/MessageActivitySchema');
 const { runAutoMod } = require('../utils/automod');
 const { ensureGuildConfig } = require('../utils/guildConfig');
 const { updateBalance } = require('../utils/economy');
@@ -19,6 +20,13 @@ module.exports = {
         if (!message.guild) return;
 
         const { author, guild, channel } = message;
+
+        const today = new Date().toISOString().slice(0, 10);
+        MessageActivitySchema.updateOne(
+            { guildId: guild.id, date: today },
+            { $inc: { count: 1 } },
+            { upsert: true }
+        ).catch(error => logger.error('Failed to record message activity:', error));
 
         let guildData;
         try {

@@ -9,7 +9,8 @@ const STYLES = {
   input:
     "rounded-lg border border-[var(--border)] bg-[var(--bg-light)] px-3 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--primary)]",
   textarea:
-    "min-h-24 resize-y rounded-lg border border-[var(--border)] bg-[var(--bg-light)] px-3 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--primary)]",
+    "resize-y rounded-lg border border-[var(--border)] bg-[var(--bg-light)] px-3 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--primary)]",
+  textareaMinHeight: "min-h-24",
   checkboxRow: "flex items-center justify-between gap-4",
   checkboxText: "flex flex-col gap-1",
   toggleLabel: "relative inline-flex h-6 w-11 shrink-0 cursor-pointer",
@@ -150,19 +151,21 @@ export function TextAreaField({
   name,
   defaultValue,
   onChange,
+  minHeightClassName,
 }: {
   label: string;
   description?: string;
   name: string;
   defaultValue: string;
   onChange?: (value: string) => void;
+  minHeightClassName?: string;
 }) {
   return (
     <FieldShell label={label} description={description}>
       <textarea
         name={name}
         defaultValue={defaultValue}
-        className={STYLES.textarea}
+        className={[STYLES.textarea, minHeightClassName ?? STYLES.textareaMinHeight].join(" ")}
         onChange={onChange ? (e) => onChange(e.target.value) : undefined}
       />
     </FieldShell>

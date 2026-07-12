@@ -246,4 +246,54 @@ describe("discord lib", () => {
       expect(fetch).toHaveBeenCalledTimes(2);
     });
   });
+
+  describe("fetchGuildMemberName", () => {
+    it("prefers the server nickname over the global name and username", async () => {
+      process.env.Token = "bot-token";
+      vi.mocked(fetch).mockResolvedValue(
+        jsonResponse({ nick: "Nick", user: { global_name: "Global", username: "user" } })
+      );
+
+      const { fetchGuildMemberName } = await import("@/lib/discord");
+      await expect(fetchGuildMemberName("guild1", "user1")).resolves.toBe("Nick");
+    });
+
+    it("falls back to global_name then username when there's no nickname", async () => {
+      process.env.Token = "bot-token";
+      vi.mocked(fetch).mockResolvedValue(jsonResponse({ user: { global_name: "Global", username: "user" } }));
+
+      const { fetchGuildMemberName } = await import("@/lib/discord");
+      await expect(fetchGuildMemberName("guild1", "user1")).resolves.toBe("Global");
+    });
+
+    it("returns null instead of throwing when the member lookup fails", async () => {
+      process.env.Token = "bot-token";
+      vi.mocked(fetch).mockResolvedValue(jsonResponse({ message: "Unknown Member" }, 404));
+
+      const { fetchGuildMemberName } = await import("@/lib/discord");
+      await expect(fetchGuildMemberName("guild1", "missing-user")).resolves.toBeNull();
+    });
+
+    it("serves cached data on a subsequent call without refetching", async () => {
+      process.env.Token = "bot-token";
+      vi.mocked(fetch).mockResolvedValue(jsonResponse({ user: { username: "user" } }));
+
+      const { fetchGuildMemberName } = await import("@/lib/discord");
+      await fetchGuildMemberName("guild-member-cache", "user1");
+      await fetchGuildMemberName("guild-member-cache", "user1");
+
+      expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("serves stale cached data on a 429 instead of failing", async () => {
+      process.env.Token = "bot-token";
+      vi.mocked(fetch)
+        .mockResolvedValueOnce(jsonResponse({ user: { username: "user" } }))
+        .mockResolvedValueOnce(jsonResponse({}, 429));
+
+      const { fetchGuildMemberName } = await import("@/lib/discord");
+      await fetchGuildMemberName("guild-member-429", "user1");
+      await expect(fetchGuildMemberName("guild-member-429", "user1")).resolves.toBe("user");
+    });
+  });
 });

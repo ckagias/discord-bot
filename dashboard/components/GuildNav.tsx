@@ -62,7 +62,7 @@ const GROUPS = [
     label: "Server",
     icon: ServerIcon,
     sections: [
-      { slug: "general",   label: "General" },
+      { slug: "",          label: "Overview" },
       { slug: "welcome",   label: "Welcome & Farewell" },
       { slug: "birthdays", label: "Birthdays" },
     ],
@@ -75,8 +75,7 @@ const GROUPS = [
       { slug: "automod",     label: "Auto-Mod" },
       { slug: "anti-raid",   label: "Anti-Raid" },
       { slug: "thresholds",  label: "Warn Thresholds" },
-      { slug: "warnings",    label: "Warnings" },
-      { slug: "cases",       label: "Case Log" },
+      { slug: "warnings",    label: "Moderation Logs" },
     ],
   },
   {
@@ -117,8 +116,10 @@ export default function GuildNav({ guildId }: { guildId: string }) {
               {group.label}
             </span>
             {group.sections.map((section) => {
-              const href = `/dashboard/${guildId}/${section.slug}`;
-              const active = pathname?.startsWith(href);
+              const href = section.slug
+                ? `/dashboard/${guildId}/${section.slug}`
+                : `/dashboard/${guildId}`;
+              const active = section.slug ? pathname?.startsWith(href) : pathname === href;
               return (
                 <Link key={section.slug} href={href} className={STYLES.link(!!active)}>
                   {section.label}

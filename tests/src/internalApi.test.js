@@ -21,13 +21,15 @@ describe('internal API /internal/health', () => {
 
     beforeAll(done => {
         process.env.INTERNAL_API_PORT = '0';
-        client = { isReady: jest.fn() };
+        client = { isReady: jest.fn(), ws: { ping: 42 }, uptime: 12345 };
 
         // Force the server onto an ephemeral port so tests don't collide, and capture the instance/port once bound.
+        // Handles both listen(port, cb) and listen(port, host, cb) since callers may bind to a specific host or not.
         const originalListen = http.Server.prototype.listen;
-        http.Server.prototype.listen = function (_port, host, cb) {
+        http.Server.prototype.listen = function (_port, hostOrCb, maybeCb) {
+            const cb = typeof hostOrCb === 'function' ? hostOrCb : maybeCb;
             server = this;
-            return originalListen.call(this, 0, host, () => {
+            return originalListen.call(this, 0, () => {
                 port = this.address().port;
                 http.Server.prototype.listen = originalListen;
                 cb();
@@ -50,7 +52,7 @@ describe('internal API /internal/health', () => {
         const res = await request(port, '/internal/health');
 
         expect(res.status).toBe(200);
-        expect(res.body).toEqual({ discord: 'up', mongo: 'up' });
+        expect(res.body).toEqual({ discord: 'up', mongo: 'up', ping: 42, uptime: 12345 });
     });
 
     test('returns 503 when discord client is not ready', async () => {
@@ -60,7 +62,7 @@ describe('internal API /internal/health', () => {
         const res = await request(port, '/internal/health');
 
         expect(res.status).toBe(503);
-        expect(res.body).toEqual({ discord: 'down', mongo: 'up' });
+        expect(res.body).toEqual({ discord: 'down', mongo: 'up', ping: null, uptime: null });
     });
 
     test('returns 503 when mongo is not connected', async () => {
@@ -70,7 +72,7 @@ describe('internal API /internal/health', () => {
         const res = await request(port, '/internal/health');
 
         expect(res.status).toBe(503);
-        expect(res.body).toEqual({ discord: 'up', mongo: 'down' });
+        expect(res.body).toEqual({ discord: 'up', mongo: 'down', ping: 42, uptime: 12345 });
     });
 
     test('does not require the internal secret header', async () => {

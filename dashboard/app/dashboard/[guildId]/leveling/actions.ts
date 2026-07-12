@@ -11,20 +11,6 @@ export async function updateLevelingSettings(guildId: string, formData: FormData
   await requireGuildAccess(guildId);
   await connectDB();
 
-  const update = {
-    levelingEnabled: formData.get("levelingEnabled") === "on",
-    levelUpChannelId: emptyToNull(formData.get("levelUpChannelId")),
-  };
-
-  await Guild.findOneAndUpdate({ guildId }, { $set: update, $setOnInsert: { guildId } }, { upsert: true });
-
-  revalidatePath(`/dashboard/${guildId}/leveling`);
-}
-
-export async function updateLevelRoles(guildId: string, formData: FormData) {
-  await requireGuildAccess(guildId);
-  await connectDB();
-
   const raw = formData.get("levelRoles")?.toString() ?? "[]";
 
   let parsed: unknown;
@@ -58,11 +44,13 @@ export async function updateLevelRoles(guildId: string, formData: FormData) {
     return true;
   });
 
-  await Guild.findOneAndUpdate(
-    { guildId },
-    { $set: { levelRoles: deduped }, $setOnInsert: { guildId } },
-    { upsert: true }
-  );
+  const update = {
+    levelingEnabled: formData.get("levelingEnabled") === "on",
+    levelUpChannelId: emptyToNull(formData.get("levelUpChannelId")),
+    levelRoles: deduped,
+  };
+
+  await Guild.findOneAndUpdate({ guildId }, { $set: update, $setOnInsert: { guildId } }, { upsert: true });
 
   revalidatePath(`/dashboard/${guildId}/leveling`);
 }

@@ -11,17 +11,18 @@ interface Row extends Omit<ShopDoc, "guildId"> {
 }
 
 const STYLES = {
-  form: "flex flex-col gap-6 max-w-2xl",
-  footer: "flex items-center gap-3",
+  form: "flex flex-col gap-6 max-w-4xl",
+  footer: "flex items-center gap-3 -mt-3",
   submitButton:
     "cursor-pointer self-start rounded-[8px] bg-[var(--primary)] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:bg-[var(--border)] disabled:text-[var(--text-muted)] disabled:opacity-100",
   savedText: "text-sm text-[var(--success)]",
   errorText: "text-sm text-[var(--danger)]",
-  row: "flex flex-col gap-3 rounded-lg border border-[var(--border-muted)] p-4",
+  row: "@container flex flex-col gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-light)] p-4",
   rowHeader: "flex items-center justify-between gap-3",
   rowTitle: "text-sm font-semibold text-[var(--text)]",
-  rowFields: "grid grid-cols-1 gap-3 sm:grid-cols-2",
-  rowFieldFull: "flex flex-col gap-1.5 sm:col-span-2",
+  rowTitlePlaceholder: "italic text-[var(--text-muted)]",
+  rowFields: "grid grid-cols-1 gap-3 @sm:grid-cols-2",
+  rowFieldFull: "flex flex-col gap-1.5 @sm:col-span-2",
   rowField: "flex flex-col gap-1.5",
   label: "text-sm font-medium text-[var(--text)]",
   input:
@@ -34,10 +35,14 @@ const STYLES = {
   checkbox: "h-4 w-4 cursor-pointer accent-[var(--primary)]",
   checkboxLabel: "text-sm text-[var(--text)]",
   removeButton:
-    "cursor-pointer shrink-0 rounded-lg border border-[var(--border-muted)] px-3 py-1.5 text-xs text-[var(--text-muted)] transition-colors hover:border-[var(--danger)] hover:text-[var(--danger)]",
-  addButton:
-    "cursor-pointer self-start rounded-lg border border-dashed border-[var(--border)] px-4 py-2 text-sm text-[var(--text-muted)] transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)]",
+    "cursor-pointer shrink-0 rounded p-1 text-[var(--danger)]/70 hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] disabled:opacity-40 transition-colors",
+  removeIcon: "h-4 w-4",
+  addIconButton:
+    "cursor-pointer flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-muted)] transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)]",
+  addIcon: "h-4 w-4",
   empty: "text-sm text-[var(--text-muted)]",
+  rowsScroll:
+    "grid max-h-[32rem] grid-cols-1 gap-4 overflow-y-auto overflow-x-hidden pr-3 -mr-3 lg:grid-cols-2 lg:items-start",
 };
 
 function blankRow(key: number, firstRoleId: string): Row {
@@ -133,145 +138,165 @@ export default function ShopForm({
       <SettingsCard
         title="Shop Items"
         description="Role items grant a Discord role on purchase; badge items add an emoji to /profile."
+        headerAction={
+          <button
+            type="button"
+            onClick={addRow}
+            className={STYLES.addIconButton}
+            aria-label="Add item"
+            title="Add item"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={STYLES.addIcon}>
+              <path d="M12 5v14" />
+              <path d="M5 12h14" />
+            </svg>
+          </button>
+        }
       >
         {rows.length === 0 ? (
           <p className={STYLES.empty}>No items in the shop yet. Add one below.</p>
         ) : (
-          rows.map((row) => (
-            <div key={row.key} className={STYLES.row}>
-              <div className={STYLES.rowHeader}>
-                <span className={STYLES.rowTitle}>
-                  {row.name || <span className="italic text-[var(--text-muted)]">Untitled item</span>}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => removeRow(row.key)}
-                  className={STYLES.removeButton}
-                >
-                  Remove
-                </button>
-              </div>
-
-              <div className={STYLES.rowFields}>
-                <div className={STYLES.rowFieldFull}>
-                  <label className={STYLES.label}>Name</label>
-                  <input
-                    type="text"
-                    value={row.name}
-                    placeholder="e.g. VIP Role"
-                    onChange={(e) => updateRow(row.key, { name: e.target.value })}
-                    className={STYLES.input}
-                  />
-                </div>
-
-                <div className={STYLES.rowField}>
-                  <label className={STYLES.label}>Type</label>
-                  <select
-                    value={row.type}
-                    onChange={(e) =>
-                      updateRow(row.key, {
-                        type: e.target.value as "role" | "badge",
-                        roleId: e.target.value === "role" ? (roles[0]?.id ?? "") : row.roleId,
-                        emoji: e.target.value === "badge" ? row.emoji : "",
-                      })
-                    }
-                    className={STYLES.select}
+          <div className={STYLES.rowsScroll}>
+            {rows.map((row) => (
+              <div key={row.key} className={STYLES.row}>
+                <div className={STYLES.rowHeader}>
+                  <span className={STYLES.rowTitle}>
+                    {row.name || <span className={STYLES.rowTitlePlaceholder}>Untitled item</span>}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeRow(row.key)}
+                    className={STYLES.removeButton}
+                    aria-label="Remove item"
+                    title="Remove"
                   >
-                    <option value="role">Role (grants a Discord role)</option>
-                    <option value="badge">Badge (emoji on /profile)</option>
-                  </select>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={STYLES.removeIcon}>
+                      <path d="M3 6h18" />
+                      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                      <path d="M10 11v6" />
+                      <path d="M14 11v6" />
+                    </svg>
+                  </button>
                 </div>
 
-                <div className={STYLES.rowField}>
-                  <label className={STYLES.label}>Price (coins)</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={row.price}
-                    onChange={(e) =>
-                      updateRow(row.key, { price: parseInt(e.target.value, 10) || 1 })
-                    }
-                    className={STYLES.numberInput}
-                  />
-                </div>
-
-                {row.type === "role" ? (
+                <div className={STYLES.rowFields}>
                   <div className={STYLES.rowFieldFull}>
-                    <label className={STYLES.label}>Role</label>
-                    {roles.length === 0 ? (
-                      <p className={STYLES.empty}>No assignable roles found in this server.</p>
-                    ) : (
-                      <select
-                        value={row.roleId ?? ""}
-                        onChange={(e) => updateRow(row.key, { roleId: e.target.value })}
-                        className={STYLES.select}
-                      >
-                        {roles.map((r) => (
-                          <option key={r.id} value={r.id}>{r.name}</option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                ) : (
-                  <div className={STYLES.rowFieldFull}>
-                    <label className={STYLES.label}>Emoji</label>
+                    <label className={STYLES.label}>Name</label>
                     <input
                       type="text"
-                      value={row.emoji ?? ""}
-                      placeholder="e.g. ⭐ or <:name:id>"
-                      onChange={(e) => updateRow(row.key, { emoji: e.target.value })}
+                      value={row.name}
+                      placeholder="e.g. VIP Role"
+                      onChange={(e) => updateRow(row.key, { name: e.target.value })}
                       className={STYLES.input}
                     />
                   </div>
-                )}
 
-                <div className={STYLES.rowFieldFull}>
-                  <label className={STYLES.label}>Description</label>
-                  <input
-                    type="text"
-                    value={row.description}
-                    placeholder="Short description shown in the shop (optional)"
-                    onChange={(e) => updateRow(row.key, { description: e.target.value })}
-                    className={STYLES.input}
-                  />
-                </div>
+                  <div className={STYLES.rowField}>
+                    <label className={STYLES.label}>Type</label>
+                    <select
+                      value={row.type}
+                      onChange={(e) =>
+                        updateRow(row.key, {
+                          type: e.target.value as "role" | "badge",
+                          roleId: e.target.value === "role" ? (roles[0]?.id ?? "") : row.roleId,
+                          emoji: e.target.value === "badge" ? row.emoji : "",
+                        })
+                      }
+                      className={STYLES.select}
+                    >
+                      <option value="role">Role (grants a Discord role)</option>
+                      <option value="badge">Badge (emoji on /profile)</option>
+                    </select>
+                  </div>
 
-                <div className={STYLES.rowFieldFull}>
-                  <label className={STYLES.checkboxRow}>
+                  <div className={STYLES.rowField}>
+                    <label className={STYLES.label}>Price (coins)</label>
                     <input
-                      type="checkbox"
-                      checked={row.enabled}
-                      onChange={(e) => updateRow(row.key, { enabled: e.target.checked })}
-                      className={STYLES.checkbox}
+                      type="number"
+                      min={1}
+                      value={row.price}
+                      onChange={(e) =>
+                        updateRow(row.key, { price: parseInt(e.target.value, 10) || 1 })
+                      }
+                      className={STYLES.numberInput}
                     />
-                    <span className={STYLES.checkboxLabel}>Visible in shop</span>
-                  </label>
+                  </div>
+
+                  {row.type === "role" ? (
+                    <div className={STYLES.rowFieldFull}>
+                      <label className={STYLES.label}>Role</label>
+                      {roles.length === 0 ? (
+                        <p className={STYLES.empty}>No assignable roles found in this server.</p>
+                      ) : (
+                        <select
+                          value={row.roleId ?? ""}
+                          onChange={(e) => updateRow(row.key, { roleId: e.target.value })}
+                          className={STYLES.select}
+                        >
+                          {roles.map((r) => (
+                            <option key={r.id} value={r.id}>{r.name}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  ) : (
+                    <div className={STYLES.rowFieldFull}>
+                      <label className={STYLES.label}>Emoji</label>
+                      <input
+                        type="text"
+                        value={row.emoji ?? ""}
+                        placeholder="e.g. ⭐ or <:name:id>"
+                        onChange={(e) => updateRow(row.key, { emoji: e.target.value })}
+                        className={STYLES.input}
+                      />
+                    </div>
+                  )}
+
+                  <div className={STYLES.rowFieldFull}>
+                    <label className={STYLES.label}>Description</label>
+                    <input
+                      type="text"
+                      value={row.description}
+                      placeholder="Short description shown in the shop (optional)"
+                      onChange={(e) => updateRow(row.key, { description: e.target.value })}
+                      className={STYLES.input}
+                    />
+                  </div>
+
+                  <div className={STYLES.rowFieldFull}>
+                    <label className={STYLES.checkboxRow}>
+                      <input
+                        type="checkbox"
+                        checked={row.enabled}
+                        onChange={(e) => updateRow(row.key, { enabled: e.target.checked })}
+                        className={STYLES.checkbox}
+                      />
+                      <span className={STYLES.checkboxLabel}>Visible in shop</span>
+                    </label>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
 
-        <button type="button" onClick={addRow} className={STYLES.addButton}>
-          + Add item
-        </button>
+        <div className={STYLES.footer}>
+          <button
+            type="submit"
+            disabled={isPending || !dirty}
+            className={STYLES.submitButton}
+          >
+            {isPending ? "Saving..." : "Save changes"}
+          </button>
+          {status === "saved" && <span className={STYLES.savedText}>Saved</span>}
+          {status === "error" && (
+            <span className={STYLES.errorText}>
+              {errorMsg || "Failed to save — try again"}
+            </span>
+          )}
+        </div>
       </SettingsCard>
-
-      <div className={STYLES.footer}>
-        <button
-          type="submit"
-          disabled={isPending || !dirty}
-          className={STYLES.submitButton}
-        >
-          {isPending ? "Saving..." : "Save changes"}
-        </button>
-        {status === "saved" && <span className={STYLES.savedText}>Saved</span>}
-        {status === "error" && (
-          <span className={STYLES.errorText}>
-            {errorMsg || "Failed to save — try again"}
-          </span>
-        )}
-      </div>
     </form>
   );
 }

@@ -18,6 +18,7 @@ const STYLES = {
 };
 
 interface GuildContext {
+  id: string;
   name: string;
   iconUrl: string | null;
   initial: string;
@@ -55,7 +56,7 @@ export default function DashboardTopbar({ userId, username, avatar, guild }: Pro
         {guild && (
           <>
             <div className={STYLES.divider} />
-            <div className={STYLES.guildHeader}>
+            <Link href={`/dashboard/${guild.id}`} className={STYLES.guildHeader}>
               {guild.iconUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={guild.iconUrl} alt="" className={STYLES.guildIcon} />
@@ -63,7 +64,7 @@ export default function DashboardTopbar({ userId, username, avatar, guild }: Pro
                 <span className={STYLES.guildIconFallback}>{guild.initial}</span>
               )}
               <span className={STYLES.guildName}>{guild.name}</span>
-            </div>
+            </Link>
           </>
         )}
       </div>

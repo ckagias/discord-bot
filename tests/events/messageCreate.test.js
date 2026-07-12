@@ -1,6 +1,7 @@
 jest.mock('../../models/LevelSchema', () => ({ findOneAndUpdate: jest.fn() }));
 jest.mock('../../models/AfkSchema', () => ({ findOne: jest.fn(), deleteOne: jest.fn() }));
 jest.mock('../../models/TriggerSchema', () => ({ find: jest.fn() }));
+jest.mock('../../models/MessageActivitySchema', () => ({ updateOne: jest.fn() }));
 jest.mock('../../utils/automod', () => ({ runAutoMod: jest.fn() }));
 jest.mock('../../utils/guildConfig', () => ({ ensureGuildConfig: jest.fn() }));
 jest.mock('../../utils/economy', () => ({ updateBalance: jest.fn() }));
@@ -9,6 +10,7 @@ jest.mock('../../utils/upsertRetry', () => ({ upsertWithRetry: jest.fn() }));
 const LevelSchema = require('../../models/LevelSchema');
 const AfkSchema = require('../../models/AfkSchema');
 const TriggerSchema = require('../../models/TriggerSchema');
+const MessageActivitySchema = require('../../models/MessageActivitySchema');
 const { runAutoMod } = require('../../utils/automod');
 const { ensureGuildConfig } = require('../../utils/guildConfig');
 const { updateBalance } = require('../../utils/economy');
@@ -42,6 +44,7 @@ describe('messageCreate', () => {
         AfkSchema.findOne.mockResolvedValue(null);
         runAutoMod.mockResolvedValue(false);
         updateBalance.mockResolvedValue({});
+        MessageActivitySchema.updateOne.mockResolvedValue({});
     });
 
     afterEach(() => {
