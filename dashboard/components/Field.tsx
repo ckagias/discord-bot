@@ -5,15 +5,15 @@ const STYLES = {
   label: "text-sm font-medium text-[var(--text)]",
   description: "text-sm text-[var(--text-muted)]",
   select:
-    "cursor-pointer appearance-none rounded-lg border border-[var(--border)] bg-[var(--bg-light)] bg-[url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20stroke%3D%22%23888%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M5%207.5%2010%2012.5%2015%207.5%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:12px] bg-[right_1rem_center] pl-3 pr-9 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--primary)]",
+    "cursor-pointer appearance-none rounded-lg border border-[var(--border)] bg-[var(--bg-light)] bg-[url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20stroke%3D%22%23888%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M5%207.5%2010%2012.5%2015%207.5%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:12px] bg-[right_1rem_center] pl-3 pr-9 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-50",
   input:
-    "rounded-lg border border-[var(--border)] bg-[var(--bg-light)] px-3 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--primary)]",
+    "rounded-lg border border-[var(--border)] bg-[var(--bg-light)] px-3 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-50",
   textarea:
     "resize-y rounded-lg border border-[var(--border)] bg-[var(--bg-light)] px-3 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--primary)]",
   textareaMinHeight: "min-h-24",
   checkboxRow: "flex items-center justify-between gap-4",
   checkboxText: "flex flex-col gap-1",
-  toggleLabel: "relative inline-flex h-6 w-11 shrink-0 cursor-pointer",
+  toggleLabel: "relative inline-flex h-6 w-11 shrink-0 cursor-pointer has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50",
   toggleTrack:
     "absolute inset-0 rounded-full bg-[var(--border)] transition-colors peer-checked:bg-[var(--primary)] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--primary)]",
   toggleKnob:
@@ -46,6 +46,7 @@ export function ChannelField({
   defaultValue,
   channels,
   onChange,
+  disabled,
 }: {
   label?: string;
   description?: string;
@@ -53,6 +54,7 @@ export function ChannelField({
   defaultValue: string | null;
   channels: DiscordChannel[];
   onChange?: (value: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <FieldShell label={label} description={description}>
@@ -63,6 +65,7 @@ export function ChannelField({
         defaultValue={defaultValue ?? ""}
         className={STYLES.select}
         onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+        disabled={disabled}
       >
         <option value="">None</option>
         {channels.map((c) => (
@@ -178,12 +181,14 @@ export function TextField({
   name,
   defaultValue,
   onChange,
+  disabled,
 }: {
   label: string;
   description?: string;
   name: string;
   defaultValue: string | null;
   onChange?: (value: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <FieldShell label={label} description={description}>
@@ -193,6 +198,7 @@ export function TextField({
         defaultValue={defaultValue ?? ""}
         className={STYLES.input}
         onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+        disabled={disabled}
       />
     </FieldShell>
   );
@@ -204,12 +210,14 @@ export function ToggleField({
   name,
   defaultChecked,
   onChange,
+  disabled,
 }: {
   label: string;
   description?: string;
   name: string;
   defaultChecked: boolean;
   onChange?: (value: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className={STYLES.checkboxRow}>
@@ -227,6 +235,7 @@ export function ToggleField({
           defaultChecked={defaultChecked}
           className={STYLES.toggleInput}
           onChange={onChange ? (e) => onChange(e.target.checked) : undefined}
+          disabled={disabled}
         />
         <span className={STYLES.toggleTrack} />
         <span className={STYLES.toggleKnob} />

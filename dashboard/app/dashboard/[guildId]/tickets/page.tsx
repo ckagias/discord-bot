@@ -8,14 +8,16 @@ import SettingsCardForm from "@/components/SettingsCardForm";
 import CopyOnClick from "@/components/CopyOnClick";
 import { ChannelField, RoleField } from "@/components/Field";
 import { updateTicketSettings } from "./actions";
+import TicketSearch from "./TicketSearch";
 
 const STYLES = {
   heading: "mb-4 text-2xl font-semibold text-[var(--text)]",
-  grid: "grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start",
+  grid: "grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch",
   leftCol: "flex flex-col gap-6",
-  ticketsCard: "rounded-2xl border border-[var(--border-muted)] bg-[var(--bg)] px-6 py-6 shadow-[0_3px_6px_rgba(0,0,0,0.16),0_3px_6px_rgba(0,0,0,0.23)]",
-  table: "text-sm",
-  thead: "border-b border-[var(--border-muted)]",
+  ticketsCard: "flex flex-col rounded-2xl border border-[var(--border-muted)] bg-[var(--bg)] px-6 py-6 shadow-[0_3px_6px_rgba(0,0,0,0.16),0_3px_6px_rgba(0,0,0,0.23)]",
+  ticketsBody: "mt-6 flex flex-1 min-h-0 flex-col gap-3.5",
+  table: "w-full text-sm",
+  theadSticky: "sticky top-0 border-b border-[var(--border-muted)] bg-[var(--bg)]",
   th: "pb-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]",
   thSortable:
     "cursor-pointer select-none pb-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] hover:text-[var(--text)]",
@@ -36,13 +38,15 @@ const STYLES = {
     ].join(" ");
   },
   empty: "text-sm text-[var(--text-muted)]",
-  filterBar: "mb-6 flex gap-2",
+  emptyWrap: "flex flex-1 min-h-0 items-center justify-center",
+  filterBar: "flex shrink-0 gap-2",
+  ticketsScroll: "mt-1.5 max-h-[11rem] overflow-y-auto overflow-x-auto pr-3 -mr-3",
   filterLink: (active: boolean) =>
     [
-      "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+      "rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors",
       active
-        ? "bg-[var(--primary)]/10 text-[var(--primary)]"
-        : "border border-[var(--border-muted)] text-[var(--text-muted)] hover:bg-[var(--bg-light)]",
+        ? "border-transparent bg-[var(--primary)]/10 text-[var(--primary)]"
+        : "border-[var(--border-muted)] text-[var(--text-muted)] hover:bg-[var(--bg-light)]",
     ].join(" "),
 };
 
@@ -59,17 +63,17 @@ export default async function TicketSettingsPage({
   searchParams,
 }: {
   params: Promise<{ guildId: string }>;
-  searchParams: Promise<{ status?: string; order?: string }>;
+  searchParams: Promise<{ status?: string; order?: string; q?: string }>;
 }) {
   const { guildId } = await params;
-  const { status, order } = await searchParams;
+  const { status, order, q } = await searchParams;
   const sortAsc = order === "asc";
   await connectDB();
 
   const ticketQuery: Record<string, unknown> = { guildId };
   if (status === "open" || status === "closed") ticketQuery.status = status;
 
-  const [guildDoc, channels, roles, tickets] = await Promise.all([
+  const [guildDoc, channels, roles, allTickets] = await Promise.all([
     Guild.findOne({ guildId }).lean<GuildDoc>(),
     fetchGuildChannels(guildId),
     fetchGuildRoles(guildId),
@@ -84,15 +88,27 @@ export default async function TicketSettingsPage({
     ticketSupportRoleId: null,
   };
 
-  const uniqueUserIds = [...new Set(tickets.map((t) => t.userId))];
+  const uniqueUserIds = [...new Set(allTickets.map((t) => t.userId))];
   const nameEntries = await Promise.all(
     uniqueUserIds.map(async (id) => [id, await fetchGuildMemberName(guildId, id)] as const)
   );
   const memberNames = new Map(nameEntries);
 
+  // Matches the ticket number, opener's raw user ID, or their resolved username.
+  const needle = q?.trim().toLowerCase() ?? "";
+  const tickets = needle
+    ? allTickets.filter((t) => {
+        if (String(t.ticketNumber).includes(needle)) return true;
+        if (t.userId.toLowerCase().includes(needle)) return true;
+        const name = memberNames.get(t.userId);
+        return !!name && name.toLowerCase().includes(needle);
+      })
+    : allTickets;
+
   function toggleOrderHref() {
     const p = new URLSearchParams();
     if (status) p.set("status", status);
+    if (q?.trim()) p.set("q", q.trim());
     p.set("order", sortAsc ? "desc" : "asc");
     return `?${p.toString()}`;
   }
@@ -100,6 +116,7 @@ export default async function TicketSettingsPage({
   function statusFilterHref(s?: string) {
     const p = new URLSearchParams();
     if (s) p.set("status", s);
+    if (q?.trim()) p.set("q", q.trim());
     if (order && order !== "desc") p.set("order", order);
     const qs = p.toString();
     return qs ? `?${qs}` : "?";
@@ -129,51 +146,63 @@ export default async function TicketSettingsPage({
             />
           </SettingsCardForm>
         </div>
-        <SettingsCard title="Open & recent tickets" description="Last 50, newest first." className={STYLES.ticketsCard}>
-          <div className={STYLES.filterBar}>
-            <Link href={statusFilterHref()} className={STYLES.filterLink(!status)}>All</Link>
-            <Link href={statusFilterHref("open")} className={STYLES.filterLink(status === "open")}>Open</Link>
-            <Link href={statusFilterHref("closed")} className={STYLES.filterLink(status === "closed")}>Closed</Link>
-          </div>
+        <SettingsCard
+          title="Open & recent tickets"
+          description="Last 50, newest first."
+          className={STYLES.ticketsCard}
+          bodyClassName={STYLES.ticketsBody}
+          headerAction={
+            <div className={STYLES.filterBar}>
+              <Link href={statusFilterHref()} className={STYLES.filterLink(!status)}>All</Link>
+              <Link href={statusFilterHref("open")} className={STYLES.filterLink(status === "open")}>Open</Link>
+              <Link href={statusFilterHref("closed")} className={STYLES.filterLink(status === "closed")}>Closed</Link>
+            </div>
+          }
+        >
+          <TicketSearch defaultValue={q ?? ""} />
           {tickets.length === 0 ? (
-            <p className={STYLES.empty}>
-              {status ? `No ${status} tickets found.` : "No tickets created yet."}
-            </p>
+            <div className={STYLES.emptyWrap}>
+              <p className={STYLES.empty}>
+                {q ? `No tickets found for "${q}".` : status ? `No ${status} tickets found.` : "No tickets created yet."}
+              </p>
+            </div>
           ) : (
-            <table className={STYLES.table}>
-              <thead className={STYLES.thead}>
-                <tr>
-                  <th className={STYLES.thSortable}>
-                    <Link href={toggleOrderHref()}>
-                      # {sortAsc ? "↑" : "↓"}
-                    </Link>
-                  </th>
-                  <th className={STYLES.th}>User</th>
-                  <th className={STYLES.th}>Status</th>
-                  <th className={STYLES.thSortableRight}>
-                    <Link href={toggleOrderHref()}>
-                      Date {sortAsc ? "↑" : "↓"}
-                    </Link>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {tickets.map((t) => (
-                  <tr key={t.ticketNumber} className={STYLES.tr}>
-                    <td className={STYLES.tdMuted}>#{t.ticketNumber}</td>
-                    <td className={STYLES.td}>
-                      <CopyOnClick value={t.userId} truncate={!!memberNames.get(t.userId)} title={`Click to copy ID: ${t.userId}`}>
-                        {memberNames.get(t.userId) ?? "Unknown user"}
-                      </CopyOnClick>
-                    </td>
-                    <td className={STYLES.td}>
-                      <span className={STYLES.statusBadge(t.status)}>{t.status}</span>
-                    </td>
-                    <td className={STYLES.tdRight}>{formatDate(t.createdAt)}</td>
+            <div className={STYLES.ticketsScroll}>
+              <table className={STYLES.table}>
+                <thead className={STYLES.theadSticky}>
+                  <tr>
+                    <th className={STYLES.thSortable}>
+                      <Link href={toggleOrderHref()}>
+                        # {sortAsc ? "↑" : "↓"}
+                      </Link>
+                    </th>
+                    <th className={STYLES.th}>User</th>
+                    <th className={STYLES.th}>Status</th>
+                    <th className={STYLES.thSortableRight}>
+                      <Link href={toggleOrderHref()}>
+                        Date {sortAsc ? "↑" : "↓"}
+                      </Link>
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {tickets.map((t) => (
+                    <tr key={t.ticketNumber} className={STYLES.tr}>
+                      <td className={STYLES.tdMuted}>#{t.ticketNumber}</td>
+                      <td className={STYLES.td}>
+                        <CopyOnClick value={t.userId} truncate={!!memberNames.get(t.userId)} title={`Click to copy ID: ${t.userId}`}>
+                          {memberNames.get(t.userId) ?? "Unknown user"}
+                        </CopyOnClick>
+                      </td>
+                      <td className={STYLES.td}>
+                        <span className={STYLES.statusBadge(t.status)}>{t.status}</span>
+                      </td>
+                      <td className={STYLES.tdRight}>{formatDate(t.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </SettingsCard>
       </div>

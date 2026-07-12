@@ -38,11 +38,11 @@ const STYLES = {
   },
   empty: "text-sm text-[var(--text-muted)]",
   actions: "flex items-center justify-end gap-1",
-  grid: "grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start",
+  grid: "grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.06fr)] lg:items-start",
   leftCol: "flex flex-col gap-6",
   pendingCard: "rounded-2xl border border-[var(--border-muted)] bg-[var(--bg)] px-6 py-6 shadow-[0_3px_6px_rgba(0,0,0,0.16),0_3px_6px_rgba(0,0,0,0.23)]",
-  pendingScroll: "max-h-[41.1rem] overflow-y-auto overflow-x-auto pr-3 -mr-3",
-  resolvedScroll: "max-h-[18.5rem] overflow-y-auto overflow-x-auto pr-3 -mr-3",
+  pendingScroll: "max-h-[39.7rem] overflow-y-auto overflow-x-auto pr-3 -mr-3",
+  resolvedScroll: "max-h-[17.1rem] overflow-y-auto overflow-x-auto pr-3 -mr-3",
 };
 
 function formatDate(d: Date) {
@@ -100,8 +100,7 @@ function SuggestionTable({
       <tbody>
         {rows.map((s, i) => {
           const authorName = authorNames.get(s.authorId);
-          // Display index over this sub-table's rows — newest gets the highest #, matching
-          // the shared date-derived numbering used across the dashboard's other tables.
+          // Display index over this sub-table's rows — newest gets the highest #.
           const displayIndex = sortAsc ? i + 1 : rows.length - i;
           return (
             <tr key={s.messageId} className={STYLES.tr}>
@@ -148,18 +147,19 @@ export default async function SuggestionsPage({
   searchParams,
 }: {
   params: Promise<{ guildId: string }>;
-  searchParams: Promise<{ order?: string }>;
+  searchParams: Promise<{ resolvedOrder?: string; pendingOrder?: string }>;
 }) {
   const { guildId } = await params;
-  const { order } = await searchParams;
-  const sortAsc = order === "asc";
+  const { resolvedOrder, pendingOrder } = await searchParams;
+  const resolvedSortAsc = resolvedOrder === "asc";
+  const pendingSortAsc = pendingOrder === "asc";
   await connectDB();
 
   const [guildDoc, channels, roles, suggestions] = await Promise.all([
     Guild.findOne({ guildId }).lean<GuildDoc>(),
     fetchGuildChannels(guildId),
     fetchGuildRoles(guildId),
-    Suggestion.find({ guildId }).sort({ createdAt: sortAsc ? 1 : -1 }).limit(50).lean<SuggestionDoc[]>(),
+    Suggestion.find({ guildId }).sort({ createdAt: -1 }).limit(50).lean<SuggestionDoc[]>(),
   ]);
 
   const guild: Pick<GuildDoc, "suggestChannelId" | "suggestApproverRoleId"> = guildDoc ?? {
@@ -170,6 +170,8 @@ export default async function SuggestionsPage({
 
   const pending = suggestions.filter((s) => s.status === "pending");
   const resolved = suggestions.filter((s) => s.status !== "pending");
+  if (resolvedSortAsc) resolved.reverse();
+  if (pendingSortAsc) pending.reverse();
 
   const uniqueAuthorIds = [...new Set(suggestions.map((s) => s.authorId))];
   const authorNameEntries = await Promise.all(
@@ -177,9 +179,17 @@ export default async function SuggestionsPage({
   );
   const authorNames = new Map(authorNameEntries);
 
-  function toggleOrderHref() {
+  function toggleResolvedOrderHref() {
     const p = new URLSearchParams();
-    p.set("order", sortAsc ? "desc" : "asc");
+    p.set("resolvedOrder", resolvedSortAsc ? "desc" : "asc");
+    if (pendingOrder && pendingOrder !== "desc") p.set("pendingOrder", pendingOrder);
+    return `?${p.toString()}`;
+  }
+
+  function togglePendingOrderHref() {
+    const p = new URLSearchParams();
+    if (resolvedOrder && resolvedOrder !== "desc") p.set("resolvedOrder", resolvedOrder);
+    p.set("pendingOrder", pendingSortAsc ? "desc" : "asc");
     return `?${p.toString()}`;
   }
 
@@ -217,8 +227,8 @@ export default async function SuggestionsPage({
                   reviewable={false}
                   authorNames={authorNames}
                   stickyHeader
-                  sortAsc={sortAsc}
-                  toggleOrderHref={toggleOrderHref()}
+                  sortAsc={resolvedSortAsc}
+                  toggleOrderHref={toggleResolvedOrderHref()}
                   showVotes={false}
                 />
               </div>
@@ -236,8 +246,8 @@ export default async function SuggestionsPage({
                 reviewable
                 authorNames={authorNames}
                 stickyHeader
-                sortAsc={sortAsc}
-                toggleOrderHref={toggleOrderHref()}
+                sortAsc={pendingSortAsc}
+                toggleOrderHref={togglePendingOrderHref()}
               />
             </div>
           )}

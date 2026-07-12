@@ -13,7 +13,7 @@ const STYLES = {
     "cursor-pointer rounded-lg border border-[var(--border-muted)] px-4 py-2 text-sm font-medium text-[var(--text-muted)] hover:bg-[var(--bg-light)]",
 };
 
-export default function WarnSearch({
+export default function UserIdSearch({
   defaultValue,
   order,
   paramName = "userId",

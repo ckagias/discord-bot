@@ -9,7 +9,6 @@ const STYLES = {
 
 const TRUNCATE_CHARS = 7;
 
-// Shortens a name to its first word, then to a fixed char count, appending an ellipsis if cut.
 function truncateName(name: string) {
   const firstWord = name.trim().split(/\s+/)[0] ?? "";
   if (firstWord.length <= TRUNCATE_CHARS) return firstWord.length < name.trim().length ? `${firstWord}…` : firstWord;

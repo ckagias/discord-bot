@@ -4,7 +4,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 
 const STYLES = {
-  wrapper: "mb-6 flex gap-2",
+  wrapper: "flex gap-2",
   input:
     "flex-1 rounded-lg border border-[var(--border-muted)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50",
   button:
@@ -13,17 +13,7 @@ const STYLES = {
     "cursor-pointer rounded-lg border border-[var(--border-muted)] px-4 py-2 text-sm font-medium text-[var(--text-muted)] hover:bg-[var(--bg-light)]",
 };
 
-export default function CaseSearch({
-  defaultValue,
-  order,
-  paramName = "userId",
-  orderParamName = "order",
-}: {
-  defaultValue: string;
-  order: string;
-  paramName?: string;
-  orderParamName?: string;
-}) {
+export default function TicketSearch({ defaultValue }: { defaultValue: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -31,12 +21,10 @@ export default function CaseSearch({
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const userId = (e.currentTarget.elements.namedItem(paramName) as HTMLInputElement).value.trim();
+    const query = (e.currentTarget.elements.namedItem("q") as HTMLInputElement).value.trim();
     const params = new URLSearchParams(searchParams.toString());
-    if (userId) params.set(paramName, userId);
-    else params.delete(paramName);
-    if (order && order !== "desc") params.set(orderParamName, order);
-    else params.delete(orderParamName);
+    if (query) params.set("q", query);
+    else params.delete("q");
     const qs = params.toString();
     startTransition(() => {
       router.push(qs ? `${pathname}?${qs}` : pathname);
@@ -45,9 +33,7 @@ export default function CaseSearch({
 
   function handleClear() {
     const params = new URLSearchParams(searchParams.toString());
-    params.delete(paramName);
-    if (order && order !== "desc") params.set(orderParamName, order);
-    else params.delete(orderParamName);
+    params.delete("q");
     const qs = params.toString();
     startTransition(() => {
       router.push(qs ? `${pathname}?${qs}` : pathname);
@@ -57,10 +43,10 @@ export default function CaseSearch({
   return (
     <form onSubmit={handleSubmit} className={STYLES.wrapper}>
       <input
-        name={paramName}
+        name="q"
         type="text"
         defaultValue={defaultValue}
-        placeholder="Filter by username or user ID..."
+        placeholder="Search by ticket # or username/ID..."
         className={STYLES.input}
       />
       <button type="submit" disabled={pending} className={STYLES.button}>

@@ -369,7 +369,7 @@ Sign in with Discord OAuth2, pick a server where you have Manage Server and the 
 | Triggers            | Keyword→response pairs                                                                             |
 | Economy             | Credit leaderboard                                                                                 |
 | Shop                | Add/edit/remove role and badge items with price, description, visibility                           |
-| Tickets             | Category and support role setup, plus a live ticket list with open/closed filter                   |
+| Tickets             | Category and support role setup, plus a searchable ticket list (by number or user) with open/closed filters |
 | Temp Voice Channels | Auto-VC channel and category                                                                       |
 | Giveaways           | Active giveaways with an End button, past giveaways with Reroll and Delete buttons                 |
 | Suggestions         | Suggestion channel and approver role, pending suggestions with Approve/Deny/Implement/Delete buttons, resolved suggestions with Delete |

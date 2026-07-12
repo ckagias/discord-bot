@@ -1,26 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { approveSuggestion, denySuggestion, implementSuggestion, deleteSuggestion } from "./actions";
 
 const STYLES = {
-  btn: (variant: "success" | "danger" | "neutral") =>
-    [
-      "cursor-pointer rounded px-2 py-1 text-xs font-medium disabled:opacity-40 transition-colors",
-      variant === "success"
-        ? "text-[var(--text-muted)] hover:bg-[var(--success)]/10 hover:text-[var(--success)]"
-        : variant === "danger"
-        ? "text-[var(--text-muted)] hover:bg-[var(--danger)]/10 hover:text-[var(--danger)]"
-        : "text-[var(--text-muted)] hover:bg-[var(--bg-light)] hover:text-[var(--text)]",
-    ].join(" "),
   error: "mt-1 text-xs text-[var(--danger)]",
   wrap: "flex flex-col items-end",
-  row: "flex items-center gap-1",
   menuWrap: "relative inline-block text-left",
   menuTrigger:
     "cursor-pointer rounded px-2 py-1 text-sm font-medium text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-light)] hover:text-[var(--text)]",
   menuPanel:
-    "absolute right-0 z-10 mt-1 w-36 overflow-hidden rounded-lg border border-[var(--border-muted)] bg-[var(--bg)] py-1 shadow-lg",
+    "fixed z-50 w-36 overflow-hidden rounded-lg border border-[var(--border-muted)] bg-[var(--bg)] py-1 shadow-lg",
   menuItem: (variant: "success" | "danger" | "neutral") =>
     [
       "block w-full cursor-pointer px-3 py-1.5 text-left text-xs font-medium disabled:opacity-40 transition-colors",
@@ -50,49 +41,48 @@ function useRunAction(onRun: () => Promise<{ error?: string }>) {
   return { run, pending, error };
 }
 
-function ActionButton({
-  label,
-  variant,
-  onRun,
-}: {
-  label: string;
-  variant: "success" | "danger" | "neutral";
-  onRun: () => Promise<{ error?: string }>;
-}) {
-  const { run, pending, error } = useRunAction(onRun);
-
-  return (
-    <div className={STYLES.wrap}>
-      <button onClick={run} disabled={pending} className={STYLES.btn(variant)}>
-        {pending ? "…" : label}
-      </button>
-      {error && <p className={STYLES.error}>{error}</p>}
-    </div>
-  );
-}
-
 interface MenuAction {
   label: string;
   variant: "success" | "danger" | "neutral";
   onRun: () => Promise<{ error?: string }>;
 }
 
+const MENU_HEIGHT_ESTIMATE = 160;
+
 function ActionsMenu({ actions }: { actions: MenuAction[] }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const ref = useRef<HTMLDivElement>(null);
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      if (
+        wrapRef.current && !wrapRef.current.contains(e.target as Node) &&
+        panelRef.current && !panelRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
+
+  function toggleOpen() {
+    if (!open && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      const openUpward = window.innerHeight - rect.bottom < MENU_HEIGHT_ESTIMATE;
+      setMenuStyle({
+        right: window.innerWidth - rect.right,
+        ...(openUpward ? { bottom: window.innerHeight - rect.top + 4 } : { top: rect.bottom + 4 }),
+      });
+    }
+    setOpen((v) => !v);
+  }
 
   function handleSelect(action: MenuAction) {
     setOpen(false);
@@ -104,10 +94,11 @@ function ActionsMenu({ actions }: { actions: MenuAction[] }) {
   }
 
   return (
-    <div className={STYLES.wrap} ref={ref}>
+    <div className={STYLES.wrap} ref={wrapRef}>
       <div className={STYLES.menuWrap}>
         <button
-          onClick={() => setOpen((v) => !v)}
+          ref={triggerRef}
+          onClick={toggleOpen}
           disabled={pending}
           className={STYLES.menuTrigger}
           aria-haspopup="menu"
@@ -115,8 +106,8 @@ function ActionsMenu({ actions }: { actions: MenuAction[] }) {
         >
           {pending ? "…" : "⋯"}
         </button>
-        {open && (
-          <div className={STYLES.menuPanel} role="menu">
+        {open && createPortal(
+          <div ref={panelRef} className={STYLES.menuPanel} style={menuStyle} role="menu">
             {actions.map((action) => (
               <button
                 key={action.label}
@@ -128,7 +119,8 @@ function ActionsMenu({ actions }: { actions: MenuAction[] }) {
                 {action.label}
               </button>
             ))}
-          </div>
+          </div>,
+          document.body
         )}
       </div>
       {error && <p className={STYLES.error}>{error}</p>}

@@ -32,9 +32,7 @@ export function buildAuthorizeUrl(state: string, forceAccountPicker = false): st
     scope: "identify guilds",
     state,
   });
-  // Discord silently reuses the browser's existing Discord session by default.
-  // prompt=consent forces the account chooser/consent screen so the user can
-  // pick a different Discord account instead of being auto-logged back in.
+  // prompt=consent forces the account chooser so the user isn't auto-logged back into their existing session.
   if (forceAccountPicker) params.set("prompt", "consent");
   return `https://discord.com/oauth2/authorize?${params.toString()}`;
 }
@@ -69,11 +67,7 @@ export async function fetchCurrentUser(accessToken: string): Promise<DiscordUser
   return res.json();
 }
 
-// Discord rate-limits /users/@me/guilds aggressively. The dashboard calls this
-// on every guild-scoped page load and again on every server action (auth
-// re-check), which can trip 429s within the same few seconds for one user.
-// A short cache absorbs that burst without weakening the per-request
-// Manage Guild check (the list is still refetched at least every 5s).
+// Short cache absorbs 429 bursts from repeated per-page-load and per-action auth re-checks.
 const userGuildsCache = new Map<string, { guilds: DiscordGuild[]; expiresAt: number }>();
 const USER_GUILDS_CACHE_MS = 5_000;
 
@@ -149,12 +143,7 @@ export interface GuildStats {
   createdAt: string;
 }
 
-// Nearly every settings page fetches channels and/or roles for the same guild
-// on every navigation. Rapid tab-switching can fire several of these within
-// the same second and trip Discord's per-route rate limit, which previously
-// surfaced as an uncaught error and the generic error boundary. A short cache
-// (mirroring fetchUserGuilds above) absorbs that burst; 429s serve stale data
-// if we have it instead of failing the request.
+// Short cache (mirroring fetchUserGuilds above) absorbs rate-limit bursts from rapid tab-switching; 429s serve stale data if we have it.
 const guildChannelsCache = new Map<string, { channels: DiscordChannel[]; expiresAt: number }>();
 const guildRolesCache = new Map<string, { roles: DiscordRole[]; expiresAt: number }>();
 const guildStatsCache = new Map<string, { stats: GuildStats; expiresAt: number }>();
@@ -166,7 +155,6 @@ function snowflakeToDate(id: string): string {
   return new Date(Number(timestampMs)).toISOString();
 }
 
-// Uses the bot token — server-only, never sent to the browser.
 export async function fetchGuildStats(guildId: string): Promise<GuildStats> {
   const cached = guildStatsCache.get(guildId);
   if (cached && cached.expiresAt > Date.now()) {
@@ -198,7 +186,6 @@ export async function fetchGuildStats(guildId: string): Promise<GuildStats> {
   return stats;
 }
 
-// Uses the bot token — server-only, never sent to the browser.
 export async function fetchBotJoinedAt(guildId: string): Promise<string | null> {
   const res = await fetch(`${API_BASE}/guilds/${guildId}/members/@me`, {
     headers: { Authorization: `Bot ${requireEnv("Token")}` },
@@ -208,7 +195,6 @@ export async function fetchBotJoinedAt(guildId: string): Promise<string | null> 
   return data.joined_at ?? null;
 }
 
-// Uses the bot token — server-only, never sent to the browser.
 export async function fetchGuildChannels(guildId: string): Promise<DiscordChannel[]> {
   const cached = guildChannelsCache.get(guildId);
   if (cached && cached.expiresAt > Date.now()) {
@@ -232,7 +218,6 @@ export async function fetchGuildChannels(guildId: string): Promise<DiscordChanne
   return channels;
 }
 
-// Uses the bot token — server-only, never sent to the browser.
 export async function fetchGuildRoles(guildId: string): Promise<DiscordRole[]> {
   const cached = guildRolesCache.get(guildId);
   if (cached && cached.expiresAt > Date.now()) {
@@ -256,13 +241,9 @@ export async function fetchGuildRoles(guildId: string): Promise<DiscordRole[]> {
   return roles;
 }
 
-// Discord has no bulk "get members by ID" endpoint, so resolving display names for a
-// list (e.g. suggestion authors) means one request per unique user. Cached per
-// guild+user to keep repeat lookups (and repeat page loads) cheap; a miss or 429
-// returns null so callers can fall back to showing the raw ID instead of failing.
+// Discord has no bulk "get members by ID" endpoint, so this is one request per unique user; cached per guild+user, null on miss so callers fall back to the raw ID.
 const guildMemberCache = new Map<string, { name: string | null; expiresAt: number }>();
 
-// Uses the bot token — server-only, never sent to the browser.
 export async function fetchGuildMemberName(guildId: string, userId: string): Promise<string | null> {
   const cacheKey = `${guildId}:${userId}`;
   const cached = guildMemberCache.get(cacheKey);

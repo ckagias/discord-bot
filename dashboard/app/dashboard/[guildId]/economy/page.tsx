@@ -18,11 +18,8 @@ const STYLES = {
   medal: "text-base w-8",
   code: "rounded bg-[var(--bg-light)] px-1.5 py-0.5 text-xs",
   empty: "text-sm text-[var(--text-muted)]",
-  // Tuned to line up the card's bottom edge with the right-rail "Server stats" panel's
-  // bottom edge for a guild with the full stats/activity/open-items/top-members set. The
-  // rail's content is conditional per guild (online count, bot health, activity data), so
-  // this is a best-effort static match, not a guaranteed pixel-perfect one for every guild.
-  tableScroll: "max-h-[38.75rem] overflow-y-auto overflow-x-auto pr-3 -mr-3",
+  // Tuned to line up with the right-rail "Server stats" panel's bottom edge; best-effort since that rail's content is conditional per guild.
+  tableScroll: "max-h-[39.75rem] overflow-y-auto overflow-x-auto pr-3 -mr-3",
 };
 
 const MEDALS = ["🥇", "🥈", "🥉"];

@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
 import SettingsCard from "@/components/SettingsCard";
 import { ChannelField, ToggleField } from "@/components/Field";
+import AddIconButton from "@/components/AddIconButton";
+import RemoveIconButton from "@/components/RemoveIconButton";
+import { useRowListForm } from "@/lib/useRowListForm";
 import { updateLevelingSettings } from "./actions";
 import type { LevelRole } from "@/lib/models/Guild";
 import type { DiscordChannel, DiscordRole } from "@/lib/discord";
@@ -28,12 +30,13 @@ const STYLES = {
   select:
     "cursor-pointer w-full appearance-none rounded-lg border border-[var(--border)] bg-[var(--bg)] bg-[url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20stroke%3D%22%23888%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M5%207.5%2010%2012.5%2015%207.5%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:12px] bg-[right_1rem_center] pl-3 pr-9 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--primary)]",
   removeButton:
-    "cursor-pointer shrink-0 rounded p-1 text-[var(--danger)]/70 hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] disabled:opacity-40 transition-colors",
+    "cursor-pointer flex h-9 w-8 shrink-0 items-center justify-center rounded p-1 text-[var(--danger)]/70 hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] disabled:opacity-40 transition-colors",
   removeIcon: "h-4 w-4",
   addIconButton:
     "cursor-pointer flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-muted)] transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)]",
   addIcon: "h-4 w-4",
   empty: "text-sm text-[var(--text-muted)]",
+  emptyWrap: "flex flex-1 min-h-0 items-center justify-center",
   rowsScroll: "flex flex-1 min-h-0 flex-col gap-4 overflow-y-auto overflow-x-hidden pr-3 -mr-3",
   divider: "border-t border-[var(--border-muted)]",
   sectionHeader: "flex items-center justify-between gap-3",
@@ -55,66 +58,29 @@ export default function LevelingSettingsForm({
   initialLevelRoles: LevelRole[];
   roles: DiscordRole[];
 }) {
-  const [rows, setRows] = useState<Row[]>(() =>
-    initialLevelRoles.map((lr, i) => ({ ...lr, key: i }))
-  );
-  const [nextKey, setNextKey] = useState(initialLevelRoles.length);
-  const [dirty, setDirty] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const [status, setStatus] = useState<"idle" | "saved" | "error">("idle");
-
-  useEffect(() => {
-    if (!dirty) return;
-    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [dirty]);
-
-  function mark() {
-    setDirty(true);
-    setStatus("idle");
-  }
-
-  function addRow() {
-    const defaultRoleId = roles[0]?.id ?? "";
-    setRows((prev) => {
+  const {
+    rows,
+    dirty,
+    mark,
+    isPending,
+    status,
+    rowsScrollRef,
+    addRow,
+    removeRow,
+    updateRow,
+    handleSubmit,
+  } = useRowListForm<Row>({
+    initial: initialLevelRoles,
+    makeRow: (key, prev) => {
       const maxLevel = prev.reduce((max, r) => Math.max(max, r.level), 0);
-      return [...prev, { key: nextKey, level: maxLevel + 1, roleId: defaultRoleId }];
-    });
-    setNextKey((k) => k + 1);
-    mark();
-  }
-
-  function removeRow(key: number) {
-    setRows((prev) => prev.filter((r) => r.key !== key));
-    mark();
-  }
-
-  function updateRow(key: number, patch: Partial<Omit<Row, "key">>) {
-    setRows((prev) =>
-      prev.map((r) => (r.key !== key ? r : { ...r, ...patch }))
-    );
-    mark();
-  }
-
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setStatus("idle");
-    const form = e.currentTarget;
-    const fd = new FormData(form);
-    fd.set("levelRoles", JSON.stringify(rows.map(({ key: _key, ...lr }) => lr)));
-
-    startTransition(async () => {
-      try {
-        await updateLevelingSettings(guildId, fd);
-        setStatus("saved");
-        setDirty(false);
-      } catch (err) {
-        console.error(err);
-        setStatus("error");
-      }
-    });
-  }
+      return { key, level: maxLevel + 1, roleId: roles[0]?.id ?? "" };
+    },
+    submit: (rows, form) => {
+      const fd = new FormData(form);
+      fd.set("levelRoles", JSON.stringify(rows.map(({ key: _key, ...lr }) => lr)));
+      return updateLevelingSettings(guildId, fd);
+    },
+  });
 
   return (
     <form onSubmit={handleSubmit} onChange={mark} className={STYLES.form}>
@@ -141,24 +107,20 @@ export default function LevelingSettingsForm({
 
         <div className={STYLES.sectionHeader}>
           <span className={STYLES.sectionTitle}>Level Roles</span>
-          <button
-            type="button"
+          <AddIconButton
             onClick={addRow}
+            label="Add level role"
             className={STYLES.addIconButton}
-            aria-label="Add level role"
-            title="Add level role"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={STYLES.addIcon}>
-              <path d="M12 5v14" />
-              <path d="M5 12h14" />
-            </svg>
-          </button>
+            iconClassName={STYLES.addIcon}
+          />
         </div>
 
         {rows.length === 0 ? (
-          <p className={STYLES.empty}>No level roles configured. Add one below.</p>
+          <div className={STYLES.emptyWrap}>
+            <p className={STYLES.empty}>No level roles configured. Add one below.</p>
+          </div>
         ) : (
-          <div className={STYLES.rowsScroll}>
+          <div ref={rowsScrollRef} className={STYLES.rowsScroll}>
             {rows.map((row) => (
               <div key={row.key} className={STYLES.row}>
                 <div className={STYLES.rowField}>
@@ -187,21 +149,12 @@ export default function LevelingSettingsForm({
                   </select>
                 </div>
 
-                <button
-                  type="button"
+                <RemoveIconButton
                   onClick={() => removeRow(row.key)}
+                  label="Remove level role"
                   className={STYLES.removeButton}
-                  aria-label="Remove level role"
-                  title="Remove"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={STYLES.removeIcon}>
-                    <path d="M3 6h18" />
-                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                    <path d="M10 11v6" />
-                    <path d="M14 11v6" />
-                  </svg>
-                </button>
+                  iconClassName={STYLES.removeIcon}
+                />
               </div>
             ))}
           </div>

@@ -11,7 +11,8 @@ const STYLES = {
   heading: "mb-4 text-2xl font-semibold text-[var(--text)]",
   form: "flex flex-col gap-6",
   cross: "grid grid-cols-1 gap-6 lg:grid-cols-2",
-  crossCard: "h-full rounded-2xl border border-[var(--border-muted)] bg-[var(--bg)] px-6 py-6 shadow-[0_3px_6px_rgba(0,0,0,0.16),0_3px_6px_rgba(0,0,0,0.23)]",
+  crossCard: "flex h-full flex-col rounded-2xl border border-[var(--border-muted)] bg-[var(--bg)] px-6 py-6 shadow-[0_3px_6px_rgba(0,0,0,0.16),0_3px_6px_rgba(0,0,0,0.23)]",
+  autoDetectionBody: "mt-6 flex flex-1 flex-col gap-6",
   lockdownBadge: (locked: boolean) =>
     [
       "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
@@ -22,7 +23,10 @@ const STYLES = {
   lockdownRow: "flex items-center gap-3",
   lockdownLabel: "text-sm font-medium text-[var(--text)]",
   lockdownHint: "mt-1 text-sm text-[var(--text-muted)]",
-  ruleSummary: "text-sm text-[var(--text-muted)]",
+  lockActionsWrap: "mt-auto",
+  lockActionsLabel: "text-sm font-medium text-[var(--text)]",
+  lockActionsHint: "mt-1 text-sm text-[var(--text-muted)]",
+  lockActionsButton: "mt-1.5",
   stepList: "flex flex-col gap-3",
   step: "flex items-start gap-3",
   stepNum:
@@ -58,8 +62,7 @@ export default async function AntiRaidPage({
     fetchGuildRoles(guildId),
   ]);
 
-  // guildDoc may predate these fields — default field-by-field rather than relying on
-  // Mongoose schema defaults, which only apply to documents created after the field was added.
+  // guildDoc may predate these fields — Mongoose defaults only apply to new documents, so default field-by-field.
   const guild: AntiRaidFields = {
     antiRaidEnabled: guildDoc?.antiRaidEnabled ?? false,
     antiRaidQuarantineRoleId: guildDoc?.antiRaidQuarantineRoleId ?? null,
@@ -90,6 +93,7 @@ export default async function AntiRaidPage({
           title="Auto-Detection"
           description="Automatically lock down when a join-rate spike is detected."
           className={STYLES.crossCard}
+          bodyClassName={STYLES.autoDetectionBody}
         >
           {/* Lockdown status — read-only, managed via /antiraid lock/unlock in Discord */}
           <div>
@@ -109,10 +113,15 @@ export default async function AntiRaidPage({
             name="antiRaidEnabled"
             defaultChecked={guild.antiRaidEnabled}
           />
-          <LockdownActions guildId={guildId} locked={guild.antiRaidLocked} />
-          <p className={STYLES.ruleSummary}>
-            Auto-locks after {guild.antiRaidJoinThreshold} joins within {guild.antiRaidJoinWindow}s.
-          </p>
+          <div className={STYLES.lockActionsWrap}>
+            <p className={STYLES.lockActionsLabel}>Manual override</p>
+            <p className={STYLES.lockActionsHint}>
+              Lock or unlock the server immediately.
+            </p>
+            <div className={STYLES.lockActionsButton}>
+              <LockdownActions guildId={guildId} locked={guild.antiRaidLocked} />
+            </div>
+          </div>
         </SettingsCard>
 
         <SettingsCard

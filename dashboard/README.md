@@ -20,7 +20,7 @@ A Next.js 16 web dashboard for managing the [Discord Bot](../README.md). Shares 
 | Triggers | Keyword→reply mappings |
 | Economy | Credit leaderboard (top 20) |
 | Shop | Add, edit, remove shop items (role grants and profile badges) |
-| Tickets | Ticket category and support role |
+| Tickets | Ticket category/support role setup, plus a searchable, filterable list of open/closed tickets |
 | Temp Voice Channels | Auto-VC channel and category |
 | Giveaways | View, end, and reroll giveaways |
 | Suggestions | Suggestion channel/approver role, review pending suggestions, view resolved |
