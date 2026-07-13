@@ -1,9 +1,15 @@
 node_modules
 .env
 .git
+.github
+.claude
 *.log
 dashboard
 tests
+data
+*.md
 *.test.js
 jest.config.js
 eslint.config.js
+LICENSE
+desktop.ini

@@ -2,4 +2,10 @@ node_modules
 .next
 .env
 .git
+.github
 *.log
+*.md
+tsconfig.tsbuildinfo
+tests
+*.test.ts
+*.test.tsx
