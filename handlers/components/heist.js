@@ -54,7 +54,7 @@ module.exports = [
         id: 'heist_join',
 
         async execute(interaction) {
-            const heist = await HeistSchema.findOne({ messageId: interaction.message.id, finished: false });
+            const heist = await HeistSchema.findOne({ messageId: interaction.message.id, finished: false }).lean();
             if (!heist) {
                 return interaction.reply({ content: 'This heist is no longer active.', flags: MessageFlags.Ephemeral });
             }
@@ -117,7 +117,7 @@ module.exports = [
         id: 'heist_begin',
 
         async execute(interaction) {
-            const heist = await HeistSchema.findOne({ messageId: interaction.message.id, finished: false });
+            const heist = await HeistSchema.findOne({ messageId: interaction.message.id, finished: false }).lean();
             if (!heist) {
                 return interaction.reply({ content: 'This heist is no longer active.', flags: MessageFlags.Ephemeral });
             }
@@ -136,7 +136,7 @@ module.exports = [
             } catch (err) {
                 logger.error('launchHeist failed after begin button:', err);
                 // Refund all members since the heist can't proceed
-                const fresh = await HeistSchema.findOne({ messageId: interaction.message.id });
+                const fresh = await HeistSchema.findOne({ messageId: interaction.message.id }).lean();
                 if (fresh) {
                     await Promise.all(fresh.members.map(m => updateBalance(m.userId, interaction.guild.id, fresh.entryFee)));
                     await HeistSchema.updateOne({ _id: fresh._id }, { $set: { finished: true } });

@@ -13,4 +13,6 @@ const shopSchema = new Schema({
     enabled:     { type: Boolean, default: true },
 });
 
+shopSchema.index({ guildId: 1, enabled: 1 });
+
 module.exports = model('Shop', shopSchema);
