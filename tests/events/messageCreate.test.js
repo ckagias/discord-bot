@@ -1,5 +1,5 @@
 jest.mock('../../models/LevelSchema', () => ({ findOneAndUpdate: jest.fn() }));
-jest.mock('../../models/AfkSchema', () => ({ findOne: jest.fn(), deleteOne: jest.fn() }));
+jest.mock('../../models/AfkSchema', () => ({ findOne: jest.fn(), find: jest.fn(), deleteOne: jest.fn() }));
 jest.mock('../../models/TriggerSchema', () => ({ find: jest.fn() }));
 jest.mock('../../models/MessageActivitySchema', () => ({ updateOne: jest.fn() }));
 jest.mock('../../utils/automod', () => ({ runAutoMod: jest.fn() }));
@@ -16,6 +16,20 @@ const { ensureGuildConfig } = require('../../utils/guildConfig');
 const { updateBalance } = require('../../utils/economy');
 const { upsertWithRetry } = require('../../utils/upsertRetry');
 const messageCreate = require('../../events/messageCreate');
+
+// Mongoose queries are chainable (e.g. `.find(...).lean()`); mimic that shape for mocked resolved/rejected values.
+function leanable(mockFn, value) {
+    mockFn.mockReturnValue({ lean: jest.fn().mockResolvedValue(value) });
+}
+function leanableOnce(mockFn, value) {
+    mockFn.mockReturnValueOnce({ lean: jest.fn().mockResolvedValue(value) });
+}
+function leanableRejects(mockFn, error) {
+    mockFn.mockReturnValue({ lean: jest.fn().mockRejectedValue(error) });
+}
+function leanableRejectsOnce(mockFn, error) {
+    mockFn.mockReturnValueOnce({ lean: jest.fn().mockRejectedValue(error) });
+}
 
 function makeMessage(overrides = {}) {
     return {
@@ -40,8 +54,9 @@ describe('messageCreate', () => {
         jest.clearAllMocks();
         jest.useFakeTimers();
         ensureGuildConfig.mockResolvedValue({});
-        TriggerSchema.find.mockResolvedValue([]);
-        AfkSchema.findOne.mockResolvedValue(null);
+        leanable(TriggerSchema.find, []);
+        leanable(AfkSchema.findOne, null);
+        leanable(AfkSchema.find, []);
         runAutoMod.mockResolvedValue(false);
         updateBalance.mockResolvedValue({});
         MessageActivitySchema.updateOne.mockResolvedValue({});
@@ -108,7 +123,7 @@ describe('messageCreate', () => {
 
     describe('triggers', () => {
         test('replies with the configured response on a trigger match', async () => {
-            TriggerSchema.find.mockResolvedValue([{ trigger: 'hello', response: 'hi there' }]);
+            leanable(TriggerSchema.find, [{ trigger: 'hello', response: 'hi there' }]);
             const message = makeMessage({ content: 'oh hello world' });
 
             await messageCreate.execute(message);
@@ -119,7 +134,7 @@ describe('messageCreate', () => {
         });
 
         test('does not match a trigger inside a larger word', async () => {
-            TriggerSchema.find.mockResolvedValue([{ trigger: 'cat', response: 'meow' }]);
+            leanable(TriggerSchema.find, [{ trigger: 'cat', response: 'meow' }]);
             const message = makeMessage({ content: 'concatenate this' });
 
             await messageCreate.execute(message);
@@ -128,7 +143,7 @@ describe('messageCreate', () => {
         });
 
         test('only replies to the first matching trigger, not all matches', async () => {
-            TriggerSchema.find.mockResolvedValue([
+            leanable(TriggerSchema.find, [
                 { trigger: 'hello', response: 'first' },
                 { trigger: 'world', response: 'second' },
             ]);
@@ -141,7 +156,7 @@ describe('messageCreate', () => {
         });
 
         test('continues processing when the trigger lookup fails', async () => {
-            TriggerSchema.find.mockRejectedValue(new Error('db down'));
+            leanableRejects(TriggerSchema.find, new Error('db down'));
             const message = makeMessage();
 
             await expect(messageCreate.execute(message)).resolves.not.toThrow();
@@ -150,7 +165,7 @@ describe('messageCreate', () => {
 
     describe('AFK return', () => {
         test('welcomes the author back and clears their AFK status', async () => {
-            AfkSchema.findOne.mockResolvedValueOnce({ since: new Date(Date.now() - 5 * 60_000) });
+            leanableOnce(AfkSchema.findOne, { since: new Date(Date.now() - 5 * 60_000) });
             const message = makeMessage();
 
             await messageCreate.execute(message);
@@ -163,7 +178,7 @@ describe('messageCreate', () => {
 
         test('stops further processing (leveling) after an AFK return', async () => {
             ensureGuildConfig.mockResolvedValue({ levelingEnabled: true });
-            AfkSchema.findOne.mockResolvedValueOnce({ since: new Date() });
+            leanableOnce(AfkSchema.findOne, { since: new Date() });
             const message = makeMessage();
 
             await messageCreate.execute(message);
@@ -176,12 +191,12 @@ describe('messageCreate', () => {
         test('notifies when a mentioned user is AFK', async () => {
             const mentionedUser = { tag: 'Mentioned#0001' };
             const message = makeMessage({ mentions: { users: new Map([['target1', mentionedUser]]) } });
-            AfkSchema.findOne
-                .mockResolvedValueOnce(null) // author not AFK
-                .mockResolvedValueOnce({ reason: 'sleeping', since: new Date(Date.now() - 60_000) }); // mentioned user AFK
+            leanableOnce(AfkSchema.findOne, null); // author not AFK
+            leanable(AfkSchema.find, [{ userId: 'target1', reason: 'sleeping', since: new Date(Date.now() - 60_000) }]);
 
             await messageCreate.execute(message);
 
+            expect(AfkSchema.find).toHaveBeenCalledWith({ userId: { $in: ['target1'] }, guildId: 'g1' });
             expect(message.reply).toHaveBeenCalledWith(
                 expect.objectContaining({ content: expect.stringContaining('is currently AFK') })
             );
@@ -195,13 +210,26 @@ describe('messageCreate', () => {
             await messageCreate.execute(message);
 
             expect(AfkSchema.findOne).toHaveBeenCalledTimes(1); // only the author's own AFK check
+            expect(AfkSchema.find).not.toHaveBeenCalled(); // no mentions left after filtering self/bot
         });
 
-        test('continues when an individual mention AFK lookup fails', async () => {
+        test('batches multiple mentions into a single AFK lookup', async () => {
+            const message = makeMessage({
+                mentions: { users: new Map([['target1', { tag: 'One' }], ['target2', { tag: 'Two' }]]) },
+            });
+            leanableOnce(AfkSchema.findOne, null);
+            leanable(AfkSchema.find, []);
+
+            await messageCreate.execute(message);
+
+            expect(AfkSchema.find).toHaveBeenCalledTimes(1);
+            expect(AfkSchema.find).toHaveBeenCalledWith({ userId: { $in: ['target1', 'target2'] }, guildId: 'g1' });
+        });
+
+        test('continues when the batched mention AFK lookup fails', async () => {
             const message = makeMessage({ mentions: { users: new Map([['target1', { tag: 'Target' }]]) } });
-            AfkSchema.findOne
-                .mockResolvedValueOnce(null)
-                .mockRejectedValueOnce(new Error('db down'));
+            leanableOnce(AfkSchema.findOne, null);
+            leanableRejectsOnce(AfkSchema.find, new Error('db down'));
 
             await expect(messageCreate.execute(message)).resolves.not.toThrow();
         });

@@ -43,7 +43,7 @@ module.exports = {
 
         // Trigger check
         try {
-            const triggers = await TriggerSchema.find({ guildId: guild.id });
+            const triggers = await TriggerSchema.find({ guildId: guild.id }).lean();
             for (const { trigger, response } of triggers) {
                 const regex = new RegExp(`(?<![\\p{L}\\p{N}])${trigger.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{N}])`, 'iu');
                 if (regex.test(message.content)) {
@@ -58,7 +58,7 @@ module.exports = {
 
         // AFK return check
         try {
-            const afkEntry = await AfkSchema.findOne({ userId: author.id, guildId: guild.id });
+            const afkEntry = await AfkSchema.findOne({ userId: author.id, guildId: guild.id }).lean();
             if (afkEntry) {
                 await AfkSchema.deleteOne({ userId: author.id, guildId: guild.id });
                 const awayMs = Date.now() - afkEntry.since.getTime();
@@ -79,11 +79,17 @@ module.exports = {
 
         // AFK mention check
         if (message.mentions.users.size > 0) {
-            for (const [id, mentionedUser] of message.mentions.users) {
-                if (id === message.client.user.id || id === author.id) continue;
+            const mentionedIds = [...message.mentions.users.keys()]
+                .filter(id => id !== message.client.user.id && id !== author.id);
+
+            if (mentionedIds.length > 0) {
                 try {
-                    const mentionedAfk = await AfkSchema.findOne({ userId: id, guildId: guild.id });
-                    if (mentionedAfk) {
+                    const afkEntries = await AfkSchema.find({ userId: { $in: mentionedIds }, guildId: guild.id }).lean();
+                    const afkById = new Map(afkEntries.map(entry => [entry.userId, entry]));
+
+                    for (const [id, mentionedUser] of message.mentions.users) {
+                        const mentionedAfk = afkById.get(id);
+                        if (!mentionedAfk) continue;
                         const awayMs = Date.now() - mentionedAfk.since.getTime();
                         const awayMins = Math.floor(awayMs / 60_000);
                         const awayHours = Math.floor(awayMins / 60);
@@ -96,7 +102,7 @@ module.exports = {
                         }).catch(() => {});
                     }
                 } catch (error) {
-                    logger.error(`AFK mention check failed for ${id}:`, error);
+                    logger.error('AFK mention check failed:', error);
                 }
             }
         }
