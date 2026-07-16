@@ -1,6 +1,24 @@
-const { model, Schema } = require('mongoose');
+import { model, Schema, Document } from 'mongoose';
 
-const blackjackSchema = new Schema({
+interface IBlackjack extends Document {
+    messageId: string;
+    userId: string;
+    guildId: string;
+    bet: number;
+    deck: string[];
+    playerHand: string[];
+    dealerHand: string[];
+    finished: boolean;
+    createdAt: Date;
+    // PvP fields
+    opponentId: string | null;
+    opponentHand: string[];
+    opponentBet: number;
+    opponentDone: boolean;
+    opponentDeck: string[]; // opponent draws from same deck position
+}
+
+const blackjackSchema = new Schema<IBlackjack>({
     messageId:      { type: String, required: true, unique: true },
     userId:         { type: String, required: true },
     guildId:        { type: String, required: true },
@@ -21,4 +39,4 @@ const blackjackSchema = new Schema({
 // Auto-delete abandoned games after 7 days so stale PvP bets don't sit forever
 blackjackSchema.index({ createdAt: 1 }, { expireAfterSeconds: 604800 });
 
-module.exports = model('Blackjack', blackjackSchema);
+export = model<IBlackjack>('Blackjack', blackjackSchema);

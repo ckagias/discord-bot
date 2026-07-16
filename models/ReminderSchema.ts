@@ -1,6 +1,15 @@
-const { model, Schema } = require('mongoose');
+import { model, Schema, Document } from 'mongoose';
 
-const reminderSchema = new Schema({
+interface IReminder extends Document {
+    userId: string;
+    guildId: string;
+    channelId: string;
+    message: string;
+    remindAt: Date;
+    sent: boolean;
+}
+
+const reminderSchema = new Schema<IReminder>({
     userId:     { type: String, required: true },
     guildId:    { type: String, required: true },
     channelId:  { type: String, required: true },
@@ -11,4 +20,4 @@ const reminderSchema = new Schema({
 
 reminderSchema.index({ sent: 1, remindAt: 1 });
 
-module.exports = model('Reminder', reminderSchema);
+export = model<IReminder>('Reminder', reminderSchema);

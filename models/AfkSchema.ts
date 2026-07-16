@@ -1,6 +1,14 @@
-const { model, Schema } = require('mongoose');
+import { model, Schema, Document } from 'mongoose';
 
-const afkSchema = new Schema({
+interface IAfk extends Document {
+    // Snowflakes stored as strings — exceed JS safe integer limit
+    userId: string;
+    guildId: string;
+    reason: string;
+    since: Date;
+}
+
+const afkSchema = new Schema<IAfk>({
     // Snowflakes stored as strings — exceed JS safe integer limit
     userId: { type: String, required: true },
     guildId: { type: String, required: true },
@@ -10,4 +18,4 @@ const afkSchema = new Schema({
 
 afkSchema.index({ userId: 1, guildId: 1 }, { unique: true });
 
-module.exports = model('Afk', afkSchema);
+export = model<IAfk>('Afk', afkSchema);

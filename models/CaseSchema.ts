@@ -1,6 +1,17 @@
-const { model, Schema } = require('mongoose');
+import { model, Schema, Document } from 'mongoose';
 
-const caseSchema = new Schema({
+interface ICase extends Document {
+    guildId: string;
+    caseId: number;
+    type: string;
+    userId: string;
+    moderatorId: string;
+    reason: string;
+    duration: string | null;
+    createdAt: Date;
+}
+
+const caseSchema = new Schema<ICase>({
     guildId: { type: String, required: true },
     caseId: { type: Number, required: true },
     type: { type: String, required: true }, // warn, kick, ban, mute, timeout, unban, unmute
@@ -14,4 +25,4 @@ const caseSchema = new Schema({
 caseSchema.index({ guildId: 1, caseId: 1 }, { unique: true });
 caseSchema.index({ guildId: 1, userId: 1 });
 
-module.exports = model('Case', caseSchema);
+export = model<ICase>('Case', caseSchema);

@@ -1,6 +1,19 @@
-const { model, Schema } = require('mongoose');
+import { model, Schema, Document } from 'mongoose';
 
-const shopSchema = new Schema({
+interface IShop extends Document {
+    guildId: string;
+    itemId: string;
+    name: string;
+    description: string;
+    price: number;
+    // 'role' grants a Discord role; 'badge' adds an emoji to /profile
+    type: 'role' | 'badge';
+    roleId: string | null; // for type 'role'
+    emoji: string | null; // for type 'badge'
+    enabled: boolean;
+}
+
+const shopSchema = new Schema<IShop>({
     guildId:     { type: String, required: true },
     itemId:      { type: String, required: true, unique: true },
     name:        { type: String, required: true },
@@ -15,4 +28,4 @@ const shopSchema = new Schema({
 
 shopSchema.index({ guildId: 1, enabled: 1 });
 
-module.exports = model('Shop', shopSchema);
+export = model<IShop>('Shop', shopSchema);

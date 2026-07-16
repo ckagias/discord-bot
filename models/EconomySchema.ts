@@ -1,6 +1,17 @@
-const { model, Schema } = require('mongoose');
+import { model, Schema, Document } from 'mongoose';
 
-const economySchema = new Schema({
+interface IEconomy extends Document {
+    // Snowflakes stored as strings — exceed JS safe integer limit
+    userId: string;
+    guildId: string;
+    balance: number;
+    lastDailyAt: Date | null;
+    lastWorkAt: Date | null;
+    lastRobAt: Date | null;
+    dailyStreak: number;
+}
+
+const economySchema = new Schema<IEconomy>({
     // Snowflakes stored as strings — exceed JS safe integer limit
     userId:      { type: String, required: true },
     guildId:     { type: String, required: true },
@@ -14,4 +25,4 @@ const economySchema = new Schema({
 economySchema.index({ userId: 1, guildId: 1 }, { unique: true });
 economySchema.index({ guildId: 1, balance: -1 });
 
-module.exports = model('Economy', economySchema);
+export = model<IEconomy>('Economy', economySchema);

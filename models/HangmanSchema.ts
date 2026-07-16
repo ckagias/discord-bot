@@ -1,6 +1,17 @@
-const { model, Schema } = require('mongoose');
+import { model, Schema, Document } from 'mongoose';
 
-const hangmanSchema = new Schema({
+interface IHangman extends Document {
+    messageId: string;
+    userId: string;
+    guildId: string;
+    word: string;
+    guessed: string[];
+    wrong: number;
+    finished: boolean;
+    won: boolean;
+}
+
+const hangmanSchema = new Schema<IHangman>({
     messageId: { type: String, required: true, unique: true },
     userId:    { type: String, required: true },
     guildId:   { type: String, required: true },
@@ -11,4 +22,4 @@ const hangmanSchema = new Schema({
     won:       { type: Boolean, default: false },
 });
 
-module.exports = model('Hangman', hangmanSchema);
+export = model<IHangman>('Hangman', hangmanSchema);

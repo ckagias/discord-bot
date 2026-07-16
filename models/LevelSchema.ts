@@ -1,6 +1,15 @@
-const { model, Schema } = require('mongoose');
+import { model, Schema, Document } from 'mongoose';
 
-const levelSchema = new Schema({
+interface ILevel extends Document {
+    // Snowflakes stored as strings — exceed JS safe integer limit
+    userId: string;
+    guildId: string;
+    xp: number;
+    level: number;
+    lastXpAt: Date | null;
+}
+
+const levelSchema = new Schema<ILevel>({
     // Snowflakes stored as strings — exceed JS safe integer limit
     userId: { type: String, required: true },
     guildId: { type: String, required: true },
@@ -11,4 +20,4 @@ const levelSchema = new Schema({
 
 levelSchema.index({ userId: 1, guildId: 1 }, { unique: true });
 
-module.exports = model('Level', levelSchema);
+export = model<ILevel>('Level', levelSchema);
