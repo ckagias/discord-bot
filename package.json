@@ -14,7 +14,8 @@
     "stop": "docker compose down",
     "restart": "./restart.sh",
     "test": "jest",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",
@@ -29,8 +30,11 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^26.1.1",
     "eslint": "^10.6.0",
     "globals": "^17.7.0",
-    "jest": "^30.4.2"
+    "jest": "^30.4.2",
+    "typescript": "^7.0.2"
   }
 }

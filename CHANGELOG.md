@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## Unreleased
 
+### Added
+
+- TypeScript tooling for the bot side (`tsconfig.json` with `allowJs`/`checkJs`, `typecheck` npm script, CI step). No source files converted yet, first step of an incremental JS-to-TS migration.
+
+### Notes
+
 The bot and dashboard have been under active development without version bumps. Recent work includes full test coverage for `events/` and `slashCommands/`, a Vitest and ESLint setup for the dashboard with coverage for its server actions, a handful of bug fixes (ticket cooldown races, case number reuse, duplicate duration formatting), and a new suggestion box (`/suggest submit`, `/suggest setup`, `/suggest list`) with up/down voting and a staff-only review flow. Approve, Deny, and Implement buttons only show up for permitted reviewers, never on the public message. Configurable via the command or the dashboard's Suggestions page, which also lists pending and resolved suggestions for review and deletion.
 
 Added birthday announcements: `/birthday set/view/unset` for members to manage their own birthday per server, `/birthdayconfig set/unset` (Manage Server) to configure the announcement channel, message, and an optional day-only role, and a daily check scheduled from `clientReady` that self-aligns to local midnight. The birthday role is cleared from all holders each day before the day's new birthdays are granted it. Configurable via the dashboard's new Birthdays page as well.

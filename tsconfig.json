@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "node16",
+    "moduleResolution": "node16",
+    "lib": ["ES2022"],
+    "allowJs": true,
+    "checkJs": false,
+    "outDir": "dist",
+    "rootDir": ".",
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "noEmitOnError": false,
+    "types": ["node", "jest"]
+  },
+  "include": [
+    "src/**/*",
+    "events/**/*",
+    "handlers/**/*",
+    "models/**/*",
+    "slashCommands/**/*",
+    "utils/**/*",
+    "tests/**/*"
+  ],
+  "exclude": ["node_modules", "dashboard", "dist"]
+}
