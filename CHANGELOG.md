@@ -16,6 +16,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Fixed
 
 - The bot has been unable to boot outside of Jest since the `utils/` TypeScript conversion: Docker ran `node src/index.js` directly against source with no build step, and plain Node's `require()` can't resolve extensionless requires to `.ts` files (only Jest's `ts-jest` transform could). Added a `build` npm script (`tsc`) and a CI step that runs it, switched the Dockerfile to a multi-stage build that compiles to `dist/` and runs the compiled output, and updated `restart.sh`'s slash-command registration to match. `dist/` is now gitignored and excluded from Jest's test matching.
+- `data/` was excluded from the Docker build context, so `data/responses.js` (used by `/work`, `/dare`, `/8ball`, and `/truth`) was missing from the deployed container. Those commands have likely been throwing `Cannot find module` in production since Docker support was added. Unrelated to the TypeScript migration, caught while investigating a slowdown after the PR4 build changes.
 
 ### Notes
 
