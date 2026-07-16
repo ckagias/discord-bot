@@ -9,6 +9,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Added
 
 - TypeScript tooling for the bot side (`tsconfig.json` with `allowJs`/`checkJs`, `typecheck` npm script, CI step). No source files converted yet, first step of an incremental JS-to-TS migration.
+- Converted `utils/` (22 files) and their paired tests to TypeScript. Added `ts-jest` and ESLint TypeScript support (`typescript-eslint`) so converted files are linted and tested like any other source file. `typescript` pinned to `^5.9` instead of the newer major 7 since `ts-jest` doesn't support it yet.
 
 ### Notes
 

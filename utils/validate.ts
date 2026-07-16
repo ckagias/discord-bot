@@ -1,4 +1,4 @@
-function isValidUrl(str) {
+function isValidUrl(str: string): boolean {
     try {
         const url = new URL(str);
         return url.protocol === 'http:' || url.protocol === 'https:';
@@ -7,4 +7,4 @@ function isValidUrl(str) {
     }
 }
 
-module.exports = { isValidUrl };
+export { isValidUrl };

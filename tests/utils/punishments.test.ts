@@ -3,17 +3,17 @@ jest.mock('../../models/PunishmentSchema', () => ({
     find: jest.fn().mockResolvedValue([]),
 }));
 
-const { schedulePunishment } = require('../../utils/punishments');
+import { schedulePunishment } from '../../utils/punishments';
 
 const MAX_TIMEOUT_MS = 2 ** 31 - 1;
 
 function makeClient() {
     return {
         guilds: { fetch: jest.fn().mockResolvedValue(null) },
-    };
+    } as any;
 }
 
-function makePunishment(overrides = {}) {
+function makePunishment(overrides: Record<string, unknown> = {}) {
     return {
         _id: 'p1',
         type: 'mute',

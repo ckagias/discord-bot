@@ -1,11 +1,11 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { formatBalance } = require('./economy');
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, User } from 'discord.js';
+import { formatBalance } from './economy';
 
 const SUITS = ['♠', '♥', '♦', '♣'];
 const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
-function buildDeck() {
-    const deck = [];
+function buildDeck(): string[] {
+    const deck: string[] = [];
     for (const suit of SUITS) {
         for (const rank of RANKS) {
             deck.push(`${rank}${suit}`);
@@ -19,14 +19,14 @@ function buildDeck() {
     return deck;
 }
 
-function cardValue(card) {
+function cardValue(card: string): number {
     const rank = card.slice(0, -1); // strip suit
     if (['J', 'Q', 'K'].includes(rank)) return 10;
     if (rank === 'A') return 11;
     return parseInt(rank);
 }
 
-function handValue(hand) {
+function handValue(hand: string[]): number {
     let total = 0;
     let aces = 0;
     for (const card of hand) {
@@ -40,21 +40,27 @@ function handValue(hand) {
     return total;
 }
 
-function isBlackjack(hand) {
+function isBlackjack(hand: string[]): boolean {
     return hand.length === 2 && handValue(hand) === 21;
 }
 
-function formatHand(hand, hideSecond = false) {
+function formatHand(hand: string[], hideSecond = false): string {
     if (hideSecond) return `${hand[0]}  🂠`;
     return hand.join('  ');
 }
 
-function buildEmbed(game, { outcome = null, dealerFull = false } = {}) {
+interface BlackjackGame {
+    playerHand: string[];
+    dealerHand: string[];
+    bet: number;
+}
+
+function buildEmbed(game: BlackjackGame, { outcome = null, dealerFull = false }: { outcome?: string | null; dealerFull?: boolean } = {}): EmbedBuilder {
     const { playerHand, dealerHand, bet } = game;
     const playerTotal = handValue(playerHand);
     const dealerTotal = dealerFull ? handValue(dealerHand) : cardValue(dealerHand[0]);
 
-    let title, color, footer;
+    let title: string, color: number, footer: string;
 
     if (outcome === 'blackjack') {
         title = '🃏 Blackjack! You win!';
@@ -100,16 +106,16 @@ function buildEmbed(game, { outcome = null, dealerFull = false } = {}) {
         .setFooter({ text: footer });
 }
 
-function buildRow(canDouble) {
-    return new ActionRowBuilder().addComponents(
+function buildRow(canDouble: boolean): ActionRowBuilder<ButtonBuilder> {
+    return new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder().setCustomId('bj_hit').setLabel('Hit').setStyle(ButtonStyle.Primary),
         new ButtonBuilder().setCustomId('bj_stand').setLabel('Stand').setStyle(ButtonStyle.Secondary),
         new ButtonBuilder().setCustomId('bj_double').setLabel('Double Down').setStyle(ButtonStyle.Success).setDisabled(!canDouble),
     );
 }
 
-function disabledRow() {
-    return new ActionRowBuilder().addComponents(
+function disabledRow(): ActionRowBuilder<ButtonBuilder> {
+    return new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder().setCustomId('bj_hit').setLabel('Hit').setStyle(ButtonStyle.Primary).setDisabled(true),
         new ButtonBuilder().setCustomId('bj_stand').setLabel('Stand').setStyle(ButtonStyle.Secondary).setDisabled(true),
         new ButtonBuilder().setCustomId('bj_double').setLabel('Double Down').setStyle(ButtonStyle.Success).setDisabled(true),
@@ -117,21 +123,29 @@ function disabledRow() {
 }
 
 // Dealer draws until 17+
-function dealerPlay(hand, deck) {
+function dealerPlay(hand: string[], deck: string[]): void {
     while (handValue(hand) < 17) {
-        hand.push(deck.pop());
+        hand.push(deck.pop()!);
     }
 }
 
+interface PvpGame {
+    playerHand: string[];
+    opponentHand: string[];
+    dealerHand: string[];
+    bet: number;
+    opponentBet: number;
+}
+
 // PvP embed — shows both players' hands and the dealer
-function buildPvpEmbed(game, { challenger, opponent, outcome = null } = {}) {
+function buildPvpEmbed(game: PvpGame, { challenger = undefined, opponent = undefined, outcome = null }: { challenger?: User; opponent?: User; outcome?: string | null } = {}): EmbedBuilder {
     const { playerHand, opponentHand, dealerHand, bet, opponentBet } = game;
     const dealerFull = outcome !== null;
     const playerTotal = handValue(playerHand);
     const opponentTotal = handValue(opponentHand);
     const dealerTotal = dealerFull ? handValue(dealerHand) : null;
 
-    let title, color;
+    let title: string, color: number;
     if (outcome) {
         title = 'Blackjack — Results';
         color = 0xe3a015;
@@ -170,13 +184,13 @@ function buildPvpEmbed(game, { challenger, opponent, outcome = null } = {}) {
     return embed;
 }
 
-function buildPvpRow(isChallenger, canDouble) {
+function buildPvpRow(isChallenger: boolean, canDouble: boolean): ActionRowBuilder<ButtonBuilder> {
     const prefix = isChallenger ? 'bj' : 'bjop';
-    return new ActionRowBuilder().addComponents(
+    return new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder().setCustomId(`${prefix}_hit`).setLabel('Hit').setStyle(ButtonStyle.Primary),
         new ButtonBuilder().setCustomId(`${prefix}_stand`).setLabel('Stand').setStyle(ButtonStyle.Secondary),
         new ButtonBuilder().setCustomId(`${prefix}_double`).setLabel('Double Down').setStyle(ButtonStyle.Success).setDisabled(!canDouble),
     );
 }
 
-module.exports = { buildDeck, handValue, isBlackjack, buildEmbed, buildRow, disabledRow, dealerPlay, buildPvpEmbed, buildPvpRow };
+export { buildDeck, handValue, isBlackjack, buildEmbed, buildRow, disabledRow, dealerPlay, buildPvpEmbed, buildPvpRow };

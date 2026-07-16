@@ -1,4 +1,4 @@
-function formatDuration(ms) {
+function formatDuration(ms: number): string {
     const totalSec = Math.floor(ms / 1000);
     const h = Math.floor(totalSec / 3600);
     const m = Math.floor((totalSec % 3600) / 60);
@@ -12,7 +12,7 @@ const SPOTIFY_OTHER_URL = /open\.spotify\.com\/(?:intl-\w+\/)?(album|playlist|ar
 
 // Spotify's embed page ships track/artist names in its __NEXT_DATA__ blob and
 // requires no API credentials, unlike the Web API.
-async function resolveSpotifyTrackQuery(url) {
+async function resolveSpotifyTrackQuery(url: string): Promise<string | null> {
     const match = url.match(SPOTIFY_TRACK_URL);
     if (!match) return null;
 
@@ -26,8 +26,8 @@ async function resolveSpotifyTrackQuery(url) {
     const entity = JSON.parse(dataMatch[1])?.props?.pageProps?.state?.data?.entity;
     if (!entity?.name) return null;
 
-    const artists = (entity.artists ?? []).map(a => a.name).join(', ');
+    const artists = (entity.artists ?? []).map((a: { name: string }) => a.name).join(', ');
     return artists ? `${entity.name} ${artists}` : entity.name;
 }
 
-module.exports = { formatDuration, SPOTIFY_TRACK_URL, SPOTIFY_OTHER_URL, resolveSpotifyTrackQuery };
+export { formatDuration, SPOTIFY_TRACK_URL, SPOTIFY_OTHER_URL, resolveSpotifyTrackQuery };

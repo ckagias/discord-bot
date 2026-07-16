@@ -14,6 +14,7 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "noEmitOnError": false,
+    "isolatedModules": true,
     "types": ["node", "jest"]
   },
   "include": [

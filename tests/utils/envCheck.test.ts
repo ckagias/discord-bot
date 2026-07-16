@@ -1,10 +1,10 @@
-const { checkEnv } = require('../../utils/envCheck');
+import { checkEnv } from '../../utils/envCheck';
 
 function makeLogger() {
     return { error: jest.fn(), warn: jest.fn(), info: jest.fn() };
 }
 
-function fullEnv(overrides = {}) {
+function fullEnv(overrides: Record<string, string | undefined> = {}) {
     return {
         Token: 't',
         ClientID: 'c',
@@ -17,10 +17,10 @@ function fullEnv(overrides = {}) {
 }
 
 describe('checkEnv', () => {
-    let exitSpy;
+    let exitSpy: jest.SpyInstance;
 
     beforeEach(() => {
-        exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {});
+        exitSpy = jest.spyOn(process, 'exit').mockImplementation((() => {}) as any);
     });
 
     afterEach(() => {

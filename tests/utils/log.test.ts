@@ -1,5 +1,5 @@
 describe('log', () => {
-    let consoleLogSpy, consoleErrorSpy, consoleWarnSpy;
+    let consoleLogSpy: jest.SpyInstance, consoleErrorSpy: jest.SpyInstance, consoleWarnSpy: jest.SpyInstance;
 
     beforeEach(() => {
         jest.resetModules();

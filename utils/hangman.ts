@@ -1,5 +1,5 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { formatBalance } = require('./economy');
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { formatBalance } from './economy';
 
 const MAX_WRONG = 6;
 
@@ -16,7 +16,7 @@ const WORDS = [
     'plank','quota','rhyme','swamp','trout','umbra','venom','waltz','pixel','sword',
 ];
 
-function pickWord() {
+function pickWord(): string {
     return WORDS[Math.floor(Math.random() * WORDS.length)];
 }
 
@@ -39,16 +39,24 @@ const STAGES = [
 
 const REWARD = 150;
 
-function renderWord(word, guessed) {
+function renderWord(word: string, guessed: string[]): string {
     return word.split('').map(l => (guessed.includes(l) ? `**${l.toUpperCase()}**` : '\\_')).join(' ');
 }
 
-function buildEmbed(game, { reward = null } = {}) {
+interface HangmanGame {
+    word: string;
+    guessed: string[];
+    wrong: number;
+    won: boolean;
+    finished: boolean;
+}
+
+function buildEmbed(game: HangmanGame, { reward = null }: { reward?: number | null } = {}): EmbedBuilder {
     const { word, guessed, wrong, won, finished } = game;
     const wrongLetters = guessed.filter(l => !word.includes(l));
     const wordDisplay = renderWord(word, guessed);
 
-    let title, color;
+    let title: string, color: number;
     if (won) {
         title = 'You saved him! 🎉';
         color = 0x538d4e;
@@ -79,8 +87,8 @@ function buildEmbed(game, { reward = null } = {}) {
     return embed;
 }
 
-function buildRow(finished) {
-    return new ActionRowBuilder().addComponents(
+function buildRow(finished: boolean): ActionRowBuilder<ButtonBuilder> {
+    return new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder()
             .setCustomId('hangman_guess')
             .setLabel('Guess a Letter')
@@ -94,4 +102,4 @@ function buildRow(finished) {
     );
 }
 
-module.exports = { pickWord, buildEmbed, buildRow, MAX_WRONG, REWARD };
+export { pickWord, buildEmbed, buildRow, MAX_WRONG, REWARD };

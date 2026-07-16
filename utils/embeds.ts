@@ -1,9 +1,9 @@
-function randomColor() {
+function randomColor(): number {
     return Math.floor(Math.random() * 0xFFFFFF);
 }
 
 // Returns { color } on success or { error } on invalid input. Blank input yields a random color.
-function parseHexColor(raw) {
+function parseHexColor(raw: string | null | undefined): { color: number; error?: undefined } | { error: string; color?: undefined } {
     const trimmed = (raw ?? '').trim();
     if (!trimmed) return { color: randomColor() };
 
@@ -14,4 +14,4 @@ function parseHexColor(raw) {
     return { color: parsed };
 }
 
-module.exports = { randomColor, parseHexColor };
+export { randomColor, parseHexColor };

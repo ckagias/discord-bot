@@ -1,8 +1,9 @@
-const { PermissionFlagsBits, EmbedBuilder, ChannelType } = require('discord.js');
-const { getLogChannel } = require('./logger');
-const { updateGuildConfig } = require('./guildConfig');
-const { randomColor } = require('./embeds');
-const log = require('./log');
+import { PermissionFlagsBits, EmbedBuilder, ChannelType, Guild, GuildMember, Role, Client, User } from 'discord.js';
+import GuildSchema from '../models/GuildSchema';
+import { getLogChannel } from './logger';
+import { updateGuildConfig } from './guildConfig';
+import { randomColor } from './embeds';
+import log = require('./log');
 const logger = log.scope('antiraid');
 
 // Members with these permissions are never quarantined.
@@ -14,15 +15,15 @@ const STAFF_PERMISSIONS = [
 
 // guildId -> array of join timestamps (ms). In-memory only — resets on restart.
 // Lockdown *state* is persisted on the Guild doc; only the rolling window is ephemeral.
-const joinTracker = new Map();
+const joinTracker = new Map<string, number[]>();
 
-function isStaff(member) {
+function isStaff(member: GuildMember | null): boolean {
     if (!member) return false;
     return STAFF_PERMISSIONS.some(perm => member.permissions.has(perm));
 }
 
 // Pushes a join timestamp, prunes to windowSeconds, returns current count.
-function recordJoin(guildId, windowSeconds) {
+function recordJoin(guildId: string, windowSeconds: number): number {
     const key = guildId;
     const now = Date.now();
     const windowMs = windowSeconds * 1_000;
@@ -34,7 +35,7 @@ function recordJoin(guildId, windowSeconds) {
 
 // Sets channel overwrites so the quarantine role cannot see or participate in any channel.
 // Mirrors the mute-role pattern in slashCommands/moderation/mute.js.
-async function ensureQuarantineOverwrites(guild, role) {
+async function ensureQuarantineOverwrites(guild: Guild, role: Role): Promise<void> {
     const deny = [
         PermissionFlagsBits.ViewChannel,
         PermissionFlagsBits.SendMessages,
@@ -52,7 +53,7 @@ async function ensureQuarantineOverwrites(guild, role) {
                 ch.type === ChannelType.GuildForum
             )
             .map(ch =>
-                ch.permissionOverwrites.edit(role, Object.fromEntries(deny.map(p => [p, false])), {
+                (ch as any).permissionOverwrites.edit(role, Object.fromEntries(deny.map(p => [p, false])), {
                     reason: 'Anti-raid: quarantine role lockdown',
                 })
             )
@@ -65,7 +66,7 @@ async function ensureQuarantineOverwrites(guild, role) {
 }
 
 // Assigns the quarantine role to a member. Returns true if quarantined.
-async function quarantineMember(member, guildData) {
+async function quarantineMember(member: GuildMember, guildData: any): Promise<boolean> {
     if (!guildData?.antiRaidQuarantineRoleId) return false;
     if (member.user.bot) return false;
     if (isStaff(member)) return false;
@@ -75,7 +76,7 @@ async function quarantineMember(member, guildData) {
     if (!role) return false;
 
     // Bot must outrank the quarantine role.
-    if (guild.members.me.roles.highest.position <= role.position) return false;
+    if (guild.members.me!.roles.highest.position <= role.position) return false;
 
     // Already quarantined.
     if (member.roles.cache.has(role.id)) return true;
@@ -88,7 +89,7 @@ async function quarantineMember(member, guildData) {
 }
 
 // Resolves the alert channel: explicit antiRaidAlertChannelId, otherwise the guild log channel.
-async function resolveAlertChannel(guild, guildData) {
+async function resolveAlertChannel(guild: Guild, guildData: any) {
     if (guildData?.antiRaidAlertChannelId) {
         return guild.channels.cache.get(guildData.antiRaidAlertChannelId) ?? null;
     }
@@ -96,14 +97,13 @@ async function resolveAlertChannel(guild, guildData) {
 }
 
 // Activates a lockdown, sets channel overwrites, and posts an alert embed.
-async function startLockdown(guild, guildData, { auto = false, triggeredBy = null } = {}) {
+async function startLockdown(guild: Guild, guildData: any, { auto = false, triggeredBy = null as User | null } = {}): Promise<void> {
     if (guildData?.antiRaidLocked) return; // already locked
 
     const role = guild.roles.cache.get(guildData?.antiRaidQuarantineRoleId);
     if (!role) return;
 
     // Atomic check-and-set: only one concurrent caller wins the lockdown race.
-    const GuildSchema = require('../models/GuildSchema');
     const updated = await GuildSchema.findOneAndUpdate(
         { guildId: guild.id, antiRaidLocked: { $ne: true } },
         { $set: { antiRaidLocked: true, antiRaidLockedAt: new Date() } },
@@ -130,16 +130,16 @@ async function startLockdown(guild, guildData, { auto = false, triggeredBy = nul
         )
         .setTimestamp();
 
-    await alertChannel.send({ embeds: [embed] }).catch(() => {});
+    await (alertChannel as any).send({ embeds: [embed] }).catch(() => {});
 }
 
 // Deactivates a lockdown, removes the quarantine role from all members who have it,
 // and posts a summary embed. Returns the list of released members for the command reply.
-async function endLockdown(guild, guildData, { by = null } = {}) {
+async function endLockdown(guild: Guild, guildData: any, { by = null as User | null } = {}) {
     if (!guildData?.antiRaidLocked) return { alreadyUnlocked: true };
 
     const role = guild.roles.cache.get(guildData?.antiRaidQuarantineRoleId);
-    const released = [];
+    const released: GuildMember[] = [];
 
     if (role) {
         // Fetch all members to ensure the cache is complete, then release anyone still holding the role.
@@ -184,7 +184,7 @@ async function endLockdown(guild, guildData, { by = null } = {}) {
             .setDescription(description)
             .setTimestamp();
 
-        await alertChannel.send({ embeds: [embed] }).catch(() => {});
+        await (alertChannel as any).send({ embeds: [embed] }).catch(() => {});
     }
 
     return { released };
@@ -192,7 +192,7 @@ async function endLockdown(guild, guildData, { by = null } = {}) {
 
 // Schedules the quarantine role assignment after a short delay so Discord's join log
 // fires first and welcome embeds don't race with the role change.
-function scheduleQuarantine(member, guildData, delayMs = 500) {
+function scheduleQuarantine(member: GuildMember, guildData: any, delayMs = 500): void {
     setTimeout(async () => {
         // Re-fetch the member in case they left in the tiny window.
         const fresh = await member.guild.members.fetch(member.id).catch(() => null);
@@ -206,7 +206,7 @@ function scheduleQuarantine(member, guildData, delayMs = 500) {
 
 // Entry point called from guildMemberAdd.
 // Returns true if this member should be quarantined (blocks autorole — role is applied after delay).
-function handleJoin(member, guildData) {
+function handleJoin(member: GuildMember, guildData: any): boolean {
     if (!guildData) return false;
 
     // Active lockdown: quarantine after delay.
@@ -228,7 +228,7 @@ function handleJoin(member, guildData) {
 
     if (count >= threshold) {
         // Fire-and-forget: start lockdown async, then schedule quarantine for this member.
-        startLockdown(member.guild, guildData, { auto: true }).catch(err =>
+        startLockdown(member.guild, guildData, { auto: true, triggeredBy: null }).catch(err =>
             logger.error('startLockdown error:', err)
         );
         if (!member.user.bot && !isStaff(member)) {
@@ -241,8 +241,7 @@ function handleJoin(member, guildData) {
 }
 
 // Called on bot startup to re-assert quarantine overwrites for any guild still in lockdown.
-async function restoreLockdowns(client) {
-    const GuildSchema = require('../models/GuildSchema');
+async function restoreLockdowns(client: Client): Promise<void> {
     const locked = await GuildSchema.find({ antiRaidLocked: true }).catch(() => []);
     if (!locked.length) return;
 
@@ -259,7 +258,7 @@ async function restoreLockdowns(client) {
     if (restored) logger.info(`Re-asserted quarantine overwrites in ${restored} guild(s) on startup.`);
 }
 
-module.exports = {
+export {
     handleJoin,
     startLockdown,
     endLockdown,

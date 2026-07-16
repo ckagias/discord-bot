@@ -1,18 +1,24 @@
-const { EmbedBuilder } = require('discord.js');
-const { getLogChannel } = require('./logger');
-const { createCase } = require('./cases');
-const { formatDuration } = require('./duration');
-const log = require('./log');
+import { EmbedBuilder, Guild, GuildMember } from 'discord.js';
+import { getLogChannel } from './logger';
+import { createCase } from './cases';
+import { formatDuration } from './duration';
+import log = require('./log');
 const logger = log.scope('warnThresholds');
+
+interface WarnThreshold {
+    count: number;
+    action: 'timeout' | 'kick' | 'ban';
+    duration?: number | null;
+}
 
 // Finds the highest-priority threshold that matches totalWarnings exactly.
 // Only fires on the exact count so repeated warnings beyond the last threshold
 // don't re-apply the same punishment every time.
-function resolveThreshold(thresholds, totalWarnings) {
+function resolveThreshold(thresholds: WarnThreshold[], totalWarnings: number): WarnThreshold | null {
     return thresholds.find(t => t.count === totalWarnings) ?? null;
 }
 
-async function logEscalation(guild, member, action, reason) {
+async function logEscalation(guild: Guild, member: GuildMember, action: string, reason: string): Promise<void> {
     const logChannel = await getLogChannel(guild).catch(() => null);
     if (!logChannel) return;
 
@@ -27,12 +33,12 @@ async function logEscalation(guild, member, action, reason) {
         )
         .setTimestamp();
 
-    await logChannel.send({ embeds: [embed] }).catch(() => {});
+    await (logChannel as any).send({ embeds: [embed] }).catch(() => {});
 }
 
 // Checks the guild's warn thresholds against totalWarnings and applies the
 // matching punishment if one exists. Safe to call from both /warn and automod.
-async function checkWarnThresholds(guild, member, totalWarnings, guildData) {
+async function checkWarnThresholds(guild: Guild, member: GuildMember, totalWarnings: number, guildData: { warnThresholds?: WarnThreshold[] } | null): Promise<void> {
     const thresholds = guildData?.warnThresholds;
     if (!thresholds?.length) return;
 
@@ -77,4 +83,4 @@ async function checkWarnThresholds(guild, member, totalWarnings, guildData) {
     }
 }
 
-module.exports = { checkWarnThresholds };
+export { checkWarnThresholds };
