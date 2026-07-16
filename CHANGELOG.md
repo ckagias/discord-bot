@@ -10,6 +10,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - TypeScript tooling for the bot side (`tsconfig.json` with `allowJs`/`checkJs`, `typecheck` npm script, CI step). No source files converted yet, first step of an incremental JS-to-TS migration.
 - Converted `utils/` (22 files) and their paired tests to TypeScript. Added `ts-jest` and ESLint TypeScript support (`typescript-eslint`) so converted files are linted and tested like any other source file. `typescript` pinned to `^5.9` instead of the newer major 7 since `ts-jest` doesn't support it yet.
+- Converted `models/` (22 mongoose schemas) to TypeScript with full document interfaces (including nested subdocuments and enum unions), so later PRs converting `events/`, `handlers/`, and `slashCommands/` get real field-level type checking on every document these models touch.
 
 ### Notes
 

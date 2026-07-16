@@ -1,6 +1,21 @@
-const { model, Schema } = require('mongoose');
+import { model, Schema, Document } from 'mongoose';
 
-const suggestionSchema = new Schema({
+interface ISuggestion extends Document {
+    guildId: string;
+    channelId: string;
+    messageId: string;
+    authorId: string;
+    content: string;
+    status: 'pending' | 'approved' | 'denied' | 'implemented';
+    upvotes: string[];
+    downvotes: string[];
+    staffId: string | null;
+    staffReason: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const suggestionSchema = new Schema<ISuggestion>({
     guildId:   { type: String, required: true },
     channelId: { type: String, required: true },
     messageId: { type: String, required: true, unique: true },
@@ -15,4 +30,4 @@ const suggestionSchema = new Schema({
 
 suggestionSchema.index({ guildId: 1, status: 1 });
 
-module.exports = model('Suggestion', suggestionSchema);
+export = model<ISuggestion>('Suggestion', suggestionSchema);

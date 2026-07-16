@@ -1,6 +1,14 @@
-const { model, Schema } = require('mongoose');
+import { model, Schema, Document } from 'mongoose';
 
-const starboardSchema = new Schema({
+interface IStarboard extends Document {
+    guildId: string;
+    channelId: string; // original message's channel
+    messageId: string; // original message id
+    starboardMessageId: string; // posted embed in the starboard channel
+    starCount: number;
+}
+
+const starboardSchema = new Schema<IStarboard>({
     guildId:            { type: String, required: true },
     channelId:          { type: String, required: true }, // original message's channel
     messageId:          { type: String, required: true }, // original message id
@@ -10,4 +18,4 @@ const starboardSchema = new Schema({
 
 starboardSchema.index({ guildId: 1, messageId: 1 });
 
-module.exports = model('Starboard', starboardSchema);
+export = model<IStarboard>('Starboard', starboardSchema);

@@ -1,6 +1,62 @@
-const { model, Schema } = require('mongoose');
+import { model, Schema, Document } from 'mongoose';
 
-const guildSchema = new Schema({
+interface WarnThreshold {
+    count: number;
+    action: 'timeout' | 'kick' | 'ban';
+    duration: number | null; // seconds, only used for timeout
+}
+
+interface LevelRole {
+    level: number;
+    roleId: string;
+}
+
+interface IGuild extends Document {
+    guildId: string;
+    levelingEnabled: boolean;
+    logChannelId: string | null;
+    welcomeChannelId: string | null;
+    welcomeMessage: string | null;
+    farewellChannelId: string | null;
+    farewellMessage: string | null;
+    muteRoleId: string | null;
+    ticketCategoryId: string | null;
+    ticketSupportRoleId: string | null;
+    ticketCount: number;
+    automodEnabled: boolean;
+    automodBannedWords: boolean;
+    automodSpam: boolean;
+    automodMentions: boolean;
+    automodInvites: boolean;
+    automodAction: string;
+    automodTimeoutSeconds: number;
+    automodBannedWordList: string[];
+    automodMentionLimit: number;
+    warnThresholds: WarnThreshold[];
+    levelRoles: LevelRole[];
+    levelUpChannelId: string | null;
+    autoroleId: string | null;
+    tempVcCategoryId: string | null;
+    starboardEnabled: boolean;
+    starboardChannelId: string | null;
+    starboardEmoji: string;
+    starboardThreshold: number;
+    starboardIgnoreNsfw: boolean;
+    antiRaidEnabled: boolean;
+    antiRaidQuarantineRoleId: string | null;
+    antiRaidJoinThreshold: number;
+    antiRaidJoinWindow: number;
+    antiRaidAlertChannelId: string | null;
+    antiRaidLocked: boolean;
+    antiRaidLockedAt: Date | null;
+    suggestChannelId: string | null;
+    suggestApproverRoleId: string | null;
+    birthdayChannelId: string | null;
+    birthdayMessage: string | null;
+    birthdayRoleId: string | null;
+}
+
+const guildSchema = new Schema<IGuild>({
     guildId: { type: String, required: true, unique: true },
     levelingEnabled: { type: Boolean, default: false },
     logChannelId: { type: String, default: null },
@@ -64,4 +120,4 @@ const guildSchema = new Schema({
     birthdayRoleId:    { type: String, default: null },
 });
 
-module.exports = model('Guild', guildSchema);
+export = model<IGuild>('Guild', guildSchema);

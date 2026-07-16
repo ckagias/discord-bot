@@ -1,6 +1,18 @@
-const { model, Schema } = require('mongoose');
+import { model, Schema, Document } from 'mongoose';
 
-const pollSchema = new Schema({
+interface IPoll extends Document {
+    guildId: string;
+    channelId: string;
+    messageId: string;
+    hostId: string;
+    question: string;
+    options: string[];
+    votes: Map<string, string[]>;
+    endsAt: Date | null;
+    ended: boolean;
+}
+
+const pollSchema = new Schema<IPoll>({
     guildId:   { type: String, required: true },
     channelId: { type: String, required: true },
     messageId: { type: String, required: true, unique: true },
@@ -14,4 +26,4 @@ const pollSchema = new Schema({
 
 pollSchema.index({ guildId: 1, ended: 1 });
 
-module.exports = model('Poll', pollSchema);
+export = model<IPoll>('Poll', pollSchema);

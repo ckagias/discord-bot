@@ -1,6 +1,14 @@
-const { model, Schema } = require('mongoose');
+import { model, Schema, Document } from 'mongoose';
 
-const punishmentSchema = new Schema({
+interface IPunishment extends Document {
+    type: 'mute' | 'ban';
+    guildId: string;
+    userId: string;
+    expiresAt: Date;
+    muteRoleId: string | null; // only used for type 'mute'
+}
+
+const punishmentSchema = new Schema<IPunishment>({
     type:       { type: String, enum: ['mute', 'ban'], required: true },
     guildId:    { type: String, required: true },
     userId:     { type: String, required: true },
@@ -10,4 +18,4 @@ const punishmentSchema = new Schema({
 
 punishmentSchema.index({ guildId: 1, userId: 1, type: 1 });
 
-module.exports = model('Punishment', punishmentSchema);
+export = model<IPunishment>('Punishment', punishmentSchema);

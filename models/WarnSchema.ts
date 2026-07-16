@@ -1,6 +1,14 @@
-const { model, Schema } = require('mongoose');
+import { model, Schema, Document } from 'mongoose';
 
-const warnSchema = new Schema({
+interface IWarn extends Document {
+    guildId: string;
+    userId: string;
+    moderatorId: string;
+    reason: string;
+    createdAt: Date;
+}
+
+const warnSchema = new Schema<IWarn>({
     guildId: { type: String, required: true },
     userId: { type: String, required: true },
     moderatorId: { type: String, required: true },
@@ -10,4 +18,4 @@ const warnSchema = new Schema({
 
 warnSchema.index({ guildId: 1, userId: 1 });
 
-module.exports = model('Warn', warnSchema);
+export = model<IWarn>('Warn', warnSchema);

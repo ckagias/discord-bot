@@ -1,6 +1,15 @@
-const { model, Schema } = require('mongoose');
+import { model, Schema, Document } from 'mongoose';
 
-const ticketSchema = new Schema({
+interface ITicket extends Document {
+    guildId: string;
+    channelId: string;
+    userId: string;
+    ticketNumber: number;
+    status: 'open' | 'closed';
+    createdAt: Date;
+}
+
+const ticketSchema = new Schema<ITicket>({
     guildId: { type: String, required: true },
     channelId: { type: String, required: true, unique: true },
     userId: { type: String, required: true },
@@ -11,4 +20,4 @@ const ticketSchema = new Schema({
 
 ticketSchema.index({ guildId: 1, ticketNumber: 1 });
 
-module.exports = model('Ticket', ticketSchema);
+export = model<ITicket>('Ticket', ticketSchema);

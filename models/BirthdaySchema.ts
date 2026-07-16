@@ -1,6 +1,15 @@
-const { model, Schema } = require('mongoose');
+import { model, Schema, Document } from 'mongoose';
 
-const birthdaySchema = new Schema({
+interface IBirthday extends Document {
+    userId: string;
+    guildId: string;
+    month: number; // 1-12
+    day: number; // 1-31
+    year: number | null;
+    lastAnnounced: number | null; // year last announced, prevents duplicate posts
+}
+
+const birthdaySchema = new Schema<IBirthday>({
     userId:       { type: String, required: true },
     guildId:      { type: String, required: true },
     month:        { type: Number, required: true }, // 1-12
@@ -12,4 +21,4 @@ const birthdaySchema = new Schema({
 birthdaySchema.index({ guildId: 1, userId: 1 }, { unique: true });
 birthdaySchema.index({ guildId: 1, month: 1, day: 1 });
 
-module.exports = model('Birthday', birthdaySchema);
+export = model<IBirthday>('Birthday', birthdaySchema);

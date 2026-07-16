@@ -1,6 +1,20 @@
-const { model, Schema } = require('mongoose');
+import { model, Schema, Document } from 'mongoose';
 
-const giveawaySchema = new Schema({
+interface IGiveaway extends Document {
+    guildId: string;
+    channelId: string;
+    messageId: string;
+    hostId: string;
+    prize: string;
+    winnerCount: number;
+    endsAt: Date;
+    ended: boolean;
+    entrants: string[];
+    winners: string[];
+    requireRoleId: string | null;
+}
+
+const giveawaySchema = new Schema<IGiveaway>({
     guildId:    { type: String, required: true },
     channelId:  { type: String, required: true },
     messageId:  { type: String, required: true, unique: true },
@@ -16,4 +30,4 @@ const giveawaySchema = new Schema({
 
 giveawaySchema.index({ guildId: 1, ended: 1 });
 
-module.exports = model('Giveaway', giveawaySchema);
+export = model<IGiveaway>('Giveaway', giveawaySchema);
