@@ -10,7 +10,7 @@ jest.mock('../../../slashCommands/utility/suggest', () => ({
     voteRow: jest.fn(),
     staffRow: jest.fn(),
     applyStatus: jest.fn(),
-    capitalize: (str) => str.charAt(0).toUpperCase() + str.slice(1),
+    capitalize: (str: string) => str.charAt(0).toUpperCase() + str.slice(1),
 }));
 
 const SuggestionSchema = require('../../../models/SuggestionSchema');
@@ -18,11 +18,11 @@ const { getGuildConfig } = require('../../../utils/guildConfig');
 const { applyStatus } = require('../../../slashCommands/utility/suggest');
 const handlers = require('../../../handlers/components/suggestVote');
 
-function handler(prefix) {
-    return handlers.find(h => h.prefix === prefix).execute;
+function handler(prefix: string) {
+    return handlers.find((h: any) => h.prefix === prefix).execute;
 }
 
-function makeInteraction({ customId, upvotes = [], downvotes = [] } = {}) {
+function makeInteraction({ customId, upvotes = [], downvotes = [] }: { customId?: string; upvotes?: string[]; downvotes?: string[] } = {}) {
     return {
         customId,
         user: { id: 'user1' },

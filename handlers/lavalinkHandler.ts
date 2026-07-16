@@ -1,13 +1,14 @@
-const { LavalinkManager } = require('lavalink-client');
-const log = require('../utils/log');
+import { Client, TextBasedChannel } from 'discord.js';
+const { LavalinkManager } = require('lavalink-client') as typeof import('lavalink-client', { with: { 'resolution-mode': 'import' } });
+import log from '../utils/log';
 const logger = log.scope('Lavalink');
 
-module.exports = (client) => {
+export = (client: Client) => {
     client.lavalink = new LavalinkManager({
         nodes: [
             {
                 host: process.env.LAVALINK_HOST || '127.0.0.1',
-                port: parseInt(process.env.LAVALINK_PORT) || 2333,
+                port: parseInt(process.env.LAVALINK_PORT as string) || 2333,
                 authorization: process.env.LAVALINK_PASSWORD || 'youshallnotpass',
                 id: 'main',
             },
@@ -17,7 +18,7 @@ module.exports = (client) => {
             if (guild) guild.shard.send(payload);
         },
         client: {
-            id: process.env.ClientID,
+            id: process.env.ClientID as string,
             username: 'Discord Bot',
         },
         playerOptions: {
@@ -32,27 +33,27 @@ module.exports = (client) => {
         },
     });
 
-    client.lavalink.on('nodeConnect', (node) => {
+    (client.lavalink as any).on('nodeConnect', (node: any) => {
         logger.info(`Node "${node.id}" connected`);
     });
 
-    client.lavalink.on('nodeError', (node, error) => {
+    (client.lavalink as any).on('nodeError', (node: any, error: any) => {
         logger.error(`Node "${node.id}" error:`, error.message);
     });
 
     client.lavalink.on('trackStart', (player, track) => {
-        const channel = client.channels.cache.get(player.textChannelId);
-        if (channel) channel.send(`Now playing: **${track.info.title}** by **${track.info.author}**`);
+        const channel = client.channels.cache.get(player.textChannelId as string) as TextBasedChannel | undefined;
+        if (channel && 'send' in channel) channel.send(`Now playing: **${track?.info.title}** by **${track?.info.author}**`);
     });
 
     client.lavalink.on('queueEnd', (player) => {
         if (player.getData('manual_stop')) return;
-        const channel = client.channels.cache.get(player.textChannelId);
-        if (channel) channel.send('Queue finished. Leaving voice channel in 30 seconds.');
+        const channel = client.channels.cache.get(player.textChannelId as string) as TextBasedChannel | undefined;
+        if (channel && 'send' in channel) channel.send('Queue finished. Leaving voice channel in 30 seconds.');
     });
 
     client.lavalink.on('playerDestroy', (player) => {
-        const channel = client.channels.cache.get(player.textChannelId);
-        if (channel) channel.send('Left the voice channel.').catch(() => {});
+        const channel = client.channels.cache.get(player.textChannelId as string) as TextBasedChannel | undefined;
+        if (channel && 'send' in channel) channel.send('Left the voice channel.').catch(() => {});
     });
 };

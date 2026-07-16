@@ -6,9 +6,10 @@ node_modules
 *.log
 dashboard
 tests
-data
+dist
 *.md
 *.test.js
+*.test.ts
 jest.config.js
 eslint.config.js
 LICENSE

@@ -1,12 +1,13 @@
-const { MessageFlags } = require('discord.js');
-const PollSchema = require('../../models/PollSchema');
 const { buildEmbed, buildButtons } = require('../../slashCommands/fun/poll');
+import { MessageFlags, ButtonInteraction } from 'discord.js';
+import PollSchema from '../../models/PollSchema';
+import { ComponentDefinition } from '../../types/discord';
 
-module.exports = {
+const component: ComponentDefinition = {
     type: 'button',
     prefix: 'poll_vote_',
 
-    async execute(interaction) {
+    async execute(interaction: ButtonInteraction) {
         const optionIndex = String(interaction.customId.replace('poll_vote_', ''));
         const poll = await PollSchema.findOne({ messageId: interaction.message.id, ended: false });
 
@@ -17,7 +18,7 @@ module.exports = {
         const votes = poll.votes;
 
         // Remove user from any option they previously voted for
-        let previousIndex = null;
+        let previousIndex: string | null = null;
         for (const [key, voters] of votes) {
             if (voters.includes(userId)) {
                 previousIndex = key;
@@ -46,3 +47,5 @@ module.exports = {
         await interaction.message.edit({ embeds: [updatedEmbed], components: [buildButtons(poll.options)] });
     },
 };
+
+export = component;

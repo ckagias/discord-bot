@@ -14,7 +14,7 @@ usage() {
 case "$1" in
     --commands)
         echo "Registering slash commands..."
-        docker compose run --rm bot node src/cmd.js
+        docker compose run --rm bot node dist/src/cmd.js
         echo "Done!"
         ;;
     --bot)
@@ -38,7 +38,7 @@ case "$1" in
         echo "Rebuilding and restarting bot..."
         docker compose up --build -d bot
         echo "Registering slash commands..."
-        docker compose run --rm bot node src/cmd.js
+        docker compose run --rm bot node dist/src/cmd.js
         echo "Rebuilding and restarting dashboard..."
         docker compose up --build -d dashboard
         echo "All services are running!"

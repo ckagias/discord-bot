@@ -15,7 +15,8 @@
     "restart": "./restart.sh",
     "test": "jest",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",

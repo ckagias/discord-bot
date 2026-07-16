@@ -19,12 +19,14 @@
   },
   "include": [
     "src/**/*",
+    "data/**/*",
     "events/**/*",
     "handlers/**/*",
     "models/**/*",
     "slashCommands/**/*",
     "utils/**/*",
-    "tests/**/*"
+    "tests/**/*",
+    "types/**/*"
   ],
   "exclude": ["node_modules", "dashboard", "dist"]
 }

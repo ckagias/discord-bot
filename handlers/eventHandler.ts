@@ -1,14 +1,21 @@
-const fs = require('fs');
-const path = require('path');
-const log = require('../utils/log');
+import fs from 'fs';
+import path from 'path';
+import { Client } from 'discord.js';
+import log from '../utils/log';
 const logger = log.scope('eventHandler');
 
-module.exports = (client) => {
+interface BotEvent {
+    name: string;
+    once?: boolean;
+    execute: (...args: any[]) => unknown;
+}
+
+export = (client: Client) => {
     const eventsPath = path.join(__dirname, '../events');
     const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
 
     for (const file of eventFiles) {
-        let event;
+        let event: BotEvent;
         try {
             event = require(path.join(eventsPath, file));
         } catch (err) {
@@ -16,7 +23,7 @@ module.exports = (client) => {
             continue;
         }
 
-        const listener = (...args) => {
+        const listener = (...args: unknown[]) => {
             try {
                 Promise.resolve(event.execute(...args, client))
                     .catch(err => logger.error(`Unhandled error in ${event.name}:`, err));
