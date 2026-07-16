@@ -1,10 +1,11 @@
-const BirthdaySchema = require('../models/BirthdaySchema');
-const GuildSchema = require('../models/GuildSchema');
-const { getGuildConfig } = require('./guildConfig');
+import { Client, Guild, GuildMember } from 'discord.js';
+import BirthdaySchema from '../models/BirthdaySchema';
+import GuildSchema from '../models/GuildSchema';
+import { getGuildConfig } from './guildConfig';
 
 const DEFAULT_BIRTHDAY_MESSAGE = "Happy Birthday {user}! You turn {age} today! 🎉";
 
-function formatMessage(template, member, age = null) {
+function formatMessage(template: string, member: GuildMember, age: number | null = null): string {
     return template
         .replace(/{user}/g, `<@${member.id}>`)
         .replace(/{server}/g, member.guild.name)
@@ -12,14 +13,14 @@ function formatMessage(template, member, age = null) {
 }
 
 // Age turned today, based on the stored birth year. Null if no year was provided.
-function calculateAge(entry, year) {
+function calculateAge(entry: { year?: number | null }, year: number): number | null {
     if (!entry.year) return null;
     return year - entry.year;
 }
 
 // Removes the birthday role from every member holding it, since it should only be worn on the
 // member's actual birthday and this runs before today's new birthdays are granted the role.
-async function clearBirthdayRoles(client, guild, roleId) {
+async function clearBirthdayRoles(client: Client, guild: Guild, roleId: string): Promise<void> {
     const role = guild.roles.cache.get(roleId);
     if (!role) return;
 
@@ -32,7 +33,7 @@ async function clearBirthdayRoles(client, guild, roleId) {
 // birthday role holders, then finds members whose month/day matches today and haven't been
 // announced yet this year, posts the announcement, assigns the birthday role if configured, and
 // marks them as announced to avoid duplicate posts on restart.
-async function checkBirthdays(client) {
+async function checkBirthdays(client: Client): Promise<void> {
     const now = new Date();
     const month = now.getMonth() + 1;
     const day = now.getDate();
@@ -48,10 +49,10 @@ async function checkBirthdays(client) {
     const todays = await BirthdaySchema.find({ month, day, lastAnnounced: { $ne: year } });
     if (!todays.length) return;
 
-    const byGuild = new Map();
+    const byGuild = new Map<string, any[]>();
     for (const entry of todays) {
         if (!byGuild.has(entry.guildId)) byGuild.set(entry.guildId, []);
-        byGuild.get(entry.guildId).push(entry);
+        byGuild.get(entry.guildId)!.push(entry);
     }
 
     for (const [guildId, entries] of byGuild) {
@@ -72,7 +73,7 @@ async function checkBirthdays(client) {
             if (!member) continue;
 
             const age = calculateAge(entry, year);
-            await channel.send({ content: formatMessage(template, member, age) }).catch(() => {});
+            await (channel as any).send({ content: formatMessage(template, member, age) }).catch(() => {});
             if (role) await member.roles.add(role).catch(() => {});
 
             await BirthdaySchema.updateOne({ _id: entry._id }, { $set: { lastAnnounced: year } });
@@ -80,4 +81,4 @@ async function checkBirthdays(client) {
     }
 }
 
-module.exports = { formatMessage, checkBirthdays, DEFAULT_BIRTHDAY_MESSAGE };
+export { formatMessage, checkBirthdays, DEFAULT_BIRTHDAY_MESSAGE };

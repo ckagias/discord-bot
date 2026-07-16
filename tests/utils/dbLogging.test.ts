@@ -1,15 +1,15 @@
-const { EventEmitter } = require('events');
-const { attachConnectionLogging } = require('../../utils/dbLogging');
+import { EventEmitter } from 'events';
+import { attachConnectionLogging } from '../../utils/dbLogging';
 
 describe('attachConnectionLogging', () => {
-    let consoleErrorSpy, consoleWarnSpy, consoleLogSpy, connection;
+    let consoleErrorSpy: jest.SpyInstance, consoleWarnSpy: jest.SpyInstance, consoleLogSpy: jest.SpyInstance, connection: EventEmitter;
 
     beforeEach(() => {
         consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
         consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
         consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
         connection = new EventEmitter();
-        attachConnectionLogging(connection);
+        attachConnectionLogging(connection as any);
     });
 
     afterEach(() => {

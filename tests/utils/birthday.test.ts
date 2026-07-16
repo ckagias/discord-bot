@@ -7,15 +7,19 @@ jest.mock('../../models/GuildSchema', () => ({
 }));
 jest.mock('../../utils/guildConfig', () => ({ getGuildConfig: jest.fn() }));
 
-const BirthdaySchema = require('../../models/BirthdaySchema');
-const GuildSchema = require('../../models/GuildSchema');
-const { getGuildConfig } = require('../../utils/guildConfig');
-const { checkBirthdays } = require('../../utils/birthday');
+import BirthdaySchema from '../../models/BirthdaySchema';
+import GuildSchema from '../../models/GuildSchema';
+import { getGuildConfig } from '../../utils/guildConfig';
+import { checkBirthdays } from '../../utils/birthday';
 
-function makeGuild({ birthdayRoleId = null } = {}) {
+const mockedBirthdaySchema = BirthdaySchema as any;
+const mockedGuildSchema = GuildSchema as any;
+const mockedGetGuildConfig = getGuildConfig as jest.Mock;
+
+function makeGuild({ birthdayRoleId = null as string | null } = {}) {
     const channel = { send: jest.fn().mockResolvedValue({}) };
     const role = { members: new Map() };
-    const guild = {
+    const guild: any = {
         id: 'g1',
         name: 'Test Guild',
         channels: { cache: new Map([['c1', channel]]) },
@@ -38,23 +42,23 @@ function makeGuild({ birthdayRoleId = null } = {}) {
 describe('checkBirthdays', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        BirthdaySchema.find.mockResolvedValue([]);
-        GuildSchema.find.mockResolvedValue([]);
+        mockedBirthdaySchema.find.mockResolvedValue([]);
+        mockedGuildSchema.find.mockResolvedValue([]);
     });
 
     test('posts an announcement for a matching birthday and marks it announced', async () => {
         const guild = makeGuild();
-        const client = { guilds: { cache: new Map([['g1', guild]]) } };
+        const client = { guilds: { cache: new Map([['g1', guild]]) } } as any;
 
-        BirthdaySchema.find.mockResolvedValue([{ _id: 'b1', guildId: 'g1', userId: 'u1' }]);
-        getGuildConfig.mockResolvedValue({ birthdayChannelId: 'c1', birthdayMessage: null, birthdayRoleId: null });
+        mockedBirthdaySchema.find.mockResolvedValue([{ _id: 'b1', guildId: 'g1', userId: 'u1' }]);
+        mockedGetGuildConfig.mockResolvedValue({ birthdayChannelId: 'c1', birthdayMessage: null, birthdayRoleId: null });
 
         await checkBirthdays(client);
 
         expect(guild.__channel.send).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('<@u1>') })
         );
-        expect(BirthdaySchema.updateOne).toHaveBeenCalledWith(
+        expect(mockedBirthdaySchema.updateOne).toHaveBeenCalledWith(
             { _id: 'b1' },
             expect.objectContaining({ $set: expect.objectContaining({ lastAnnounced: expect.any(Number) }) })
         );
@@ -62,11 +66,11 @@ describe('checkBirthdays', () => {
 
     test('substitutes {age} using the current year minus the stored birth year', async () => {
         const guild = makeGuild();
-        const client = { guilds: { cache: new Map([['g1', guild]]) } };
+        const client = { guilds: { cache: new Map([['g1', guild]]) } } as any;
         const expectedAge = new Date().getFullYear() - 1995;
 
-        BirthdaySchema.find.mockResolvedValue([{ _id: 'b1', guildId: 'g1', userId: 'u1', year: 1995 }]);
-        getGuildConfig.mockResolvedValue({ birthdayChannelId: 'c1', birthdayMessage: 'You turn {age}!', birthdayRoleId: null });
+        mockedBirthdaySchema.find.mockResolvedValue([{ _id: 'b1', guildId: 'g1', userId: 'u1', year: 1995 }]);
+        mockedGetGuildConfig.mockResolvedValue({ birthdayChannelId: 'c1', birthdayMessage: 'You turn {age}!', birthdayRoleId: null });
 
         await checkBirthdays(client);
 
@@ -77,10 +81,10 @@ describe('checkBirthdays', () => {
 
     test('falls back to a generic phrase for {age} when no birth year was given', async () => {
         const guild = makeGuild();
-        const client = { guilds: { cache: new Map([['g1', guild]]) } };
+        const client = { guilds: { cache: new Map([['g1', guild]]) } } as any;
 
-        BirthdaySchema.find.mockResolvedValue([{ _id: 'b1', guildId: 'g1', userId: 'u1', year: null }]);
-        getGuildConfig.mockResolvedValue({ birthdayChannelId: 'c1', birthdayMessage: 'You turn {age}!', birthdayRoleId: null });
+        mockedBirthdaySchema.find.mockResolvedValue([{ _id: 'b1', guildId: 'g1', userId: 'u1', year: null }]);
+        mockedGetGuildConfig.mockResolvedValue({ birthdayChannelId: 'c1', birthdayMessage: 'You turn {age}!', birthdayRoleId: null });
 
         await checkBirthdays(client);
 
@@ -91,10 +95,10 @@ describe('checkBirthdays', () => {
 
     test('grants the birthday role when configured', async () => {
         const guild = makeGuild();
-        const client = { guilds: { cache: new Map([['g1', guild]]) } };
+        const client = { guilds: { cache: new Map([['g1', guild]]) } } as any;
 
-        BirthdaySchema.find.mockResolvedValue([{ _id: 'b1', guildId: 'g1', userId: 'u1' }]);
-        getGuildConfig.mockResolvedValue({ birthdayChannelId: 'c1', birthdayMessage: null, birthdayRoleId: 'r1' });
+        mockedBirthdaySchema.find.mockResolvedValue([{ _id: 'b1', guildId: 'g1', userId: 'u1' }]);
+        mockedGetGuildConfig.mockResolvedValue({ birthdayChannelId: 'c1', birthdayMessage: null, birthdayRoleId: 'r1' });
         guild.roles.cache.set('r1', { members: new Map() });
 
         await checkBirthdays(client);
@@ -104,10 +108,10 @@ describe('checkBirthdays', () => {
 
     test('clears the birthday role from prior holders before granting new ones', async () => {
         const guild = makeGuild({ birthdayRoleId: 'r1' });
-        const client = { guilds: { cache: new Map([['g1', guild]]) } };
+        const client = { guilds: { cache: new Map([['g1', guild]]) } } as any;
 
-        GuildSchema.find.mockResolvedValue([{ guildId: 'g1', birthdayRoleId: 'r1' }]);
-        BirthdaySchema.find.mockResolvedValue([]);
+        mockedGuildSchema.find.mockResolvedValue([{ guildId: 'g1', birthdayRoleId: 'r1' }]);
+        mockedBirthdaySchema.find.mockResolvedValue([]);
 
         await checkBirthdays(client);
 
@@ -116,14 +120,14 @@ describe('checkBirthdays', () => {
 
     test('skips guilds without a configured birthday channel', async () => {
         const guild = makeGuild();
-        const client = { guilds: { cache: new Map([['g1', guild]]) } };
+        const client = { guilds: { cache: new Map([['g1', guild]]) } } as any;
 
-        BirthdaySchema.find.mockResolvedValue([{ _id: 'b1', guildId: 'g1', userId: 'u1' }]);
-        getGuildConfig.mockResolvedValue({ birthdayChannelId: null });
+        mockedBirthdaySchema.find.mockResolvedValue([{ _id: 'b1', guildId: 'g1', userId: 'u1' }]);
+        mockedGetGuildConfig.mockResolvedValue({ birthdayChannelId: null });
 
         await checkBirthdays(client);
 
         expect(guild.__channel.send).not.toHaveBeenCalled();
-        expect(BirthdaySchema.updateOne).not.toHaveBeenCalled();
+        expect(mockedBirthdaySchema.updateOne).not.toHaveBeenCalled();
     });
 });

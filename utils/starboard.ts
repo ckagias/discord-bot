@@ -1,15 +1,14 @@
-const { EmbedBuilder } = require('discord.js');
-const { getGuildConfig } = require('./guildConfig');
-const StarboardSchema = require('../models/StarboardSchema');
-const log = require('./log');
+import { EmbedBuilder, MessageReaction } from 'discord.js';
+import { getGuildConfig } from './guildConfig';
+import StarboardSchema from '../models/StarboardSchema';
+import log = require('./log');
 const logger = log.scope('starboard');
 
 /**
  * Handle a star reaction being added or removed on a message.
  * Called by both messageReactionAdd and messageReactionRemove events.
- * @param {import('discord.js').MessageReaction} reaction
  */
-async function handleStarReaction(reaction) {
+async function handleStarReaction(reaction: MessageReaction): Promise<void> {
     // Resolve partials — we need message content, author, and attachments
     if (reaction.partial) {
         try { await reaction.fetch(); } catch { return; }
@@ -37,10 +36,10 @@ async function handleStarReaction(reaction) {
     if (message.channel.id === config.starboardChannelId) return;
 
     // Ignore NSFW channels if configured to do so
-    if (config.starboardIgnoreNsfw && message.channel.nsfw) return;
+    if (config.starboardIgnoreNsfw && (message.channel as any).nsfw) return;
 
     // Get the current live star count for the configured emoji
-    const count = message.reactions.cache.get(emojiKey)?.count ?? 0;
+    const count = message.reactions.cache.get(emojiKey as string)?.count ?? 0;
 
     const guildId = message.guild.id;
     const channelId = message.channel.id;
@@ -97,12 +96,12 @@ async function handleStarReaction(reaction) {
 /**
  * Build the starboard embed for a message.
  */
-function buildEmbed(message, guildId, channelId, messageId) {
+function buildEmbed(message: MessageReaction['message'], guildId: string, channelId: string, messageId: string): EmbedBuilder {
     const embed = new EmbedBuilder()
         .setColor(Math.floor(Math.random() * 0xFFFFFF))
         .setAuthor({
-            name: message.author.tag,
-            iconURL: message.author.displayAvatarURL(),
+            name: message.author!.tag,
+            iconURL: message.author!.displayAvatarURL(),
         })
         .setDescription(message.content || null)
         .addFields({
@@ -117,4 +116,4 @@ function buildEmbed(message, guildId, channelId, messageId) {
     return embed;
 }
 
-module.exports = { handleStarReaction };
+export { handleStarReaction };

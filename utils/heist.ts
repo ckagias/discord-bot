@@ -1,15 +1,15 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { updateBalance, formatBalance } = require('./economy');
-const HeistSchema = require('../models/HeistSchema');
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, Message, Guild } from 'discord.js';
+import { updateBalance, formatBalance } from './economy';
+import HeistSchema from '../models/HeistSchema';
 
 // Success chance: 30% base + 5% per member, capped at 75%
-function successChance(memberCount) {
+function successChance(memberCount: number): number {
     return Math.min(0.30 + (memberCount - 1) * 0.05, 0.75);
 }
 
 // Each surviving member gets an equal share of the total pot, plus a random bonus multiplier (1.5x–3x).
 // Remainder coins (from floor division) go to the first survivor so no coins are destroyed.
-function calcPayout(totalPot, survivors) {
+function calcPayout(totalPot: number, survivors: number) {
     const multiplier = 1.5 + Math.random() * 1.5; // 1.5x–3x
     const total = Math.floor(totalPot * multiplier);
     const perPerson = Math.floor(total / survivors);
@@ -17,7 +17,7 @@ function calcPayout(totalPot, survivors) {
     return { perPerson, remainder, multiplier };
 }
 
-async function launchHeist(message, guild) {
+async function launchHeist(message: Message, guild: Guild) {
     // Atomic guard — only one of setTimeout and heist_begin can win this update
     const heist = await HeistSchema.findOneAndUpdate(
         { messageId: message.id, finished: false },
@@ -26,7 +26,7 @@ async function launchHeist(message, guild) {
     );
     if (!heist) return;
 
-    const disabledRow = new ActionRowBuilder().addComponents(
+    const disabledRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder().setCustomId('heist_join').setLabel('Join Heist').setEmoji('🔫').setStyle(ButtonStyle.Primary).setDisabled(true),
         new ButtonBuilder().setCustomId('heist_cancel').setLabel('Cancel').setStyle(ButtonStyle.Danger).setDisabled(true),
     );
@@ -98,4 +98,4 @@ async function launchHeist(message, guild) {
     return message.edit({ embeds: [embed], components: [disabledRow] });
 }
 
-module.exports = { launchHeist };
+export { launchHeist };

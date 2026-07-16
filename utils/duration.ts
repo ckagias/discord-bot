@@ -1,16 +1,16 @@
 // Formats a duration in milliseconds as an exact compound string (e.g. "1h 30m"),
 // never rounding away the remainder the way a single-unit label like "2h" would.
-function formatDuration(ms) {
+function formatDuration(ms: number): string {
     let seconds = Math.round(ms / 1000);
 
-    const units = [
+    const units: [string, number][] = [
         ['w', 604800],
         ['d', 86400],
         ['h', 3600],
         ['m', 60],
     ];
 
-    const parts = [];
+    const parts: string[] = [];
     for (const [label, size] of units) {
         if (seconds >= size) {
             const count = Math.floor(seconds / size);
@@ -23,4 +23,4 @@ function formatDuration(ms) {
     return parts.slice(0, 2).join(' ');
 }
 
-module.exports = { formatDuration };
+export { formatDuration };

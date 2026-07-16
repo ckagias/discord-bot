@@ -1,14 +1,14 @@
-const { upsertWithRetry } = require('../../utils/upsertRetry');
+import { upsertWithRetry } from '../../utils/upsertRetry';
 
 function duplicateKeyError() {
-    const err = new Error('E11000 duplicate key error');
+    const err: any = new Error('E11000 duplicate key error');
     err.code = 11000;
     return err;
 }
 
 describe('upsertWithRetry', () => {
     test('returns the result of the upsert when it succeeds', async () => {
-        const model = { findOneAndUpdate: jest.fn().mockResolvedValue({ xp: 10 }) };
+        const model: any = { findOneAndUpdate: jest.fn().mockResolvedValue({ xp: 10 }) };
 
         const result = await upsertWithRetry(model, { userId: '1' }, { $inc: { xp: 10 } });
 
@@ -18,7 +18,7 @@ describe('upsertWithRetry', () => {
     });
 
     test('retries as a plain update when the upsert insert loses a race (E11000)', async () => {
-        const model = {
+        const model: any = {
             findOneAndUpdate: jest.fn()
                 .mockRejectedValueOnce(duplicateKeyError())
                 .mockResolvedValueOnce({ xp: 25 }),
@@ -34,7 +34,7 @@ describe('upsertWithRetry', () => {
 
     test('rethrows errors that are not a duplicate-key conflict', async () => {
         const otherError = new Error('connection lost');
-        const model = { findOneAndUpdate: jest.fn().mockRejectedValue(otherError) };
+        const model: any = { findOneAndUpdate: jest.fn().mockRejectedValue(otherError) };
 
         await expect(upsertWithRetry(model, { userId: '1' }, {})).rejects.toThrow('connection lost');
         expect(model.findOneAndUpdate).toHaveBeenCalledTimes(1);

@@ -1,4 +1,4 @@
-const { formatDuration } = require('../../utils/duration');
+import { formatDuration } from '../../utils/duration';
 
 describe('formatDuration', () => {
     test('formats seconds only', () => {

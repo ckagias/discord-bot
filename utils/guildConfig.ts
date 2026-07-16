@@ -1,11 +1,11 @@
-const GuildSchema = require('../models/GuildSchema');
+import GuildSchema from '../models/GuildSchema';
 
-function getGuildConfig(guildId) {
+function getGuildConfig(guildId: string) {
     return GuildSchema.findOne({ guildId });
 }
 
 // Ensures a config document exists for the guild and returns it, creating one with schema defaults if needed.
-function ensureGuildConfig(guildId) {
+function ensureGuildConfig(guildId: string) {
     return GuildSchema.findOneAndUpdate(
         { guildId },
         { $setOnInsert: { guildId } },
@@ -14,7 +14,7 @@ function ensureGuildConfig(guildId) {
 }
 
 // Upserts the given fields onto the guild's config document.
-function updateGuildConfig(guildId, fields) {
+function updateGuildConfig(guildId: string, fields: Record<string, unknown>) {
     return GuildSchema.findOneAndUpdate(
         { guildId },
         { $set: fields, $setOnInsert: { guildId } },
@@ -22,4 +22,4 @@ function updateGuildConfig(guildId, fields) {
     );
 }
 
-module.exports = { getGuildConfig, ensureGuildConfig, updateGuildConfig };
+export { getGuildConfig, ensureGuildConfig, updateGuildConfig };
