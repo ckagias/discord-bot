@@ -12,6 +12,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Converted `utils/` (22 files) and their paired tests to TypeScript. Added `ts-jest` and ESLint TypeScript support (`typescript-eslint`) so converted files are linted and tested like any other source file. `typescript` pinned to `^5.9` instead of the newer major 7 since `ts-jest` doesn't support it yet.
 - Converted `models/` (22 mongoose schemas) to TypeScript with full document interfaces (including nested subdocuments and enum unions), so later PRs converting `events/`, `handlers/`, and `slashCommands/` get real field-level type checking on every document these models touch.
 - Converted `handlers/` and `handlers/components/` (16 files + 2 paired tests) to TypeScript. Added a `types/discord.d.ts` module augmentation for the custom properties (`commands`, `components`, `lavalink`, `embedDrafts`, `tempVCs`) the bot attaches to the discord.js `Client` at runtime.
+- Converted `events/` (13 files + paired tests) to TypeScript, typing event handler signatures against discord.js's `GuildMember`, `Interaction`, `Message`, `MessageReaction`, `GuildBan`, and `VoiceState` types (and their partials where discord.js can emit one). Extended `types/discord.d.ts` with the `snipeCache`/`editSnipeCache` properties `messageDelete`/`messageUpdate` attach to the `Client` at runtime. `handlers/eventHandler.ts`'s dynamic event-file scan now matches both `.js` and `.ts`, same as `componentHandler.ts` already did.
 
 ### Fixed
 

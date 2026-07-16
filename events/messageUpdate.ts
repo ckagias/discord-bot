@@ -1,9 +1,9 @@
-const { EmbedBuilder } = require('discord.js');
+import { EmbedBuilder, Message, PartialMessage, Client } from 'discord.js';
 const { getLogChannel } = require('../utils/logger');
 
 module.exports = {
     name: 'messageUpdate',
-    async execute(oldMessage, newMessage, client) {
+    async execute(oldMessage: Message | PartialMessage, newMessage: Message | PartialMessage, client: Client) {
         if (!newMessage.guild) return;
         if (newMessage.author?.bot) return;
         if (oldMessage.content === newMessage.content) return;

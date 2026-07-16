@@ -1,3 +1,4 @@
+import { Message } from 'discord.js';
 const LevelSchema = require('../models/LevelSchema');
 const AfkSchema = require('../models/AfkSchema');
 const TriggerSchema = require('../models/TriggerSchema');
@@ -15,7 +16,7 @@ const xp_cooldown_ms = 60_000;
 module.exports = {
     name: 'messageCreate',
 
-    async execute(message) {
+    async execute(message: Message) {
         if (message.author.bot) return;
         if (!message.guild) return;
 
@@ -58,7 +59,7 @@ module.exports = {
 
         // AFK return check
         try {
-            const afkEntry = await AfkSchema.findOne({ userId: author.id, guildId: guild.id }).lean();
+            const afkEntry: any = await AfkSchema.findOne({ userId: author.id, guildId: guild.id }).lean();
             if (afkEntry) {
                 await AfkSchema.deleteOne({ userId: author.id, guildId: guild.id });
                 const awayMs = Date.now() - afkEntry.since.getTime();
@@ -84,7 +85,7 @@ module.exports = {
 
             if (mentionedIds.length > 0) {
                 try {
-                    const afkEntries = await AfkSchema.find({ userId: { $in: mentionedIds }, guildId: guild.id }).lean();
+                    const afkEntries: any[] = await AfkSchema.find({ userId: { $in: mentionedIds }, guildId: guild.id }).lean();
                     const afkById = new Map(afkEntries.map(entry => [entry.userId, entry]));
 
                     for (const [id, mentionedUser] of message.mentions.users) {
@@ -151,7 +152,7 @@ module.exports = {
                     const announceChannel = guildData.levelUpChannelId
                         ? (guild.channels.cache.get(guildData.levelUpChannelId) ?? channel)
                         : channel;
-                    await announceChannel.send(
+                    await (announceChannel as any).send(
                         `🎉 Congratulations ${author}! You leveled up to **Level ${levelled.level}**!`
                     ).catch(() => {});
 

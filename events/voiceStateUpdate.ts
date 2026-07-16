@@ -1,9 +1,9 @@
-const { EmbedBuilder } = require('discord.js');
+import { EmbedBuilder, VoiceState, Client } from 'discord.js';
 const { getLogChannel } = require('../utils/logger');
 
 module.exports = {
     name: 'voiceStateUpdate',
-    async execute(oldState, newState, client) {
+    async execute(oldState: VoiceState, newState: VoiceState, client: Client) {
         const member = newState.member ?? oldState.member;
         if (!member || member.user.bot) return;
 

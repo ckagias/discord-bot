@@ -1,10 +1,10 @@
-const { EmbedBuilder, AuditLogEvent } = require('discord.js');
+import { EmbedBuilder, AuditLogEvent, GuildMember, PartialGuildMember } from 'discord.js';
 const { getLogChannel } = require('../utils/logger');
 const { getFarewellConfig, formatMessage } = require('../utils/welcome');
 
 module.exports = {
     name: 'guildMemberRemove',
-    async execute(member) {
+    async execute(member: GuildMember | PartialGuildMember) {
         const [logChannel, farewellConfig] = await Promise.all([
             getLogChannel(member.guild).catch(() => null),
             getFarewellConfig(member.guild).catch(() => null),

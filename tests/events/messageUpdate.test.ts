@@ -3,7 +3,7 @@ jest.mock('../../utils/logger', () => ({ getLogChannel: jest.fn() }));
 const { getLogChannel } = require('../../utils/logger');
 const messageUpdate = require('../../events/messageUpdate');
 
-function makeMessage(overrides = {}) {
+function makeMessage(overrides: Record<string, any> = {}) {
     return {
         guild: { id: 'g1' },
         author: { id: 'user1', bot: false, username: 'User', displayAvatarURL: jest.fn().mockReturnValue('https://example.com/a.png') },
@@ -14,7 +14,7 @@ function makeMessage(overrides = {}) {
     };
 }
 
-function makeClient() {
+function makeClient(): any {
     return {};
 }
 

@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
+import { EmbedBuilder, GuildMember } from 'discord.js';
 const { getLogChannel } = require('../utils/logger');
 const { getWelcomeConfig, formatMessage } = require('../utils/welcome');
 const { getGuildConfig } = require('../utils/guildConfig');
@@ -8,7 +8,7 @@ const logger = log.scope('autorole');
 
 module.exports = {
     name: 'guildMemberAdd',
-    async execute(member) {
+    async execute(member: GuildMember) {
         const [logChannel, welcomeConfig, guildConfig] = await Promise.all([
             getLogChannel(member.guild).catch(() => null),
             getWelcomeConfig(member.guild).catch(() => null),
