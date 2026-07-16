@@ -14,8 +14,7 @@ module.exports = {
         let reason = ban.reason || 'No reason provided';
 
         try {
-            // AuditLogEvent.MemberBan does not exist on this enum (pre-existing bug, preserved as-is)
-            const audit = await ban.guild.fetchAuditLogs({ type: (AuditLogEvent as any).MemberBan, limit: 1 });
+            const audit = await ban.guild.fetchAuditLogs({ type: AuditLogEvent.MemberBanAdd, limit: 1 });
             const entry = audit.entries.first();
             if (entry && entry.target?.id === ban.user.id) {
                 moderator = entry.executor.username;

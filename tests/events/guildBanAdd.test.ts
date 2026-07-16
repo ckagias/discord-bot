@@ -2,6 +2,7 @@ jest.mock('../../utils/logger', () => ({ getLogChannel: jest.fn() }));
 
 const { getLogChannel } = require('../../utils/logger');
 const guildBanAdd = require('../../events/guildBanAdd');
+const { AuditLogEvent } = require('discord.js');
 
 function makeBan(overrides = {}) {
     return {
@@ -44,6 +45,9 @@ describe('guildBanAdd', () => {
 
         expect(logChannel.send).toHaveBeenCalledWith(
             expect.objectContaining({ embeds: expect.any(Array) })
+        );
+        expect(ban.guild.fetchAuditLogs).toHaveBeenCalledWith(
+            expect.objectContaining({ type: AuditLogEvent.MemberBanAdd })
         );
     });
 
