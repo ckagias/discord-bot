@@ -36,5 +36,7 @@ declare module 'discord.js' {
         lavalink: LavalinkManager;
         embedDrafts?: Map<string, any>;
         tempVCs?: Map<string, string>;
+        snipeCache?: Map<string, any>;
+        editSnipeCache?: Map<string, any>;
     }
 }

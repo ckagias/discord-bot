@@ -1,9 +1,9 @@
-const { EmbedBuilder, AuditLogEvent } = require('discord.js');
+import { EmbedBuilder, AuditLogEvent, GuildMember, PartialGuildMember } from 'discord.js';
 const { getLogChannel } = require('../utils/logger');
 
 module.exports = {
     name: 'guildMemberUpdate',
-    async execute(oldMember, newMember) {
+    async execute(oldMember: GuildMember | PartialGuildMember, newMember: GuildMember) {
         const logChannel = await getLogChannel(newMember.guild).catch(() => null);
         if (!logChannel) return;
 

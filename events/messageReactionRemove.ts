@@ -1,4 +1,4 @@
-const { Events } = require('discord.js');
+import { Events, MessageReaction, PartialMessageReaction, User, PartialUser } from 'discord.js';
 const ReactionRoleSchema = require('../models/ReactionRoleSchema');
 const { handleStarReaction } = require('../utils/starboard');
 const log = require('../utils/log');
@@ -8,7 +8,7 @@ const starboardLogger = log.scope('starboard');
 module.exports = {
     name: Events.MessageReactionRemove,
 
-    async execute(reaction, user) {
+    async execute(reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) {
         if (user.bot) return;
 
         if (reaction.partial) {

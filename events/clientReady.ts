@@ -1,4 +1,4 @@
-const { ActivityType } = require('discord.js');
+import { ActivityType, Client } from 'discord.js';
 const GiveawaySchema = require('../models/GiveawaySchema');
 const { endGiveaway, scheduleGiveawayEnd } = require('../slashCommands/utility/giveaway');
 const { restorePunishments } = require('../utils/punishments');
@@ -23,7 +23,7 @@ const birthdayLogger = log.scope('birthday');
 module.exports = {
     name: 'clientReady',
     once: true,
-    async execute(client) {
+    async execute(client: Client) {
         logger.info(`Logged in as ${client.user.tag}`);
 
         // Init after READY so client.user.id is guaranteed populated and the gateway
@@ -81,7 +81,7 @@ module.exports = {
 
 // Runs the birthday check once now (covers birthdays missed while offline), then re-aligns
 // to fire once every local midnight.
-function scheduleBirthdayCheck(client) {
+function scheduleBirthdayCheck(client: Client) {
     const runAndReschedule = async () => {
         await checkBirthdays(client).catch(err => birthdayLogger.error('Birthday check failed:', err));
         setTimeout(runAndReschedule, msUntilNextMidnight());
@@ -109,7 +109,7 @@ async function cancelStaleHeists() {
     heistLogger.info(`Cancelled ${stale.length} stale heist(s) and refunded entry fees.`);
 }
 
-async function restoreAutoroles(client) {
+async function restoreAutoroles(client: Client) {
     const configs = await GuildSchema.find({ autoroleId: { $ne: null } }).catch(() => []);
     if (!configs.length) return;
 

@@ -5,14 +5,14 @@ const { getLogChannel } = require('../../utils/logger');
 const { getFarewellConfig, formatMessage } = require('../../utils/welcome');
 const guildMemberRemove = require('../../events/guildMemberRemove');
 
-function makeCollection(items) {
-    const map = new Map(items.map((item, i) => [i, item]));
-    map.filter = (fn) => makeCollection([...map.values()].filter(fn));
-    map.map = (fn) => [...map.values()].map(fn);
+function makeCollection(items: any[]): any {
+    const map: any = new Map(items.map((item, i) => [i, item]));
+    map.filter = (fn: (item: any) => boolean) => makeCollection([...map.values()].filter(fn));
+    map.map = (fn: (item: any) => any) => [...map.values()].map(fn);
     return map;
 }
 
-function makeMember(overrides = {}) {
+function makeMember(overrides: Record<string, any> = {}) {
     return {
         guild: {
             id: 'g1', memberCount: 99,

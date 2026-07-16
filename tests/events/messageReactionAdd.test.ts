@@ -5,7 +5,7 @@ const ReactionRoleSchema = require('../../models/ReactionRoleSchema');
 const { handleStarReaction } = require('../../utils/starboard');
 const messageReactionAdd = require('../../events/messageReactionAdd');
 
-function makeReaction({ partial = false, guild = { id: 'g1', members: { cache: { get: jest.fn() }, fetch: jest.fn() }, roles: { cache: { get: jest.fn() } } } } = {}) {
+function makeReaction({ partial = false, guild = { id: 'g1', members: { cache: { get: jest.fn() }, fetch: jest.fn() }, roles: { cache: { get: jest.fn() } } } }: { partial?: boolean; guild?: any } = {}) {
     return {
         partial,
         fetch: jest.fn().mockResolvedValue({}),

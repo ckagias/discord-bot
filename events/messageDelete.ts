@@ -1,9 +1,9 @@
-const { EmbedBuilder } = require('discord.js');
+import { EmbedBuilder, Message, PartialMessage, Client } from 'discord.js';
 const { getLogChannel } = require('../utils/logger');
 
 module.exports = {
     name: 'messageDelete',
-    async execute(message, client) {
+    async execute(message: Message | PartialMessage, client: Client) {
         if (!message.guild) return;
         if (message.author?.bot) return;
 
