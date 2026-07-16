@@ -1,9 +1,10 @@
-const fs = require('fs');
-const path = require('path');
-const log = require('../utils/log');
+import fs from 'fs';
+import path from 'path';
+import { Client } from 'discord.js';
+import log from '../utils/log';
 const logger = log.scope('slashCommandHandler');
 
-module.exports = (client) => {
+export = (client: Client) => {
     client.commands = new Map();
 
     const folders = fs.readdirSync(path.join(__dirname, '../slashCommands'));

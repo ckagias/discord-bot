@@ -1,23 +1,25 @@
-const fs = require('fs');
-const path = require('path');
-const log = require('../utils/log');
+import fs from 'fs';
+import path from 'path';
+import { Client } from 'discord.js';
+import log from '../utils/log';
+import { ComponentDefinition, ComponentBucket } from '../types/discord';
 const logger = log.scope('componentHandler');
 
-module.exports = (client) => {
+function registerComponents(client: Client) {
     client.components = {
         button: { byId: new Map(), prefixes: [] },
         modal: { byId: new Map(), prefixes: [] },
     };
 
     const componentsPath = path.join(__dirname, 'components');
-    const files = fs.readdirSync(componentsPath).filter(f => f.endsWith('.js'));
+    const files = fs.readdirSync(componentsPath).filter(f => f.endsWith('.js') || f.endsWith('.ts'));
 
     for (const file of files) {
         const exported = require(path.join(componentsPath, file));
-        const entries = Array.isArray(exported) ? exported : [exported];
+        const entries: ComponentDefinition[] = Array.isArray(exported) ? exported : [exported];
 
         for (const entry of entries) {
-            const bucket = client.components[entry.type];
+            const bucket: ComponentBucket | undefined = client.components[entry.type];
             if (!bucket) {
                 logger.warn(`${file} has unknown type "${entry.type}", skipping.`);
                 continue;
@@ -32,11 +34,11 @@ module.exports = (client) => {
             }
         }
     }
-};
+}
 
 // Resolves the handler for a given interaction type ('button' | 'modal') and customId,
 // checking exact-id matches first, then prefix matches in registration order.
-function resolveComponent(client, type, customId) {
+function resolveComponent(client: Client, type: 'button' | 'modal', customId: string) {
     const bucket = client.components?.[type];
     if (!bucket) return null;
 
@@ -50,4 +52,4 @@ function resolveComponent(client, type, customId) {
     return null;
 }
 
-module.exports.resolveComponent = resolveComponent;
+export = Object.assign(registerComponents, { resolveComponent });

@@ -1,20 +1,21 @@
-const { EmbedBuilder, MessageFlags } = require('discord.js');
-const GiveawaySchema = require('../../models/GiveawaySchema');
-const log = require('../../utils/log');
+import { EmbedBuilder, MessageFlags, ButtonInteraction } from 'discord.js';
+import GiveawaySchema from '../../models/GiveawaySchema';
+import log from '../../utils/log';
+import { ComponentDefinition } from '../../types/discord';
 const logger = log.scope('giveaway');
 
-module.exports = {
+const component: ComponentDefinition = {
     type: 'button',
     id: 'giveaway_enter',
 
-    async execute(interaction) {
+    async execute(interaction: ButtonInteraction) {
         const giveaway = await GiveawaySchema.findOne({ messageId: interaction.message.id, ended: false });
 
         if (!giveaway)
             return interaction.reply({ content: 'This giveaway has already ended.', flags: MessageFlags.Ephemeral });
 
         if (giveaway.requireRoleId) {
-            const member = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
+            const member = await interaction.guild!.members.fetch(interaction.user.id).catch(() => null);
             if (!member || !member.roles.cache.has(giveaway.requireRoleId)) {
                 return interaction.reply({ content: `You need the <@&${giveaway.requireRoleId}> role to enter this giveaway.`, flags: MessageFlags.Ephemeral });
             }
@@ -48,3 +49,5 @@ module.exports = {
             .catch(err => logger.error('Failed to update entry count on giveaway embed:', err));
     },
 };
+
+export = component;

@@ -1,9 +1,10 @@
-const { MessageFlags } = require('discord.js');
-const BlackjackGame = require('../../models/BlackjackSchema');
-const { handValue, buildEmbed, buildRow, disabledRow, dealerPlay, buildPvpEmbed, buildPvpRow } = require('../../utils/blackjack');
-const { updateBalance, getWallet, formatBalance } = require('../../utils/economy');
+import { MessageFlags, ButtonInteraction } from 'discord.js';
+import BlackjackGame from '../../models/BlackjackSchema';
+import { handValue, buildEmbed, buildRow, disabledRow, dealerPlay, buildPvpEmbed, buildPvpRow } from '../../utils/blackjack';
+import { updateBalance, getWallet, formatBalance } from '../../utils/economy';
+import { ComponentDefinition } from '../../types/discord';
 
-async function resolveGame(interaction, isOpponent = false) {
+async function resolveGame(interaction: ButtonInteraction, isOpponent = false) {
     const game = await BlackjackGame.findOne({ messageId: interaction.message.id });
     if (!game) {
         await interaction.reply({ content: 'Game not found.', flags: MessageFlags.Ephemeral });
@@ -35,7 +36,7 @@ async function resolveGame(interaction, isOpponent = false) {
 }
 
 // Settle PvP — called once challenger is done (stand/bust) and opponent is also done
-async function settlePvp(interaction, game) {
+async function settlePvp(interaction: ButtonInteraction, game: any) {
     const { userId, guildId, opponentId, bet, opponentBet, playerHand, opponentHand, dealerHand, deck } = game;
 
     dealerPlay(dealerHand, deck);
@@ -46,7 +47,7 @@ async function settlePvp(interaction, game) {
     const playerTotal = handValue(playerHand);
     const opponentTotal = handValue(opponentHand);
 
-    const resultLine = (userId, hand, total, betAmt, label) => {
+    const resultLine = (userId: string, hand: string[], total: number, betAmt: number, label: string) => {
         const busted = total > 21;
         const win = !busted && (dealerTotal > 21 || total > dealerTotal);
         const push = !busted && total === dealerTotal;
@@ -75,14 +76,14 @@ async function settlePvp(interaction, game) {
     const summaryText = `${pResult.line}\n${oResult.line}`;
     const pvpGame = { playerHand, opponentHand, dealerHand, bet, opponentBet };
 
-    await interaction.update({
-        embeds: [buildPvpEmbed(pvpGame, { challenger, opponent, outcome: summaryText })],
+    await (interaction as any).update({
+        embeds: [buildPvpEmbed(pvpGame, { challenger: challenger as any, opponent: opponent as any, outcome: summaryText })],
         components: [disabledRow()],
     });
 }
 
 // Settle single-player game
-async function finish(interaction, game, outcome) {
+async function finish(interaction: ButtonInteraction, game: any, outcome: string) {
     const { bet, playerHand, dealerHand, userId, guildId } = game;
 
     if (outcome === 'win') await updateBalance(userId, guildId, bet * 2);
@@ -91,7 +92,7 @@ async function finish(interaction, game, outcome) {
     game.finished = true;
     await game.save();
 
-    await interaction.update({
+    await (interaction as any).update({
         embeds: [buildEmbed({ playerHand, dealerHand, bet }, { outcome, dealerFull: true })],
         components: [disabledRow()],
     });
@@ -99,12 +100,12 @@ async function finish(interaction, game, outcome) {
 
 // --- Challenger buttons (bj_*) ---
 
-async function handleHit(interaction, isOpponent) {
+async function handleHit(interaction: ButtonInteraction, isOpponent: boolean) {
     const game = await resolveGame(interaction, isOpponent);
     if (!game) return;
 
     const hand = isOpponent ? game.opponentHand : game.playerHand;
-    hand.push(game.deck.pop());
+    hand.push(game.deck.pop() as string);
     game.markModified(isOpponent ? 'opponentHand' : 'playerHand');
     game.markModified('deck');
 
@@ -129,8 +130,8 @@ async function handleHit(interaction, isOpponent) {
                 const pvpGame = { playerHand: game.playerHand, opponentHand: game.opponentHand, dealerHand: game.dealerHand, bet: game.bet, opponentBet: game.opponentBet };
                 const opponentWallet = await getWallet(game.opponentId, game.guildId);
                 const canDouble = opponentWallet.balance >= game.opponentBet && game.opponentHand.length === 2;
-                return interaction.update({
-                    embeds: [buildPvpEmbed(pvpGame, { challenger, opponent })],
+                return (interaction as any).update({
+                    embeds: [buildPvpEmbed(pvpGame, { challenger: challenger as any, opponent: opponent as any })],
                     components: [buildPvpRow(false, canDouble)],
                 });
             }
@@ -149,8 +150,8 @@ async function handleHit(interaction, isOpponent) {
                 const pvpGame = { playerHand: game.playerHand, opponentHand: game.opponentHand, dealerHand: game.dealerHand, bet: game.bet, opponentBet: game.opponentBet };
                 const opponentWallet = await getWallet(game.opponentId, game.guildId);
                 const canDouble = opponentWallet.balance >= game.opponentBet && game.opponentHand.length === 2;
-                return interaction.update({
-                    embeds: [buildPvpEmbed(pvpGame, { challenger, opponent })],
+                return (interaction as any).update({
+                    embeds: [buildPvpEmbed(pvpGame, { challenger: challenger as any, opponent: opponent as any })],
                     components: [buildPvpRow(false, canDouble)],
                 });
             }
@@ -163,8 +164,8 @@ async function handleHit(interaction, isOpponent) {
         const canDouble = isOpponent
             ? (await getWallet(game.opponentId, game.guildId)).balance >= game.opponentBet && game.opponentHand.length === 2
             : (await getWallet(game.userId, game.guildId)).balance >= game.bet && game.playerHand.length === 2;
-        return interaction.update({
-            embeds: [buildPvpEmbed(pvpGame, { challenger, opponent })],
+        return (interaction as any).update({
+            embeds: [buildPvpEmbed(pvpGame, { challenger: challenger as any, opponent: opponent as any })],
             components: [buildPvpRow(isOpponent, canDouble)],
         });
     }
@@ -183,10 +184,10 @@ async function handleHit(interaction, isOpponent) {
     await game.save();
     const wallet = await getWallet(game.userId, game.guildId);
     const canDouble = wallet.balance >= game.bet && game.playerHand.length === 2;
-    await interaction.update({ embeds: [buildEmbed(game)], components: [buildRow(canDouble)] });
+    await (interaction as any).update({ embeds: [buildEmbed(game)], components: [buildRow(canDouble)] });
 }
 
-async function handleStand(interaction, isOpponent) {
+async function handleStand(interaction: ButtonInteraction, isOpponent: boolean) {
     const game = await resolveGame(interaction, isOpponent);
     if (!game) return;
 
@@ -205,8 +206,8 @@ async function handleStand(interaction, isOpponent) {
             const pvpGame = { playerHand: game.playerHand, opponentHand: game.opponentHand, dealerHand: game.dealerHand, bet: game.bet, opponentBet: game.opponentBet };
             const opponentWallet = await getWallet(game.opponentId, game.guildId);
             const canDouble = opponentWallet.balance >= game.opponentBet && game.opponentHand.length === 2;
-            return interaction.update({
-                embeds: [buildPvpEmbed(pvpGame, { challenger, opponent })],
+            return (interaction as any).update({
+                embeds: [buildPvpEmbed(pvpGame, { challenger: challenger as any, opponent: opponent as any })],
                 components: [buildPvpRow(false, canDouble)],
             });
         }
@@ -224,7 +225,7 @@ async function handleStand(interaction, isOpponent) {
     return finish(interaction, game, outcome);
 }
 
-async function handleDouble(interaction, isOpponent) {
+async function handleDouble(interaction: ButtonInteraction, isOpponent: boolean) {
     const game = await resolveGame(interaction, isOpponent);
     if (!game) return;
 
@@ -232,19 +233,19 @@ async function handleDouble(interaction, isOpponent) {
     const hand = isOpponent ? game.opponentHand : game.playerHand;
     const ownerId = isOpponent ? game.opponentId : game.userId;
 
-    const wallet = await getWallet(ownerId, game.guildId);
+    const wallet = await getWallet(ownerId as string, game.guildId);
     if (wallet.balance < betAmt) {
         return interaction.reply({ content: `You don't have enough coins to double down.`, flags: MessageFlags.Ephemeral });
     }
 
-    const debit = await updateBalance(ownerId, game.guildId, -betAmt);
+    const debit = await updateBalance(ownerId as string, game.guildId, -betAmt);
     if (!debit) {
         return interaction.reply({ content: `You don't have enough coins to double down.`, flags: MessageFlags.Ephemeral });
     }
     if (isOpponent) game.opponentBet *= 2;
     else game.bet *= 2;
 
-    hand.push(game.deck.pop());
+    hand.push(game.deck.pop() as string);
     game.markModified(isOpponent ? 'opponentHand' : 'playerHand');
     game.markModified('deck');
 
@@ -264,8 +265,8 @@ async function handleDouble(interaction, isOpponent) {
         const pvpGame = { playerHand: game.playerHand, opponentHand: game.opponentHand, dealerHand: game.dealerHand, bet: game.bet, opponentBet: game.opponentBet };
         const opponentWallet = await getWallet(game.opponentId, game.guildId);
         const canDouble = opponentWallet.balance >= game.opponentBet && game.opponentHand.length === 2;
-        return interaction.update({
-            embeds: [buildPvpEmbed(pvpGame, { challenger, opponent })],
+        return (interaction as any).update({
+            embeds: [buildPvpEmbed(pvpGame, { challenger: challenger as any, opponent: opponent as any })],
             components: [buildPvpRow(false, canDouble)],
         });
     }
@@ -279,11 +280,13 @@ async function handleDouble(interaction, isOpponent) {
     return finish(interaction, game, outcome);
 }
 
-module.exports = [
-    { type: 'button', id: 'bj_hit',     async execute(i) { return handleHit(i, false); } },
-    { type: 'button', id: 'bj_stand',   async execute(i) { return handleStand(i, false); } },
-    { type: 'button', id: 'bj_double',  async execute(i) { return handleDouble(i, false); } },
-    { type: 'button', id: 'bjop_hit',   async execute(i) { return handleHit(i, true); } },
-    { type: 'button', id: 'bjop_stand', async execute(i) { return handleStand(i, true); } },
-    { type: 'button', id: 'bjop_double',async execute(i) { return handleDouble(i, true); } },
+const components: ComponentDefinition[] = [
+    { type: 'button', id: 'bj_hit',     async execute(i: ButtonInteraction) { return handleHit(i, false); } },
+    { type: 'button', id: 'bj_stand',   async execute(i: ButtonInteraction) { return handleStand(i, false); } },
+    { type: 'button', id: 'bj_double',  async execute(i: ButtonInteraction) { return handleDouble(i, false); } },
+    { type: 'button', id: 'bjop_hit',   async execute(i: ButtonInteraction) { return handleHit(i, true); } },
+    { type: 'button', id: 'bjop_stand', async execute(i: ButtonInteraction) { return handleStand(i, true); } },
+    { type: 'button', id: 'bjop_double',async execute(i: ButtonInteraction) { return handleDouble(i, true); } },
 ];
+
+export = components;

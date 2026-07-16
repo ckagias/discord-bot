@@ -1,13 +1,14 @@
-const { MessageFlags } = require('discord.js');
-const HangmanGame = require('../../models/HangmanSchema');
-const { buildEmbed, buildRow, MAX_WRONG, REWARD } = require('../../utils/hangman');
-const { updateBalance } = require('../../utils/economy');
+import { MessageFlags, ModalSubmitInteraction } from 'discord.js';
+import HangmanGame from '../../models/HangmanSchema';
+import { buildEmbed, buildRow, MAX_WRONG, REWARD } from '../../utils/hangman';
+import { updateBalance } from '../../utils/economy';
+import { ComponentDefinition } from '../../types/discord';
 
-module.exports = {
+const component: ComponentDefinition = {
     type: 'modal',
     prefix: 'hangman_modal_',
 
-    async execute(interaction) {
+    async execute(interaction: ModalSubmitInteraction) {
         const messageId = interaction.customId.replace('hangman_modal_', '');
         const game = await HangmanGame.findOne({ messageId });
         if (!game) return interaction.reply({ content: 'Game not found.', flags: MessageFlags.Ephemeral });
@@ -42,9 +43,11 @@ module.exports = {
 
         await game.save();
 
-        await interaction.update({
+        await (interaction as any).update({
             embeds: [buildEmbed(game, { reward })],
             components: [buildRow(game.finished)],
         });
     },
 };
+
+export = component;

@@ -1,11 +1,12 @@
-const { EmbedBuilder, MessageFlags } = require('discord.js');
-const SuggestionSchema = require('../../models/SuggestionSchema');
-const { getGuildConfig } = require('../../utils/guildConfig');
+import { EmbedBuilder, MessageFlags, ButtonInteraction, GuildMember } from 'discord.js';
+import SuggestionSchema from '../../models/SuggestionSchema';
+import { getGuildConfig } from '../../utils/guildConfig';
 const { staffRow, applyStatus, capitalize } = require('../../slashCommands/utility/suggest');
-const log = require('../../utils/log');
+import log from '../../utils/log';
+import { ComponentDefinition } from '../../types/discord';
 const logger = log.scope('suggest');
 
-async function handleVote(interaction, field) {
+async function handleVote(interaction: ButtonInteraction, field: 'upvotes' | 'downvotes') {
     const suggestionId = interaction.customId.split(':')[1];
     const suggestion = await SuggestionSchema.findById(suggestionId);
 
@@ -36,7 +37,7 @@ async function handleVote(interaction, field) {
         .catch(err => logger.error('Failed to update vote counts on suggestion embed:', err));
 }
 
-function canReview(config, member) {
+function canReview(config: any, member: GuildMember) {
     const hasRole = config?.suggestApproverRoleId && member.roles.cache.has(config.suggestApproverRoleId);
     const hasManageGuild = member.permissions.has('ManageGuild');
     return Boolean(hasRole || hasManageGuild);
@@ -44,11 +45,11 @@ function canReview(config, member) {
 
 // Public message only ever shows vote buttons + this "Review" button, never the staff action
 // buttons directly, so non-approvers never see Approve/Deny/Implement to begin with.
-async function handleReview(interaction) {
+async function handleReview(interaction: ButtonInteraction) {
     const suggestionId = interaction.customId.split(':')[1];
-    const config = await getGuildConfig(interaction.guild.id);
+    const config = await getGuildConfig(interaction.guild!.id);
 
-    if (!canReview(config, interaction.member))
+    if (!canReview(config, interaction.member as GuildMember))
         return interaction.reply({ content: 'You do not have permission to review suggestions.', flags: MessageFlags.Ephemeral });
 
     const suggestion = await SuggestionSchema.findById(suggestionId);
@@ -58,11 +59,11 @@ async function handleReview(interaction) {
     return interaction.reply({ content: 'Review this suggestion:', components: [staffRow(suggestionId)], flags: MessageFlags.Ephemeral });
 }
 
-async function handleStaffAction(interaction, status) {
+async function handleStaffAction(interaction: ButtonInteraction, status: string) {
     const suggestionId = interaction.customId.split(':')[1];
-    const config = await getGuildConfig(interaction.guild.id);
+    const config = await getGuildConfig(interaction.guild!.id);
 
-    if (!canReview(config, interaction.member))
+    if (!canReview(config, interaction.member as GuildMember))
         return interaction.reply({ content: 'You do not have permission to review suggestions.', flags: MessageFlags.Ephemeral });
 
     const suggestion = await SuggestionSchema.findById(suggestionId);
@@ -73,7 +74,7 @@ async function handleStaffAction(interaction, status) {
     return interaction.reply({ content: `Suggestion marked as **${capitalize(status)}**.`, flags: MessageFlags.Ephemeral });
 }
 
-module.exports = [
+const components: ComponentDefinition[] = [
     { type: 'button', prefix: 'suggest_up:', execute: (interaction) => handleVote(interaction, 'upvotes') },
     { type: 'button', prefix: 'suggest_down:', execute: (interaction) => handleVote(interaction, 'downvotes') },
     { type: 'button', prefix: 'suggest_review:', execute: handleReview },
@@ -81,3 +82,5 @@ module.exports = [
     { type: 'button', prefix: 'suggest_deny:', execute: (interaction) => handleStaffAction(interaction, 'denied') },
     { type: 'button', prefix: 'suggest_implement:', execute: (interaction) => handleStaffAction(interaction, 'implemented') },
 ];
+
+export = components;

@@ -1,4 +1,4 @@
-const {
+import {
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle,
@@ -8,17 +8,21 @@ const {
     TextInputStyle,
     MessageFlags,
     PermissionFlagsBits,
-} = require('discord.js');
-const log = require('../../utils/log');
+    VoiceChannel,
+    ButtonInteraction,
+    ModalSubmitInteraction,
+} from 'discord.js';
+import log from '../../utils/log';
+import { ComponentDefinition } from '../../types/discord';
 const logger = log.scope('tempvc');
 
 // Reads whether @everyone's Connect is denied to determine locked state.
-function isChannelLocked(channel) {
+function isChannelLocked(channel: VoiceChannel) {
     const overwrite = channel.permissionOverwrites.cache.get(channel.guild.roles.everyone.id);
     return overwrite?.deny.has(PermissionFlagsBits.Connect) ?? false;
 }
 
-function buildPanel(channel) {
+function buildPanel(channel: VoiceChannel) {
     const locked = isChannelLocked(channel);
     const limit = channel.userLimit === 0 ? 'Unlimited' : `${channel.userLimit}`;
 
@@ -32,7 +36,7 @@ function buildPanel(channel) {
         )
         .setFooter({ text: 'Only the channel owner can use these controls.' });
 
-    const row = new ActionRowBuilder().addComponents(
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder()
             .setCustomId(`tempvc_rename:${channel.id}`)
             .setLabel('Rename')
@@ -54,7 +58,7 @@ function buildPanel(channel) {
 }
 
 // Returns the channel if the interaction caller is the owner, or replies ephemerally and returns null.
-async function guardOwner(interaction) {
+async function guardOwner(interaction: ButtonInteraction | ModalSubmitInteraction) {
     const channelId = interaction.customId.split(':')[1];
     const ownerId = interaction.client.tempVCs?.get(channelId);
 
@@ -68,7 +72,7 @@ async function guardOwner(interaction) {
         return null;
     }
 
-    const channel = interaction.guild.channels.cache.get(channelId);
+    const channel = interaction.guild!.channels.cache.get(channelId) as VoiceChannel | undefined;
     if (!channel) {
         await interaction.reply({ content: 'Channel not found.', flags: MessageFlags.Ephemeral });
         return null;
@@ -77,7 +81,7 @@ async function guardOwner(interaction) {
     return channel;
 }
 
-async function handleRenameButton(interaction) {
+async function handleRenameButton(interaction: ButtonInteraction) {
     const channel = await guardOwner(interaction);
     if (!channel) return;
 
@@ -85,7 +89,7 @@ async function handleRenameButton(interaction) {
         .setCustomId(`tempvc_rename:${channel.id}`)
         .setTitle('Rename Voice Channel')
         .addComponents(
-            new ActionRowBuilder().addComponents(
+            new ActionRowBuilder<TextInputBuilder>().addComponents(
                 new TextInputBuilder()
                     .setCustomId('name')
                     .setLabel('New channel name')
@@ -100,23 +104,23 @@ async function handleRenameButton(interaction) {
     await interaction.showModal(modal);
 }
 
-async function handleLockToggle(interaction) {
+async function handleLockToggle(interaction: ButtonInteraction) {
     const channel = await guardOwner(interaction);
     if (!channel) return;
 
     const locked = isChannelLocked(channel);
     try {
-        await channel.permissionOverwrites.edit(interaction.guild.roles.everyone, {
-            [PermissionFlagsBits.Connect]: locked ? null : false,
-        });
-        await interaction.update(buildPanel(channel));
+        const overwriteOptions: Record<number, boolean | null> = {};
+        overwriteOptions[PermissionFlagsBits.Connect as unknown as number] = locked ? null : false;
+        await channel.permissionOverwrites.edit(interaction.guild!.roles.everyone, overwriteOptions as any);
+        await (interaction as any).update(buildPanel(channel));
     } catch (err) {
         logger.error('Lock toggle error:', err);
         await interaction.reply({ content: 'Failed to update channel permissions.', flags: MessageFlags.Ephemeral });
     }
 }
 
-async function handleLimitButton(interaction) {
+async function handleLimitButton(interaction: ButtonInteraction) {
     const channel = await guardOwner(interaction);
     if (!channel) return;
 
@@ -124,7 +128,7 @@ async function handleLimitButton(interaction) {
         .setCustomId(`tempvc_limit:${channel.id}`)
         .setTitle('Set User Limit')
         .addComponents(
-            new ActionRowBuilder().addComponents(
+            new ActionRowBuilder<TextInputBuilder>().addComponents(
                 new TextInputBuilder()
                     .setCustomId('limit')
                     .setLabel('Max members (0 = unlimited, max 99)')
@@ -139,14 +143,14 @@ async function handleLimitButton(interaction) {
     await interaction.showModal(modal);
 }
 
-async function handleRenameModal(interaction) {
+async function handleRenameModal(interaction: ModalSubmitInteraction) {
     const channelId = interaction.customId.split(':')[1];
     const ownerId = interaction.client.tempVCs?.get(channelId);
 
     if (!ownerId) return interaction.reply({ content: 'This is no longer an active temp VC.', flags: MessageFlags.Ephemeral });
     if (ownerId !== interaction.user.id) return interaction.reply({ content: 'Only the channel owner can manage this VC.', flags: MessageFlags.Ephemeral });
 
-    const channel = interaction.guild.channels.cache.get(channelId);
+    const channel = interaction.guild!.channels.cache.get(channelId) as VoiceChannel | undefined;
     if (!channel) return interaction.reply({ content: 'Channel not found.', flags: MessageFlags.Ephemeral });
 
     const name = interaction.fields.getTextInputValue('name').trim();
@@ -156,7 +160,7 @@ async function handleRenameModal(interaction) {
         await channel.setName(name);
         // Update the panel message in the channel.
         const messages = await channel.messages.fetch({ limit: 20 });
-        const panelMsg = messages.find(m => m.author.id === interaction.client.user.id && m.components.length > 0);
+        const panelMsg = messages.find(m => m.author.id === interaction.client.user!.id && m.components.length > 0);
         const panel = buildPanel(channel);
         if (panelMsg) {
             await panelMsg.edit(panel);
@@ -170,14 +174,14 @@ async function handleRenameModal(interaction) {
     }
 }
 
-async function handleLimitModal(interaction) {
+async function handleLimitModal(interaction: ModalSubmitInteraction) {
     const channelId = interaction.customId.split(':')[1];
     const ownerId = interaction.client.tempVCs?.get(channelId);
 
     if (!ownerId) return interaction.reply({ content: 'This is no longer an active temp VC.', flags: MessageFlags.Ephemeral });
     if (ownerId !== interaction.user.id) return interaction.reply({ content: 'Only the channel owner can manage this VC.', flags: MessageFlags.Ephemeral });
 
-    const channel = interaction.guild.channels.cache.get(channelId);
+    const channel = interaction.guild!.channels.cache.get(channelId) as VoiceChannel | undefined;
     if (!channel) return interaction.reply({ content: 'Channel not found.', flags: MessageFlags.Ephemeral });
 
     const raw = interaction.fields.getTextInputValue('limit').trim();
@@ -189,7 +193,7 @@ async function handleLimitModal(interaction) {
     try {
         await channel.setUserLimit(limit);
         const messages = await channel.messages.fetch({ limit: 20 });
-        const panelMsg = messages.find(m => m.author.id === interaction.client.user.id && m.components.length > 0);
+        const panelMsg = messages.find(m => m.author.id === interaction.client.user!.id && m.components.length > 0);
         const panel = buildPanel(channel);
         if (panelMsg) {
             await panelMsg.edit(panel);
@@ -203,7 +207,7 @@ async function handleLimitModal(interaction) {
     }
 }
 
-const entries = [
+const entries: ComponentDefinition[] & { buildPanel?: typeof buildPanel } = [
     { type: 'button', prefix: 'tempvc_rename:', execute: handleRenameButton },
     { type: 'button', prefix: 'tempvc_lock:',   execute: handleLockToggle },
     { type: 'button', prefix: 'tempvc_limit:',  execute: handleLimitButton },
@@ -212,4 +216,5 @@ const entries = [
 ];
 
 entries.buildPanel = buildPanel;
-module.exports = entries;
+
+export = entries;

@@ -1,13 +1,14 @@
-const { MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { getWallet, updateBalance, formatBalance } = require('../../utils/economy');
-const { launchHeist } = require('../../utils/heist');
-const HeistSchema = require('../../models/HeistSchema');
-const log = require('../../utils/log');
+import { MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction } from 'discord.js';
+import { getWallet, updateBalance, formatBalance } from '../../utils/economy';
+import { launchHeist } from '../../utils/heist';
+import HeistSchema from '../../models/HeistSchema';
+import log from '../../utils/log';
+import { ComponentDefinition } from '../../types/discord';
 const logger = log.scope('heist');
 
-function lobbyEmbed(heist) {
+function lobbyEmbed(heist: any) {
     const memberList = heist.members.length
-        ? heist.members.map(m => `• ${m.username}`).join('\n')
+        ? heist.members.map((m: any) => `• ${m.username}`).join('\n')
         : '*No one yet — be the first!*';
 
     return new EmbedBuilder()
@@ -23,7 +24,7 @@ function lobbyEmbed(heist) {
 
 function lobbyRow(memberCount = 1) {
     const canBegin = memberCount >= 2;
-    return new ActionRowBuilder().addComponents(
+    return new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder()
             .setCustomId('heist_join')
             .setLabel('Join Heist')
@@ -42,24 +43,24 @@ function lobbyRow(memberCount = 1) {
     );
 }
 
-const DISABLED_ROW = new ActionRowBuilder().addComponents(
+const DISABLED_ROW = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setCustomId('heist_join').setLabel('Join Heist').setEmoji('🔫').setStyle(ButtonStyle.Primary).setDisabled(true),
     new ButtonBuilder().setCustomId('heist_begin').setLabel('Begin Early').setEmoji('🚀').setStyle(ButtonStyle.Success).setDisabled(true),
     new ButtonBuilder().setCustomId('heist_cancel').setLabel('Cancel').setStyle(ButtonStyle.Danger).setDisabled(true),
 );
 
-module.exports = [
+const components: ComponentDefinition[] = [
     {
         type: 'button',
         id: 'heist_join',
 
-        async execute(interaction) {
+        async execute(interaction: ButtonInteraction) {
             const heist = await HeistSchema.findOne({ messageId: interaction.message.id, finished: false }).lean();
             if (!heist) {
                 return interaction.reply({ content: 'This heist is no longer active.', flags: MessageFlags.Ephemeral });
             }
 
-            const wallet = await getWallet(interaction.user.id, interaction.guild.id);
+            const wallet = await getWallet(interaction.user.id, interaction.guild!.id);
             if (wallet.balance < heist.entryFee) {
                 return interaction.reply({
                     content: `You don't have enough coins to join. Entry fee is **${formatBalance(heist.entryFee)}** and your balance is **${formatBalance(wallet.balance)}**.`,
@@ -79,16 +80,16 @@ module.exports = [
             }
 
             // Fee deducted only after confirmed membership — no lost coins if the save had failed
-            await updateBalance(interaction.user.id, interaction.guild.id, -heist.entryFee);
+            await updateBalance(interaction.user.id, interaction.guild!.id, -heist.entryFee);
 
-            await interaction.update({ embeds: [lobbyEmbed(updated)], components: [lobbyRow(updated.members.length)] });
+            await (interaction as any).update({ embeds: [lobbyEmbed(updated)], components: [lobbyRow(updated.members.length)] });
         },
     },
     {
         type: 'button',
         id: 'heist_cancel',
 
-        async execute(interaction) {
+        async execute(interaction: ButtonInteraction) {
             const heist = await HeistSchema.findOne({ messageId: interaction.message.id, finished: false });
             if (!heist) {
                 return interaction.reply({ content: 'This heist is no longer active.', flags: MessageFlags.Ephemeral });
@@ -102,21 +103,21 @@ module.exports = [
             await heist.save();
 
             // Refund all members
-            await Promise.all(heist.members.map(m => updateBalance(m.userId, interaction.guild.id, heist.entryFee)));
+            await Promise.all(heist.members.map(m => updateBalance(m.userId as string, interaction.guild!.id, heist.entryFee)));
 
             const embed = new EmbedBuilder()
                 .setTitle('Heist Cancelled')
                 .setDescription('The organizer called off the heist. All entry fees have been refunded.')
                 .setColor(0xc0392b);
 
-            await interaction.update({ embeds: [embed], components: [DISABLED_ROW] });
+            await (interaction as any).update({ embeds: [embed], components: [DISABLED_ROW] });
         },
     },
     {
         type: 'button',
         id: 'heist_begin',
 
-        async execute(interaction) {
+        async execute(interaction: ButtonInteraction) {
             const heist = await HeistSchema.findOne({ messageId: interaction.message.id, finished: false }).lean();
             if (!heist) {
                 return interaction.reply({ content: 'This heist is no longer active.', flags: MessageFlags.Ephemeral });
@@ -130,15 +131,15 @@ module.exports = [
                 return interaction.reply({ content: 'You need at least 2 crew members to begin the heist.', flags: MessageFlags.Ephemeral });
             }
 
-            await interaction.update({ components: [DISABLED_ROW] });
+            await (interaction as any).update({ components: [DISABLED_ROW] });
             try {
-                await launchHeist(interaction.message, interaction.guild);
+                await launchHeist(interaction.message, interaction.guild!);
             } catch (err) {
                 logger.error('launchHeist failed after begin button:', err);
                 // Refund all members since the heist can't proceed
                 const fresh = await HeistSchema.findOne({ messageId: interaction.message.id }).lean();
                 if (fresh) {
-                    await Promise.all(fresh.members.map(m => updateBalance(m.userId, interaction.guild.id, fresh.entryFee)));
+                    await Promise.all(fresh.members.map(m => updateBalance(m.userId as string, interaction.guild!.id, fresh.entryFee)));
                     await HeistSchema.updateOne({ _id: fresh._id }, { $set: { finished: true } });
                 }
                 await interaction.message.edit({ content: 'The heist failed to launch due to an error. All entry fees have been refunded.', components: [DISABLED_ROW] });
@@ -146,3 +147,5 @@ module.exports = [
         },
     },
 ];
+
+export = components;

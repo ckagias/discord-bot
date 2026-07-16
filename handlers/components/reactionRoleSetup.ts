@@ -1,16 +1,17 @@
-const { EmbedBuilder, MessageFlags } = require('discord.js');
-const { isValidUrl } = require('../../utils/validate');
-const { parseHexColor } = require('../../utils/embeds');
+import { EmbedBuilder, MessageFlags, ModalSubmitInteraction } from 'discord.js';
+import { isValidUrl } from '../../utils/validate';
+import { parseHexColor } from '../../utils/embeds';
+import { ComponentDefinition } from '../../types/discord';
 
-module.exports = {
+const component: ComponentDefinition = {
     type: 'modal',
     prefix: 'rr_setup:',
 
-    async execute(interaction) {
+    async execute(interaction: ModalSubmitInteraction) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const channelId = interaction.customId.split(':')[1];
-        const channel = await interaction.guild.channels.fetch(channelId).catch(() => null);
+        const channel = await interaction.guild!.channels.fetch(channelId).catch(() => null);
         if (!channel)
             return interaction.editReply({ content: 'Could not find the channel. Please try again.' });
 
@@ -34,10 +35,12 @@ module.exports = {
         if (footerText) embed.setFooter({ text: footerText });
         if (thumbnail)  embed.setThumbnail(thumbnail);
 
-        const sent = await channel.send({ embeds: [embed] });
+        const sent = await (channel as any).send({ embeds: [embed] });
 
         return interaction.editReply({
             content: `Embed posted. Message ID: \`${sent.id}\`\nUse \`/reactionrole add\` with this ID to bind emojis to roles.`,
         });
     },
 };
+
+export = component;

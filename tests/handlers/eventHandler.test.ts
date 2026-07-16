@@ -1,20 +1,20 @@
 jest.mock('fs');
 
 function makeClient() {
-    const listeners = {};
+    const listeners: Record<string, (...args: any[]) => any> = {};
     return {
         listeners,
-        once: jest.fn((name, fn) => { listeners[name] = fn; }),
-        on: jest.fn((name, fn) => { listeners[name] = fn; }),
+        once: jest.fn((name: string, fn: (...args: any[]) => any) => { listeners[name] = fn; }),
+        on: jest.fn((name: string, fn: (...args: any[]) => any) => { listeners[name] = fn; }),
     };
 }
 
-function loadEventHandler(files) {
+function loadEventHandler(files: Record<string, any>) {
     const fs = require('fs');
     fs.readdirSync.mockReturnValue(Object.keys(files));
     jest.doMock('path', () => {
         const actual = jest.requireActual('path');
-        return { ...actual, join: (...parts) => parts[parts.length - 1] };
+        return { ...actual, join: (...parts: string[]) => parts[parts.length - 1] };
     });
     for (const [file, mod] of Object.entries(files)) {
         jest.doMock(file, () => mod, { virtual: true });
@@ -23,7 +23,7 @@ function loadEventHandler(files) {
 }
 
 describe('eventHandler', () => {
-    let consoleErrorSpy;
+    let consoleErrorSpy: jest.SpyInstance;
 
     beforeEach(() => {
         jest.resetModules();
