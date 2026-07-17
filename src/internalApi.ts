@@ -165,7 +165,7 @@ export = function startInternalApi(client: Client) {
                     return send(res, 400, { error: 'Quarantine role no longer exists.' });
                 }
 
-                await startLockdown(guild, guildData, { auto: false, triggeredBy: username ? ({ username } as any) : null });
+                await startLockdown(guild, guildData, { auto: false, triggeredBy: username ? { username } : null });
                 send(res, 200, { ok: true });
             } catch (err) {
                 logger.error('/internal/antiraid/lock error:', err);
@@ -188,7 +188,7 @@ export = function startInternalApi(client: Client) {
                     return send(res, 409, { error: 'There is no active lockdown.' });
                 }
 
-                const { released } = await endLockdown(guild, guildData, { by: username ? ({ username } as any) : null });
+                const { released } = await endLockdown(guild, guildData, { by: username ? { username } : null });
                 send(res, 200, { ok: true, released: released?.length ?? 0 });
             } catch (err) {
                 logger.error('/internal/antiraid/unlock error:', err);

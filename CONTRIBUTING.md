@@ -46,9 +46,9 @@ discord-bot/
 │   └── clean.ts              # Deletes leftover guild-specific slash commands: node dist/src/clean.js <guildId>
 ├── events/                   # One file per Discord event (messageCreate, interactionCreate, …)
 ├── handlers/
-│   ├── slashCommandHandler.js    # Auto-discovers every file in slashCommands/
-│   ├── eventHandler.js           # Auto-discovers every file in events/
-│   ├── componentHandler.js       # Auto-discovers every file in handlers/components/
+│   ├── slashCommandHandler.ts    # Auto-discovers every file in slashCommands/
+│   ├── eventHandler.ts           # Auto-discovers every file in events/
+│   ├── componentHandler.ts       # Auto-discovers every file in handlers/components/
 │   └── components/               # Button and modal handlers
 ├── slashCommands/            # Slash commands, organized by category folder
 │   ├── fun/
@@ -73,19 +73,19 @@ discord-bot/
 
 ## Adding a Command
 
-Every command is a single `.js` file dropped into the matching category folder under `slashCommands/`. The handler auto-discovers it so no registration step beyond running `node src/cmd.js` to push the updated command list to Discord.
+Every command is a single `.ts` file dropped into the matching category folder under `slashCommands/`. The handler auto-discovers it so no registration step beyond running `npm run build && node dist/src/cmd.js` to push the updated command list to Discord.
 
 ### Minimal template
 
-```js
-const { SlashCommandBuilder, MessageFlags } = require('discord.js');
+```ts
+import { SlashCommandBuilder, MessageFlags, ChatInputCommandInteraction } from 'discord.js';
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('commandname')
         .setDescription('What this command does.'),
 
-    async execute(interaction) {
+    async execute(interaction: ChatInputCommandInteraction) {
         await interaction.reply({ content: 'Hello!', flags: MessageFlags.Ephemeral });
     },
 };
@@ -93,10 +93,10 @@ module.exports = {
 
 ### With a permission gate
 
-Export a `permissions` field set to a `PermissionFlagsBits` value. `interactionCreate.js` checks it automatically before calling `execute()` so you don't need to repeat the check inside the command.
+Export a `permissions` field set to a `PermissionFlagsBits` value. `interactionCreate.ts` checks it automatically before calling `execute()` so you don't need to repeat the check inside the command.
 
-```js
-const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
+```ts
+import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, ChatInputCommandInteraction } from 'discord.js';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -106,7 +106,7 @@ module.exports = {
 
     permissions: PermissionFlagsBits.ManageGuild,
 
-    async execute(interaction) {
+    async execute(interaction: ChatInputCommandInteraction) {
         await interaction.reply({ content: 'Done.', flags: MessageFlags.Ephemeral });
     },
 };
@@ -114,8 +114,8 @@ module.exports = {
 
 ### With subcommands
 
-```js
-const { SlashCommandBuilder } = require('discord.js');
+```ts
+import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -126,7 +126,7 @@ module.exports = {
         .addSubcommand(sub =>
             sub.setName('bar').setDescription('The bar subcommand.')),
 
-    async execute(interaction) {
+    async execute(interaction: ChatInputCommandInteraction) {
         const sub = interaction.options.getSubcommand();
         if (sub === 'foo') { /* … */ }
         if (sub === 'bar') { /* … */ }
@@ -146,16 +146,16 @@ module.exports = {
 
 ## Adding an Event
 
-Event files live in `events/`. The handler loads every `.js` file there automatically.
+Event files live in `events/`. The handler loads every `.ts` file there automatically.
 
 ### Template
 
-```js
+```ts
 module.exports = {
     name: 'eventName',  // must match the discord.js event name exactly
     once: false,        // true for one-time events like 'ready'
 
-    async execute(...args) {
+    async execute(...args: unknown[]) {
         // discord.js passes the event arguments first, then the client as the last arg
         const client = args[args.length - 1];
     },
@@ -168,11 +168,11 @@ For the `ready` event or any event that should only fire once, set `once: true`.
 
 ## Adding a Component Handler
 
-Button and modal interactions are handled by files in `handlers/components/`. The component handler loads every `.js` file there and routes incoming interactions by `customId`.
+Button and modal interactions are handled by files in `handlers/components/`. The component handler loads every `.ts` file there and routes incoming interactions by `customId`.
 
 ### Exact-ID match (single button or modal)
 
-```js
+```ts
 module.exports = {
     type: 'button',       // 'button' or 'modal'
     id: 'my_button_id',   // must match the customId set in the command
@@ -187,7 +187,7 @@ module.exports = {
 
 Use `prefix` instead of `id` when your customId carries dynamic data (e.g. `confirm_123456` where `123456` is a user ID).
 
-```js
+```ts
 module.exports = {
     type: 'button',
     prefix: 'confirm_',   // matches any customId starting with this string
@@ -201,7 +201,7 @@ module.exports = {
 
 A file can also export an **array** of handler objects if a single file logically owns multiple related interactions:
 
-```js
+```ts
 module.exports = [
     { type: 'button', id: 'accept', async execute(i) { /* … */ } },
     { type: 'button', id: 'decline', async execute(i) { /* … */ } },
@@ -212,12 +212,18 @@ module.exports = [
 
 ## Adding a Mongoose Model
 
-Models live in `models/`. Use one file per collection. All schema definitions follow the same pattern:
+Models live in `models/`. Use one file per collection. All schema definitions follow the same pattern, with a full `Document` interface for the fields the schema stores:
 
-```js
-const { model, Schema } = require('mongoose');
+```ts
+import { model, Schema, Document } from 'mongoose';
 
-const exampleSchema = new Schema({
+interface IExample extends Document {
+    guildId: string;
+    userId: string;
+    value: string | null;
+}
+
+const exampleSchema = new Schema<IExample>({
     guildId: { type: String, required: true },
     userId:  { type: String, required: true },
     value:   { type: String, default: null },
@@ -226,7 +232,7 @@ const exampleSchema = new Schema({
 // Add compound indexes for any queries that filter on more than one field
 exampleSchema.index({ guildId: 1, userId: 1 });
 
-module.exports = model('Example', exampleSchema);
+export = model<IExample>('Example', exampleSchema);
 ```
 
 **Store Discord snowflakes as `String`, not `Number`.** Snowflakes exceed the JavaScript safe integer limit and will be silently corrupted if stored as numbers.
@@ -257,7 +263,7 @@ module.exports = model('Example', exampleSchema);
 
 ## Testing
 
-Run `npm test` to run the Jest suite. Tests live under `tests/`, mirroring the source tree, as `*.test.js` (e.g. `tests/utils/punishments.test.js` covers `utils/punishments.js`).
+Run `npm test` to run the Jest suite. Tests live under `tests/`, mirroring the source tree, as `*.test.ts` (e.g. `tests/utils/punishments.test.ts` covers `utils/punishments.ts`).
 
 `events/` and `slashCommands/` have full coverage. `utils/` and `handlers/` still have gaps, pure functions in `utils/` (parsing, formatting, scheduling) are the best candidates for new coverage. If you touch a file, add or update the matching test under `tests/` at the same relative path.
 
