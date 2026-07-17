@@ -42,7 +42,7 @@ module.exports = {
 
             const shortUrl = response.data.shorturl;
             if (!shortUrl) {
-                return interaction.editReply({ content: 'Failed to shorten the URL. The service may have rejected it.', flags: MessageFlags.Ephemeral } as any);
+                return interaction.editReply({ content: 'Failed to shorten the URL. The service may have rejected it.' });
             }
 
             await interaction.editReply(`Here's your shortened URL:\n**${shortUrl}**\n\n> Original: <${url}>`);

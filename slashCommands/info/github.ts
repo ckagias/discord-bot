@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, MessageFlags, ChatInputCommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, ChatInputCommandInteraction } from 'discord.js';
 const { Resvg } = require('@resvg/resvg-js');
 const log = require('../../utils/log');
 const logger = log.scope('github');
@@ -133,12 +133,12 @@ module.exports = {
 
         } catch (err: any) {
             if (err.response?.status === 404) {
-                await interaction.editReply({ content: `GitHub user **${username}** was not found.`, flags: MessageFlags.Ephemeral } as any);
+                await interaction.editReply({ content: `GitHub user **${username}** was not found.` });
             } else if (err.response?.status === 403) {
-                await interaction.editReply({ content: 'GitHub API rate limit exceeded. Please try again later.', flags: MessageFlags.Ephemeral } as any);
+                await interaction.editReply({ content: 'GitHub API rate limit exceeded. Please try again later.' });
             } else {
                 logger.error('Error:', err);
-                await interaction.editReply({ content: 'An error occurred while fetching GitHub data.', flags: MessageFlags.Ephemeral } as any);
+                await interaction.editReply({ content: 'An error occurred while fetching GitHub data.' });
             }
         }
     }
