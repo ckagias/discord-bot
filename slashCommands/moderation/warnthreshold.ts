@@ -3,6 +3,7 @@ const { getGuildConfig, updateGuildConfig } = require('../../utils/guildConfig')
 const { formatDuration: formatMsDuration } = require('../../utils/duration');
 
 const ACTION_LABELS: Record<string, string> = { timeout: 'Timeout', kick: 'Kick', ban: 'Ban' };
+const MAX_TIMEOUT_SECONDS = 2419200; // Discord maximum: 28 days
 
 function formatDuration(seconds: number) {
     if (!seconds) return '—';
@@ -86,8 +87,7 @@ module.exports = {
                 if (!duration) {
                     return interaction.editReply({ content: 'Invalid duration format. Use a number followed by `s`, `m`, `h`, or `d` (e.g. `30m`).' });
                 }
-                // Discord's max timeout is 28 days
-                if (duration > 2419200) {
+                if (duration > MAX_TIMEOUT_SECONDS) {
                     return interaction.editReply({ content: 'Timeout duration cannot exceed 28 days.' });
                 }
             }

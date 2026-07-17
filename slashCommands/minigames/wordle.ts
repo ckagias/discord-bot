@@ -17,12 +17,7 @@ const TILE: Record<string, string> = {
 };
 
 
-function scoreGuess(guess: string, solution: string) {
-    const result = Array(WORD_LENGTH).fill('absent');
-    const solutionChars: (string | null)[] = solution.split('');
-    const guessChars: (string | null)[] = guess.split('');
-
-    // First pass: correct positions
+function markExactMatches(result: string[], guessChars: (string | null)[], solutionChars: (string | null)[]) {
     for (let i = 0; i < WORD_LENGTH; i++) {
         if (guessChars[i] === solutionChars[i]) {
             result[i] = 'correct';
@@ -30,8 +25,9 @@ function scoreGuess(guess: string, solution: string) {
             guessChars[i] = null;
         }
     }
+}
 
-    // Second pass: present but wrong position
+function markPresentLetters(result: string[], guessChars: (string | null)[], solutionChars: (string | null)[]) {
     for (let i = 0; i < WORD_LENGTH; i++) {
         if (guessChars[i] === null) continue;
         const idx = solutionChars.indexOf(guessChars[i]);
@@ -40,6 +36,15 @@ function scoreGuess(guess: string, solution: string) {
             solutionChars[idx] = null;
         }
     }
+}
+
+function scoreGuess(guess: string, solution: string) {
+    const result = Array(WORD_LENGTH).fill('absent');
+    const solutionChars: (string | null)[] = solution.split('');
+    const guessChars: (string | null)[] = guess.split('');
+
+    markExactMatches(result, guessChars, solutionChars);
+    markPresentLetters(result, guessChars, solutionChars);
 
     return result;
 }

@@ -17,22 +17,21 @@ function cleanTitle(title: string) {
         .trim();
 }
 
-async function fetchLyrics(title: string, artist: string) {
-    const cleanedTitle = cleanTitle(title);
-
-    // 1. Structured lookup
+async function fetchStructuredLyrics(cleanedTitle: string, artist: string) {
     try {
         const res = await axios.get('https://lrclib.net/api/get', {
             params: { track_name: cleanedTitle, artist_name: artist },
             headers: LRCLIB_HEADERS,
             timeout: 8000,
         });
-        if (res.data?.plainLyrics) return res.data.plainLyrics;
+        return res.data?.plainLyrics ?? null;
     } catch (err: any) {
         if (!err.response || err.response.status !== 404) throw err;
+        return null;
     }
+}
 
-    // 2. Search fallback
+async function fetchLyricsViaSearch(cleanedTitle: string, artist: string) {
     const res = await axios.get('https://lrclib.net/api/search', {
         params: { q: `${cleanedTitle} ${artist}` },
         headers: LRCLIB_HEADERS,
@@ -40,6 +39,12 @@ async function fetchLyrics(title: string, artist: string) {
     });
     const match = (res.data ?? []).find((entry: any) => entry.plainLyrics);
     return match?.plainLyrics ?? null;
+}
+
+async function fetchLyrics(title: string, artist: string) {
+    const cleanedTitle = cleanTitle(title);
+    const structured = await fetchStructuredLyrics(cleanedTitle, artist);
+    return structured ?? fetchLyricsViaSearch(cleanedTitle, artist);
 }
 
 function splitLyrics(lyrics: string) {

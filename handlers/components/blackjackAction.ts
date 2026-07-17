@@ -4,6 +4,10 @@ import { handValue, buildEmbed, buildRow, disabledRow, dealerPlay, buildPvpEmbed
 import { updateBalance, getWallet, formatBalance } from '../../utils/economy';
 import { ComponentDefinition } from '../../types/discord';
 
+function buildWrongTurnMessage(isParticipant: boolean) {
+    return isParticipant ? 'Wait for your turn — these buttons are for the other player right now.' : 'This is not your game!';
+}
+
 async function resolveGame(interaction: ButtonInteraction, isOpponent = false) {
     const game = await BlackjackGame.findOne({ messageId: interaction.message.id });
     if (!game) {
@@ -13,12 +17,8 @@ async function resolveGame(interaction: ButtonInteraction, isOpponent = false) {
 
     const expectedId = isOpponent ? game.opponentId : game.userId;
     if (interaction.user.id !== expectedId) {
-        // Give a useful message to both non-participants and the wrong player
         const isParticipant = interaction.user.id === game.userId || interaction.user.id === game.opponentId;
-        await interaction.reply({
-            content: isParticipant ? 'Wait for your turn — these buttons are for the other player right now.' : 'This is not your game!',
-            flags: MessageFlags.Ephemeral,
-        });
+        await interaction.reply({ content: buildWrongTurnMessage(isParticipant), flags: MessageFlags.Ephemeral });
         return null;
     }
 
@@ -35,8 +35,7 @@ async function resolveGame(interaction: ButtonInteraction, isOpponent = false) {
     return game;
 }
 
-// Settle PvP — called once challenger is done (stand/bust) and opponent is also done
-async function settlePvp(interaction: ButtonInteraction, game: any) {
+async function settlePvpWhenBothDone(interaction: ButtonInteraction, game: any) {
     const { userId, guildId, opponentId, bet, opponentBet, playerHand, opponentHand, dealerHand, deck } = game;
 
     dealerPlay(dealerHand, deck);
@@ -82,6 +81,19 @@ async function settlePvp(interaction: ButtonInteraction, game: any) {
     });
 }
 
+async function switchTurnToOpponent(interaction: ButtonInteraction, game: any) {
+    await game.save();
+    const opponent = await interaction.client.users.fetch(game.opponentId).catch(() => ({ username: 'Opponent' }));
+    const challenger = interaction.user;
+    const pvpGame = { playerHand: game.playerHand, opponentHand: game.opponentHand, dealerHand: game.dealerHand, bet: game.bet, opponentBet: game.opponentBet };
+    const opponentWallet = await getWallet(game.opponentId, game.guildId);
+    const canDouble = opponentWallet.balance >= game.opponentBet && game.opponentHand.length === 2;
+    return (interaction as any).update({
+        embeds: [buildPvpEmbed(pvpGame, { challenger: challenger as any, opponent: opponent as any })],
+        components: [buildPvpRow(false, canDouble)],
+    });
+}
+
 async function finish(interaction: ButtonInteraction, game: any, outcome: string) {
     const { bet, playerHand, dealerHand, userId, guildId } = game;
 
@@ -97,79 +109,14 @@ async function finish(interaction: ButtonInteraction, game: any, outcome: string
     });
 }
 
-// --- Challenger buttons (bj_*) ---
+function isAutoStandTotal(total: number) {
+    return total === 21;
+}
 
-async function handleHit(interaction: ButtonInteraction, isOpponent: boolean) {
-    const game = await resolveGame(interaction, isOpponent);
-    if (!game) return;
-
-    const hand = isOpponent ? game.opponentHand : game.playerHand;
-    hand.push(game.deck.pop() as string);
-    game.markModified(isOpponent ? 'opponentHand' : 'playerHand');
-    game.markModified('deck');
-
-    const total = handValue(hand);
-    const isPvp = !!game.opponentId;
-
-    if (isPvp) {
-        if (total > 21) {
-            if (isOpponent) {
-                game.opponentDone = true;
-                await game.save();
-                // Challenger always goes first, so if opponent busted here both players are done.
-                return settlePvp(interaction, game);
-            } else {
-                game.markModified('playerHand');
-                await game.save();
-                const opponent = await interaction.client.users.fetch(game.opponentId).catch(() => ({ username: 'Opponent' }));
-                const challenger = interaction.user;
-                const pvpGame = { playerHand: game.playerHand, opponentHand: game.opponentHand, dealerHand: game.dealerHand, bet: game.bet, opponentBet: game.opponentBet };
-                const opponentWallet = await getWallet(game.opponentId, game.guildId);
-                const canDouble = opponentWallet.balance >= game.opponentBet && game.opponentHand.length === 2;
-                return (interaction as any).update({
-                    embeds: [buildPvpEmbed(pvpGame, { challenger: challenger as any, opponent: opponent as any })],
-                    components: [buildPvpRow(false, canDouble)],
-                });
-            }
-        }
-
-        if (total === 21) {
-            // Auto-stand
-            if (isOpponent) {
-                game.opponentDone = true;
-                await game.save();
-                return settlePvp(interaction, game);
-            } else {
-                await game.save();
-                const opponent = await interaction.client.users.fetch(game.opponentId).catch(() => ({ username: 'Opponent' }));
-                const challenger = interaction.user;
-                const pvpGame = { playerHand: game.playerHand, opponentHand: game.opponentHand, dealerHand: game.dealerHand, bet: game.bet, opponentBet: game.opponentBet };
-                const opponentWallet = await getWallet(game.opponentId, game.guildId);
-                const canDouble = opponentWallet.balance >= game.opponentBet && game.opponentHand.length === 2;
-                return (interaction as any).update({
-                    embeds: [buildPvpEmbed(pvpGame, { challenger: challenger as any, opponent: opponent as any })],
-                    components: [buildPvpRow(false, canDouble)],
-                });
-            }
-        }
-
-        await game.save();
-        const opponent = await interaction.client.users.fetch(game.opponentId).catch(() => ({ username: 'Opponent' }));
-        const challenger = isOpponent ? await interaction.client.users.fetch(game.userId).catch(() => ({ username: 'Challenger' })) : interaction.user;
-        const pvpGame = { playerHand: game.playerHand, opponentHand: game.opponentHand, dealerHand: game.dealerHand, bet: game.bet, opponentBet: game.opponentBet };
-        const canDouble = isOpponent
-            ? (await getWallet(game.opponentId, game.guildId)).balance >= game.opponentBet && game.opponentHand.length === 2
-            : (await getWallet(game.userId, game.guildId)).balance >= game.bet && game.playerHand.length === 2;
-        return (interaction as any).update({
-            embeds: [buildPvpEmbed(pvpGame, { challenger: challenger as any, opponent: opponent as any })],
-            components: [buildPvpRow(isOpponent, canDouble)],
-        });
-    }
-
-    // Single player
+async function handleSinglePlayerHit(interaction: ButtonInteraction, game: any, total: number) {
     if (total > 21) return finish(interaction, game, 'bust');
 
-    if (total === 21) {
+    if (isAutoStandTotal(total)) {
         dealerPlay(game.dealerHand, game.deck);
         game.markModified('dealerHand');
         const dealerTotal = handValue(game.dealerHand);
@@ -183,6 +130,53 @@ async function handleHit(interaction: ButtonInteraction, isOpponent: boolean) {
     await (interaction as any).update({ embeds: [buildEmbed(game)], components: [buildRow(canDouble)] });
 }
 
+async function handleHit(interaction: ButtonInteraction, isOpponent: boolean) {
+    const game = await resolveGame(interaction, isOpponent);
+    if (!game) return;
+
+    const hand = isOpponent ? game.opponentHand : game.playerHand;
+    hand.push(game.deck.pop() as string);
+    game.markModified(isOpponent ? 'opponentHand' : 'playerHand');
+    game.markModified('deck');
+
+    const total = handValue(hand);
+    const isPvp = !!game.opponentId;
+
+    if (!isPvp) return handleSinglePlayerHit(interaction, game, total);
+
+    if (total > 21) {
+        if (isOpponent) {
+            game.opponentDone = true;
+            await game.save();
+            // Challenger always goes first, so if opponent busted here both players are done.
+            return settlePvpWhenBothDone(interaction, game);
+        }
+        game.markModified('playerHand');
+        return switchTurnToOpponent(interaction, game);
+    }
+
+    if (isAutoStandTotal(total)) {
+        if (isOpponent) {
+            game.opponentDone = true;
+            await game.save();
+            return settlePvpWhenBothDone(interaction, game);
+        }
+        return switchTurnToOpponent(interaction, game);
+    }
+
+    await game.save();
+    const opponent = await interaction.client.users.fetch(game.opponentId).catch(() => ({ username: 'Opponent' }));
+    const challenger = isOpponent ? await interaction.client.users.fetch(game.userId).catch(() => ({ username: 'Challenger' })) : interaction.user;
+    const pvpGame = { playerHand: game.playerHand, opponentHand: game.opponentHand, dealerHand: game.dealerHand, bet: game.bet, opponentBet: game.opponentBet };
+    const canDouble = isOpponent
+        ? (await getWallet(game.opponentId, game.guildId)).balance >= game.opponentBet && game.opponentHand.length === 2
+        : (await getWallet(game.userId, game.guildId)).balance >= game.bet && game.playerHand.length === 2;
+    return (interaction as any).update({
+        embeds: [buildPvpEmbed(pvpGame, { challenger: challenger as any, opponent: opponent as any })],
+        components: [buildPvpRow(isOpponent, canDouble)],
+    });
+}
+
 async function handleStand(interaction: ButtonInteraction, isOpponent: boolean) {
     const game = await resolveGame(interaction, isOpponent);
     if (!game) return;
@@ -193,20 +187,9 @@ async function handleStand(interaction: ButtonInteraction, isOpponent: boolean) 
         if (isOpponent) {
             game.opponentDone = true;
             await game.save();
-            return settlePvp(interaction, game);
-        } else {
-            // Challenger stood — switch to opponent
-            await game.save();
-            const opponent = await interaction.client.users.fetch(game.opponentId).catch(() => ({ username: 'Opponent' }));
-            const challenger = interaction.user;
-            const pvpGame = { playerHand: game.playerHand, opponentHand: game.opponentHand, dealerHand: game.dealerHand, bet: game.bet, opponentBet: game.opponentBet };
-            const opponentWallet = await getWallet(game.opponentId, game.guildId);
-            const canDouble = opponentWallet.balance >= game.opponentBet && game.opponentHand.length === 2;
-            return (interaction as any).update({
-                embeds: [buildPvpEmbed(pvpGame, { challenger: challenger as any, opponent: opponent as any })],
-                components: [buildPvpRow(false, canDouble)],
-            });
+            return settlePvpWhenBothDone(interaction, game);
         }
+        return switchTurnToOpponent(interaction, game);
     }
 
     dealerPlay(game.dealerHand, game.deck);
@@ -252,19 +235,9 @@ async function handleDouble(interaction: ButtonInteraction, isOpponent: boolean)
         if (total > 21 || isOpponent) {
             if (isOpponent) game.opponentDone = true;
             await game.save();
-            if (isOpponent || total > 21) return settlePvp(interaction, game);
+            if (isOpponent || total > 21) return settlePvpWhenBothDone(interaction, game);
         }
-        // Challenger doubled — switch to opponent
-        await game.save();
-        const opponent = await interaction.client.users.fetch(game.opponentId).catch(() => ({ username: 'Opponent' }));
-        const challenger = interaction.user;
-        const pvpGame = { playerHand: game.playerHand, opponentHand: game.opponentHand, dealerHand: game.dealerHand, bet: game.bet, opponentBet: game.opponentBet };
-        const opponentWallet = await getWallet(game.opponentId, game.guildId);
-        const canDouble = opponentWallet.balance >= game.opponentBet && game.opponentHand.length === 2;
-        return (interaction as any).update({
-            embeds: [buildPvpEmbed(pvpGame, { challenger: challenger as any, opponent: opponent as any })],
-            components: [buildPvpRow(false, canDouble)],
-        });
+        return switchTurnToOpponent(interaction, game);
     }
 
     if (total > 21) return finish(interaction, game, 'bust');

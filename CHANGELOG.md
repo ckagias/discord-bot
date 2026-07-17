@@ -18,6 +18,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Changed
 
 - Comment audit across the bot and dashboard: collapsed multi-line `//` and JSDoc blocks to single lines, trimmed verbose explanations down to their single most important fact, and removed comments that just restated the code below them. No logic changes.
+- Rewrote code instead of documenting around it wherever a comment existed only to explain unclear structure: `blackjack`, `coinflip`, and `rps` each split their inline PvP/vs-bot branches into named `handlePvp*`/`handleVsBot*`/`handleVsDealer` functions; `wordle`'s two-pass letter scoring became `markExactMatches`/`markPresentLetters`; `lyrics`'s two lookup strategies became `fetchStructuredLyrics`/`fetchLyricsViaSearch`; `purge` split into `bulkDeleteWithoutFilters`/`bulkDeleteWithFilters`; `warnthreshold`'s bare `2419200` literal now reuses the same named `MAX_TIMEOUT_SECONDS` pattern already used in `automod`; `handlers/components/blackjackAction.ts` deduplicated four identical inline "switch turn to opponent" blocks into one `switchTurnToOpponent` helper and extracted `buildWrongTurnMessage`/`isAutoStandTotal`/`handleSinglePlayerHit`; the dashboard's Temp VC page replaced a bare Discord channel-type literal with a named `DISCORD_CHANNEL_TYPE_CATEGORY` constant. No behavior changes intended, verified via the full test suite.
 
 ### Fixed
 
