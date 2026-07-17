@@ -1,4 +1,4 @@
-import { PermissionFlagsBits, EmbedBuilder, ChannelType, Guild, GuildMember, Role, Client, User } from 'discord.js';
+import { PermissionFlagsBits, EmbedBuilder, ChannelType, Guild, GuildMember, Role, Client } from 'discord.js';
 import GuildSchema from '../models/GuildSchema';
 import { getLogChannel } from './logger';
 import { updateGuildConfig } from './guildConfig';
@@ -97,7 +97,7 @@ async function resolveAlertChannel(guild: Guild, guildData: any) {
 }
 
 // Activates a lockdown, sets channel overwrites, and posts an alert embed.
-async function startLockdown(guild: Guild, guildData: any, { auto = false, triggeredBy = null as User | null } = {}): Promise<void> {
+async function startLockdown(guild: Guild, guildData: any, { auto = false, triggeredBy = null as { username: string } | null } = {}): Promise<void> {
     if (guildData?.antiRaidLocked) return; // already locked
 
     const role = guild.roles.cache.get(guildData?.antiRaidQuarantineRoleId);
@@ -135,7 +135,7 @@ async function startLockdown(guild: Guild, guildData: any, { auto = false, trigg
 
 // Deactivates a lockdown, removes the quarantine role from all members who have it,
 // and posts a summary embed. Returns the list of released members for the command reply.
-async function endLockdown(guild: Guild, guildData: any, { by = null as User | null } = {}) {
+async function endLockdown(guild: Guild, guildData: any, { by = null as { username: string } | null } = {}) {
     if (!guildData?.antiRaidLocked) return { alreadyUnlocked: true };
 
     const role = guild.roles.cache.get(guildData?.antiRaidQuarantineRoleId);
@@ -148,7 +148,7 @@ async function endLockdown(guild: Guild, guildData: any, { by = null as User | n
             const quarantined = members.filter(m => m.roles.cache.has(role.id));
             await Promise.allSettled(
                 quarantined.map(m =>
-                    m.roles.remove(role, `Anti-raid: lockdown lifted by ${by?.tag ?? 'moderator'}`).then(() => {
+                    m.roles.remove(role, `Anti-raid: lockdown lifted by ${by?.username ?? 'moderator'}`).then(() => {
                         released.push(m);
                     })
                 )
