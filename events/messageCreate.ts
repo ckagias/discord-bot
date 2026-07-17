@@ -42,7 +42,6 @@ module.exports = {
             if (actioned) return;
         }
 
-        // Trigger check
         try {
             const triggers = await TriggerSchema.find({ guildId: guild.id }).lean();
             for (const { trigger, response } of triggers) {
@@ -57,7 +56,6 @@ module.exports = {
             logger.error('Trigger check failed:', error);
         }
 
-        // AFK return check
         try {
             const afkEntry: any = await AfkSchema.findOne({ userId: author.id, guildId: guild.id }).lean();
             if (afkEntry) {
@@ -78,7 +76,6 @@ module.exports = {
             logger.error('AFK return check failed:', error);
         }
 
-        // AFK mention check
         if (message.mentions.users.size > 0) {
             const mentionedIds = [...message.mentions.users.keys()]
                 .filter(id => id !== message.client.user.id && id !== author.id);
@@ -130,8 +127,7 @@ module.exports = {
                 { returnDocument: 'after' }
             );
 
-            // When the cooldown filter doesn't match, upsert inserts a bare doc with a fresh lastXpAt.
-            // Detect that case by checking if the write just happened (within 1s).
+            // A non-matching cooldown filter causes upsert to insert a bare doc; detect that via a fresh lastXpAt.
             if (!userData || Date.now() - userData.lastXpAt.getTime() > 1000) return;
 
             // Passive credit earnings — fires on the same cooldown as XP so it's never spammed.

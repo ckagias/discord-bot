@@ -18,8 +18,7 @@ function calculateAge(entry: { year?: number | null }, year: number): number | n
     return year - entry.year;
 }
 
-// Removes the birthday role from every member holding it, since it should only be worn on the
-// member's actual birthday and this runs before today's new birthdays are granted the role.
+// Clears yesterday's holders since the role should only be worn on the actual birthday.
 async function clearBirthdayRoles(client: Client, guild: Guild, roleId: string): Promise<void> {
     const role = guild.roles.cache.get(roleId);
     if (!role) return;
@@ -29,10 +28,7 @@ async function clearBirthdayRoles(client: Client, guild: Guild, roleId: string):
     }
 }
 
-// Runs once per day. For every guild with a birthday channel configured, clears yesterday's
-// birthday role holders, then finds members whose month/day matches today and haven't been
-// announced yet this year, posts the announcement, assigns the birthday role if configured, and
-// marks them as announced to avoid duplicate posts on restart.
+// Tracks lastAnnounced per year to avoid duplicate posts on restart.
 async function checkBirthdays(client: Client): Promise<void> {
     const now = new Date();
     const month = now.getMonth() + 1;

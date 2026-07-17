@@ -143,8 +143,7 @@ async function handlePostNow(interaction: ButtonInteraction) {
     }
 }
 
-// One customId prefix can map to either a modal or a button submit depending on interaction type,
-// so this module registers multiple component entries sharing the handlers above.
+// One customId prefix can map to either a modal or a button submit depending on interaction type.
 const components: ComponentDefinition[] = [
     { type: 'modal', prefix: 'embed_create:', execute: handleMainModal },
     { type: 'modal', prefix: 'embed_edit:', execute: handleMainModal },

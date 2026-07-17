@@ -1,8 +1,6 @@
 import { Model, QueryFilter, UpdateQuery, QueryOptions } from 'mongoose';
 
-// Two concurrent findOneAndUpdate upserts targeting a not-yet-existing document can both
-// attempt the insert; the loser gets a duplicate-key error (11000) instead of an update.
-// Retrying without upsert picks up the winner's freshly-inserted document.
+// On a concurrent-insert race the loser gets error 11000; retry without upsert to pick up the winner's doc.
 async function upsertWithRetry(model: Model<any>, filter: QueryFilter<any>, update: UpdateQuery<any>, options: QueryOptions = {}) {
     try {
         return await model.findOneAndUpdate(filter, update, { ...options, upsert: true });

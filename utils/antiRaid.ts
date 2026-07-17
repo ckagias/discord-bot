@@ -13,8 +13,7 @@ const STAFF_PERMISSIONS = [
     PermissionFlagsBits.ManageGuild,
 ];
 
-// guildId -> array of join timestamps (ms). In-memory only — resets on restart.
-// Lockdown *state* is persisted on the Guild doc; only the rolling window is ephemeral.
+// In-memory only; lockdown state itself is persisted on the Guild doc.
 const joinTracker = new Map<string, number[]>();
 
 function isStaff(member: GuildMember | null): boolean {
@@ -33,7 +32,6 @@ function recordJoin(guildId: string, windowSeconds: number): number {
     return timestamps.length;
 }
 
-// Sets channel overwrites so the quarantine role cannot see or participate in any channel.
 // Mirrors the mute-role pattern in slashCommands/moderation/mute.js.
 async function ensureQuarantineOverwrites(guild: Guild, role: Role): Promise<void> {
     const deny = [
@@ -133,8 +131,7 @@ async function startLockdown(guild: Guild, guildData: any, { auto = false, trigg
     await (alertChannel as any).send({ embeds: [embed] }).catch(() => {});
 }
 
-// Deactivates a lockdown, removes the quarantine role from all members who have it,
-// and posts a summary embed. Returns the list of released members for the command reply.
+// Returns the list of released members for the command reply.
 async function endLockdown(guild: Guild, guildData: any, { by = null as { username: string } | null } = {}) {
     if (!guildData?.antiRaidLocked) return { alreadyUnlocked: true };
 
@@ -190,8 +187,7 @@ async function endLockdown(guild: Guild, guildData: any, { by = null as { userna
     return { released };
 }
 
-// Schedules the quarantine role assignment after a short delay so Discord's join log
-// fires first and welcome embeds don't race with the role change.
+// Delayed so Discord's join log fires first and welcome embeds don't race with the role change.
 function scheduleQuarantine(member: GuildMember, guildData: any, delayMs = 500): void {
     setTimeout(async () => {
         // Re-fetch the member in case they left in the tiny window.
@@ -204,7 +200,6 @@ function scheduleQuarantine(member: GuildMember, guildData: any, delayMs = 500):
     }, delayMs);
 }
 
-// Entry point called from guildMemberAdd.
 // Returns true if this member should be quarantined (blocks autorole — role is applied after delay).
 function handleJoin(member: GuildMember, guildData: any): boolean {
     if (!guildData) return false;

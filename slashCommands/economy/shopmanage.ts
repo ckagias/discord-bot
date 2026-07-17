@@ -81,7 +81,6 @@ module.exports = {
                 return interaction.editReply({ content: 'You must provide an **emoji** for type `badge`.' });
             }
 
-            // Prevent duplicate names per guild
             const existing = await ShopSchema.findOne({ guildId: interaction.guild.id, name: { $regex: `^${escapeRegex(name)}$`, $options: 'i' } });
             if (existing) {
                 return interaction.editReply({ content: `An item named **${name}** already exists in the shop.` });

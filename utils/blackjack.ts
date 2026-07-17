@@ -122,7 +122,6 @@ function disabledRow(): ActionRowBuilder<ButtonBuilder> {
     );
 }
 
-// Dealer draws until 17+
 function dealerPlay(hand: string[], deck: string[]): void {
     while (handValue(hand) < 17) {
         hand.push(deck.pop()!);
@@ -137,7 +136,6 @@ interface PvpGame {
     opponentBet: number;
 }
 
-// PvP embed — shows both players' hands and the dealer
 function buildPvpEmbed(game: PvpGame, { challenger = undefined, opponent = undefined, outcome = null }: { challenger?: User; opponent?: User; outcome?: string | null } = {}): EmbedBuilder {
     const { playerHand, opponentHand, dealerHand, bet, opponentBet } = game;
     const dealerFull = outcome !== null;

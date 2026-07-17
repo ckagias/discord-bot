@@ -15,6 +15,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Converted `events/` (13 files + paired tests) to TypeScript, typing event handler signatures against discord.js's `GuildMember`, `Interaction`, `Message`, `MessageReaction`, `GuildBan`, and `VoiceState` types (and their partials where discord.js can emit one). Extended `types/discord.d.ts` with the `snipeCache`/`editSnipeCache` properties `messageDelete`/`messageUpdate` attach to the `Client` at runtime.
 - Converted all 92 files in `slashCommands/` (plus paired tests) to TypeScript, split across three batches: `economy`, `fun`, `minigames`, `roles`, `settings`, `tickets` (29 files); `moderation`, `music` (35 files); `info`, `leveling`, `utility` (28 files). `handlers/slashCommandHandler.ts`'s dynamic command-file scan now matches both `.js` and `.ts`, same fix already applied to `componentHandler.ts` and `eventHandler.ts`. Commands using mongoose models get real field-level type checking from the `Document` interfaces added in the `models/` PR; music commands type against `client.lavalink`'s `LavalinkManager`. `handlers/eventHandler.ts`'s dynamic event-file scan now matches both `.js` and `.ts`, same as `componentHandler.ts` already did.
 
+### Changed
+
+- Comment audit across the bot and dashboard: collapsed multi-line `//` and JSDoc blocks to single lines, trimmed verbose explanations down to their single most important fact, and removed comments that just restated the code below them. No logic changes.
+
 ### Fixed
 
 - The bot has been unable to boot outside of Jest since the `utils/` TypeScript conversion: Docker ran `node src/index.js` directly against source with no build step, and plain Node's `require()` can't resolve extensionless requires to `.ts` files (only Jest's `ts-jest` transform could). Added a `build` npm script (`tsc`) and a CI step that runs it, switched the Dockerfile to a multi-stage build that compiles to `dist/` and runs the compiled output, and updated `restart.sh`'s slash-command registration to match. `dist/` is now gitignored and excluded from Jest's test matching.

@@ -10,8 +10,7 @@ function formatDuration(ms: number): string {
 const SPOTIFY_TRACK_URL = /open\.spotify\.com\/(?:intl-\w+\/)?track\/([A-Za-z0-9]+)/i;
 const SPOTIFY_OTHER_URL = /open\.spotify\.com\/(?:intl-\w+\/)?(album|playlist|artist)\//i;
 
-// Spotify's embed page ships track/artist names in its __NEXT_DATA__ blob and
-// requires no API credentials, unlike the Web API.
+// Spotify's embed page ships track names in its __NEXT_DATA__ blob and needs no API credentials.
 async function resolveSpotifyTrackQuery(url: string): Promise<string | null> {
     const match = url.match(SPOTIFY_TRACK_URL);
     if (!match) return null;

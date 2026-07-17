@@ -41,7 +41,6 @@ module.exports = {
             return interaction.respond(choices);
         }
 
-        // buy autocomplete — shop items
         const items = await ShopSchema.find({ guildId: interaction.guild.id, enabled: true });
         const choices = items
             .filter(i => i.name.toLowerCase().includes(focused))
@@ -90,13 +89,11 @@ module.exports = {
             // Credit coins before removing from inventory — prevents partial failure leaving user with neither
             const updated = refund > 0 ? await updateBalance(interaction.user.id, interaction.guild.id, refund) : await getWallet(interaction.user.id, interaction.guild.id);
 
-            // Remove from inventory
             await InventorySchema.updateOne(
                 { userId: interaction.user.id, guildId: interaction.guild.id },
                 { $pull: { items: { itemId } } }
             );
 
-            // Revoke role if applicable
             if (ownedItem.type === 'role' && shopItem?.roleId) {
                 const member = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
                 if (member) await member.roles.remove(shopItem.roleId).catch(() => null);
@@ -115,7 +112,6 @@ module.exports = {
             return interaction.editReply({ embeds: [embed] });
         }
 
-        // buy
         const itemId = interaction.options.getString('item');
         const item = await ShopSchema.findOne({ itemId, guildId: interaction.guild.id, enabled: true });
         if (!item) return interaction.editReply({ content: 'That item does not exist or is no longer available.' });
@@ -144,7 +140,6 @@ module.exports = {
             });
         }
 
-        // Apply role effect after successful purchase
         if (item.type === 'role' && item.roleId) {
             const member = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
             if (member) {

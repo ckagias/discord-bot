@@ -60,7 +60,6 @@ module.exports = {
         const sub = interaction.options.getSubcommand();
         const guildData = await getGuildConfig(guild.id);
 
-        // ── setrole ──────────────────────────────────────────────────────────────
         if (sub === 'setrole') {
             const role = interaction.options.getRole('role');
 
@@ -88,7 +87,6 @@ module.exports = {
             });
         }
 
-        // ── lock ─────────────────────────────────────────────────────────────────
         if (sub === 'lock') {
             if (!guildData?.antiRaidQuarantineRoleId) {
                 return interaction.editReply({
@@ -103,7 +101,6 @@ module.exports = {
             return interaction.editReply({ content: '🔒 Lockdown activated. New members will be quarantined until you run `/antiraid unlock`.' });
         }
 
-        // ── unlock ───────────────────────────────────────────────────────────────
         if (sub === 'unlock') {
             if (!guildData?.antiRaidLocked) {
                 return interaction.editReply({ content: 'There is no active lockdown.' });
@@ -120,7 +117,6 @@ module.exports = {
             });
         }
 
-        // ── release ──────────────────────────────────────────────────────────────
         if (sub === 'release') {
             if (!guildData?.antiRaidQuarantineRoleId) {
                 return interaction.editReply({ content: 'No quarantine role is configured.' });
@@ -146,7 +142,6 @@ module.exports = {
             return interaction.editReply({ content: `✅ Removed quarantine role from ${member}. They can now access the server normally.` });
         }
 
-        // ── config ───────────────────────────────────────────────────────────────
         if (sub === 'config') {
             const threshold = interaction.options.getInteger('threshold');
             const window = interaction.options.getInteger('window');
@@ -171,7 +166,6 @@ module.exports = {
             return interaction.editReply({ content: `✅ Anti-raid config updated: ${parts.join(', ')}.` });
         }
 
-        // ── status ───────────────────────────────────────────────────────────────
         if (sub === 'status') {
             const quarantineRole = guildData?.antiRaidQuarantineRoleId
                 ? guild.roles.cache.get(guildData.antiRaidQuarantineRoleId)

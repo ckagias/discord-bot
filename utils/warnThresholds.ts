@@ -11,9 +11,7 @@ interface WarnThreshold {
     duration?: number | null;
 }
 
-// Finds the highest-priority threshold that matches totalWarnings exactly.
-// Only fires on the exact count so repeated warnings beyond the last threshold
-// don't re-apply the same punishment every time.
+// Exact-count match only, so warnings past the last threshold don't re-apply the punishment.
 function resolveThreshold(thresholds: WarnThreshold[], totalWarnings: number): WarnThreshold | null {
     return thresholds.find(t => t.count === totalWarnings) ?? null;
 }
@@ -36,8 +34,7 @@ async function logEscalation(guild: Guild, member: GuildMember, action: string, 
     await (logChannel as any).send({ embeds: [embed] }).catch(() => {});
 }
 
-// Checks the guild's warn thresholds against totalWarnings and applies the
-// matching punishment if one exists. Safe to call from both /warn and automod.
+// Safe to call from both /warn and automod.
 async function checkWarnThresholds(guild: Guild, member: GuildMember, totalWarnings: number, guildData: { warnThresholds?: WarnThreshold[] } | null): Promise<void> {
     const thresholds = guildData?.warnThresholds;
     if (!thresholds?.length) return;

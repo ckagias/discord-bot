@@ -86,8 +86,7 @@ describe('trivia command', () => {
         await trivia.execute(interaction);
         updateBalance.mockResolvedValue({ balance: 550 });
 
-        // Determine the correct index by inspecting the built row's customIds isn't directly
-        // accessible, so we test both outcomes generically via the recorded collector handler.
+        // Row's customIds aren't inspectable here, so both outcomes are tested generically.
         const i = { customId: 'trivia_0', update: jest.fn().mockResolvedValue({}) };
         await interaction._collector.handlers.collect(i);
 

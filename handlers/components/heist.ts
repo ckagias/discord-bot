@@ -102,7 +102,6 @@ const components: ComponentDefinition[] = [
             heist.finished = true;
             await heist.save();
 
-            // Refund all members
             await Promise.all(heist.members.map(m => updateBalance(m.userId as string, interaction.guild!.id, heist.entryFee)));
 
             const embed = new EmbedBuilder()

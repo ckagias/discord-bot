@@ -64,8 +64,7 @@ module.exports = {
 
         await interaction.deferReply();
 
-        // Only set overwrites on channels that don't already have one for this role,
-        // to avoid hammering the API on every mute when the role is already configured.
+        // Skip channels that already have an overwrite for this role, to avoid hammering the API on every mute.
         const textChannels = interaction.guild.channels.cache.filter(c => c.isTextBased() && !(c as any).permissionOverwrites.cache.has(muteRole.id));
         const voiceChannels = interaction.guild.channels.cache.filter(c => c.isVoiceBased() && !(c as any).permissionOverwrites.cache.has(muteRole.id));
 

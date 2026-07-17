@@ -1,9 +1,6 @@
 import CaseSchema from '../models/CaseSchema';
 
-// Case numbers reflect what's actually in the log, not a permanent counter — deleting the
-// highest-numbered case frees its number for reuse. A unique index on {guildId, caseId}
-// catches the rare race where two cases are created for the same guild at once; on conflict
-// we just recompute and retry rather than crash the command.
+// Deleting the highest-numbered case frees its number; on conflict, recompute and retry rather than crash.
 const MAX_ATTEMPTS = 5;
 
 interface CreateCaseInput {

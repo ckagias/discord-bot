@@ -33,8 +33,7 @@ module.exports = {
         const job = workResponses[Math.floor(Math.random() * workResponses.length)];
         const earned = Math.floor(Math.random() * (job.max - job.min + 1)) + job.min;
 
-        // Atomic: stamp cooldown and credit coins in one operation so a crash between
-        // steps can't lock the user out without paying them.
+        // Atomic: stamp cooldown and credit coins together so a crash between steps can't lock the user out without paying them.
         const updated = await claimCooldown(interaction.user.id, interaction.guild.id, 'lastWorkAt', WORK_COOLDOWN_MS, {
             $inc: { balance: earned },
         });
