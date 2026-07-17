@@ -1,11 +1,11 @@
-const http = require('node:http');
+import http from 'node:http';
 const mongoose = require('mongoose');
 
 jest.mock('../../slashCommands/utility/giveaway', () => ({ endGiveaway: jest.fn() }));
 jest.mock('../../models/GiveawaySchema', () => ({ findOne: jest.fn() }));
 
-function request(port, path, options = {}) {
-    return new Promise((resolve, reject) => {
+function request(port: number, path: string, options: { method?: string; headers?: Record<string, string> } = {}) {
+    return new Promise<{ status: number | undefined; body: any }>((resolve, reject) => {
         const req = http.request({ port, path, method: options.method || 'GET', headers: options.headers }, res => {
             let body = '';
             res.on('data', chunk => (body += chunk));
@@ -17,20 +17,20 @@ function request(port, path, options = {}) {
 }
 
 describe('internal API /internal/health', () => {
-    let server, port, client;
+    let server: http.Server | undefined, port: number, client: { isReady: jest.Mock; ws: { ping: number }; uptime: number };
 
     beforeAll(done => {
         process.env.INTERNAL_API_PORT = '0';
         client = { isReady: jest.fn(), ws: { ping: 42 }, uptime: 12345 };
 
-        // Force the server onto an ephemeral port so tests don't collide, and capture the instance/port once bound.
-        // Handles both listen(port, cb) and listen(port, host, cb) since callers may bind to a specific host or not.
+        // Force the server onto an ephemeral port so tests don't collide, and capture the instance/port once bound, handling both listen(port, cb) and listen(port, host, cb).
         const originalListen = http.Server.prototype.listen;
-        http.Server.prototype.listen = function (_port, hostOrCb, maybeCb) {
+        (http.Server.prototype.listen as any) = function (this: http.Server, _port: number, hostOrCb?: any, maybeCb?: any) {
             const cb = typeof hostOrCb === 'function' ? hostOrCb : maybeCb;
+            // eslint-disable-next-line @typescript-eslint/no-this-alias -- need to capture the server instance for later assertions/cleanup
             server = this;
-            return originalListen.call(this, 0, () => {
-                port = this.address().port;
+            return (originalListen as any).call(this, 0, () => {
+                port = ((server as http.Server).address() as any).port;
                 http.Server.prototype.listen = originalListen;
                 cb();
                 done();

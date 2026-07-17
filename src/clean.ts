@@ -1,9 +1,10 @@
-const { REST, Routes } = require('discord.js');
-require('dotenv').config();
-const log = require('../utils/log');
+import { REST, Routes } from 'discord.js';
+import dotenv from 'dotenv';
+dotenv.config();
+import log from '../utils/log';
 const logger = log.scope('clean');
 
-const guildId = process.argv[2];
+const guildId: string | undefined = process.argv[2];
 
 if (!guildId) {
     logger.error('Usage: node src/clean.js <guildId>');
@@ -11,14 +12,14 @@ if (!guildId) {
     process.exit(1);
 }
 
-const rest = new REST({ version: '10' }).setToken(process.env.Token);
+const rest = new REST({ version: '10' }).setToken(process.env.Token as string);
 
 (async () => {
     try {
         logger.info(`Starting cleanup for Server ID: ${guildId}...`);
         // Sending an empty array removes all guild-specific commands
         await rest.put(
-            Routes.applicationGuildCommands(process.env.ClientID, guildId),
+            Routes.applicationGuildCommands(process.env.ClientID as string, guildId),
             { body: [] }
         );
         logger.info('Success! All old ghost commands for this server have been deleted.');

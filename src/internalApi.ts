@@ -1,25 +1,26 @@
-const http = require('node:http');
-const mongoose = require('mongoose');
+import http, { IncomingMessage, ServerResponse } from 'node:http';
+import mongoose from 'mongoose';
+import { Client, EmbedBuilder } from 'discord.js';
 const { endGiveaway } = require('../slashCommands/utility/giveaway');
 const { applyStatus } = require('../slashCommands/utility/suggest');
-const { startLockdown, endLockdown } = require('../utils/antiRaid');
-const { getGuildConfig } = require('../utils/guildConfig');
-const GiveawaySchema = require('../models/GiveawaySchema');
-const SuggestionSchema = require('../models/SuggestionSchema');
-const log = require('../utils/log');
+import { startLockdown, endLockdown } from '../utils/antiRaid';
+import { getGuildConfig } from '../utils/guildConfig';
+import GiveawaySchema from '../models/GiveawaySchema';
+import SuggestionSchema from '../models/SuggestionSchema';
+import log from '../utils/log';
 const logger = log.scope('internal-api');
 
 const PORT = process.env.INTERNAL_API_PORT || 4000;
 const SECRET = process.env.INTERNAL_API_SECRET;
 
-function send(res, status, body) {
+function send(res: ServerResponse, status: number, body: unknown) {
     res.writeHead(status, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(body));
 }
 
 const MAX_BODY_BYTES = 1024 * 1024; // 1 MB
 
-function readBody(req) {
+function readBody(req: IncomingMessage): Promise<string> {
     return new Promise((resolve, reject) => {
         let body = '';
         let bytes = 0;
@@ -36,9 +37,9 @@ function readBody(req) {
     });
 }
 
-module.exports = function startInternalApi(client) {
-    const server = http.createServer(async (req, res) => {
-        const url = new URL(req.url, `http://localhost:${PORT}`);
+export = function startInternalApi(client: Client) {
+    const server = http.createServer(async (req: IncomingMessage, res: ServerResponse) => {
+        const url = new URL(req.url as string, `http://localhost:${PORT}`);
 
         if (req.method === 'GET' && url.pathname === '/internal/health') {
             const healthy = client.isReady() && mongoose.connection.readyState === 1;
@@ -57,7 +58,7 @@ module.exports = function startInternalApi(client) {
         if (req.method === 'POST' && url.pathname === '/internal/giveaway/end') {
             try {
                 const raw = await readBody(req);
-                const { guildId, messageId } = JSON.parse(raw);
+                const { guildId, messageId }: { guildId?: string; messageId?: string } = JSON.parse(raw);
                 if (!guildId || !messageId) return send(res, 400, { error: 'Missing guildId or messageId' });
 
                 const giveaway = await GiveawaySchema.findOne({ guildId: String(guildId), messageId: String(messageId), ended: false });
@@ -75,7 +76,7 @@ module.exports = function startInternalApi(client) {
         if (req.method === 'POST' && url.pathname === '/internal/giveaway/reroll') {
             try {
                 const raw = await readBody(req);
-                const { guildId, messageId } = JSON.parse(raw);
+                const { guildId, messageId }: { guildId?: string; messageId?: string } = JSON.parse(raw);
                 if (!guildId || !messageId) return send(res, 400, { error: 'Missing guildId or messageId' });
 
                 const giveaway = await GiveawaySchema.findOne({ guildId: String(guildId), messageId: String(messageId), ended: true });
@@ -87,7 +88,7 @@ module.exports = function startInternalApi(client) {
                     const members = await guild.members.fetch({ user: giveaway.entrants }).catch(() => new Map());
                     eligibleEntrants = giveaway.entrants.filter(id => {
                         const m = members.get(id);
-                        return m && m.roles.cache.has(giveaway.requireRoleId);
+                        return m && m.roles.cache.has(giveaway.requireRoleId as string);
                     });
                 }
 
@@ -98,10 +99,9 @@ module.exports = function startInternalApi(client) {
                 await giveaway.save();
 
                 const channel = await client.channels.fetch(giveaway.channelId).catch(() => null);
-                if (channel) {
+                if (channel && 'messages' in channel) {
                     const message = await channel.messages.fetch(giveaway.messageId).catch(() => null);
                     if (message) {
-                        const { EmbedBuilder } = require('discord.js');
                         const current = message.embeds[0];
                         if (current) {
                             const updated = EmbedBuilder.from(current).spliceFields(
@@ -115,7 +115,7 @@ module.exports = function startInternalApi(client) {
                     const mention = winners.length
                         ? `🎉 Reroll! Congratulations ${winners.map(id => `<@${id}>`).join(', ')}! You won **${giveaway.prize}**!`
                         : `No valid entrants for the reroll of **${giveaway.prize}**.`;
-                    await channel.send({ content: mention }).catch(() => {});
+                    await (channel as any).send({ content: mention }).catch(() => {});
                 }
 
                 send(res, 200, { ok: true });
@@ -129,7 +129,7 @@ module.exports = function startInternalApi(client) {
         if (req.method === 'POST' && url.pathname === '/internal/suggestion/status') {
             try {
                 const raw = await readBody(req);
-                const { guildId, messageId, status, staffId } = JSON.parse(raw);
+                const { guildId, messageId, status, staffId }: { guildId?: string; messageId?: string; status?: string; staffId?: string } = JSON.parse(raw);
                 if (!guildId || !messageId || !status) return send(res, 400, { error: 'Missing guildId, messageId, or status' });
                 if (!['approved', 'denied', 'implemented'].includes(status)) return send(res, 400, { error: 'Invalid status' });
 
@@ -148,7 +148,7 @@ module.exports = function startInternalApi(client) {
         if (req.method === 'POST' && url.pathname === '/internal/antiraid/lock') {
             try {
                 const raw = await readBody(req);
-                const { guildId, username } = JSON.parse(raw);
+                const { guildId, username }: { guildId?: string; username?: string } = JSON.parse(raw);
                 if (!guildId) return send(res, 400, { error: 'Missing guildId' });
 
                 const guild = await client.guilds.fetch(guildId).catch(() => null);
@@ -165,7 +165,7 @@ module.exports = function startInternalApi(client) {
                     return send(res, 400, { error: 'Quarantine role no longer exists.' });
                 }
 
-                await startLockdown(guild, guildData, { auto: false, triggeredBy: username ? { username } : null });
+                await startLockdown(guild, guildData, { auto: false, triggeredBy: username ? ({ username } as any) : null });
                 send(res, 200, { ok: true });
             } catch (err) {
                 logger.error('/internal/antiraid/lock error:', err);
@@ -177,7 +177,7 @@ module.exports = function startInternalApi(client) {
         if (req.method === 'POST' && url.pathname === '/internal/antiraid/unlock') {
             try {
                 const raw = await readBody(req);
-                const { guildId, username } = JSON.parse(raw);
+                const { guildId, username }: { guildId?: string; username?: string } = JSON.parse(raw);
                 if (!guildId) return send(res, 400, { error: 'Missing guildId' });
 
                 const guild = await client.guilds.fetch(guildId).catch(() => null);
@@ -188,7 +188,7 @@ module.exports = function startInternalApi(client) {
                     return send(res, 409, { error: 'There is no active lockdown.' });
                 }
 
-                const { released } = await endLockdown(guild, guildData, { by: username ? { username } : null });
+                const { released } = await endLockdown(guild, guildData, { by: username ? ({ username } as any) : null });
                 send(res, 200, { ok: true, released: released?.length ?? 0 });
             } catch (err) {
                 logger.error('/internal/antiraid/unlock error:', err);

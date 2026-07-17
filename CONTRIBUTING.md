@@ -19,11 +19,14 @@ By participating in this project, you agree to follow our [Code of Conduct](CODE
 2. **Create a `.env` file** (see [Installation](README.md#installation) in the README for all required keys)
 3. **Run the bot locally**
    ```bash
+   # Build the TypeScript source
+   npm run build
+
    # Register slash commands with Discord once (or after any command change)
-   node src/cmd.js
+   node dist/src/cmd.js
 
    # Start the bot
-   node src/index.js
+   node dist/src/index.js
    ```
    Or use Docker if you prefer the full stack (bot + MongoDB + Lavalink) locally (see the README).
 4. **Create a branch** off `main` for your change:
@@ -38,9 +41,9 @@ By participating in this project, you agree to follow our [Code of Conduct](CODE
 ```
 discord-bot/
 ├── src/
-│   ├── index.js              # Entry point, creates the client and loads handlers
-│   ├── cmd.js                # Registers slash commands with the Discord API
-│   └── clean.js              # Deletes leftover guild-specific slash commands: node src/clean.js <guildId>
+│   ├── index.ts              # Entry point, creates the client and loads handlers
+│   ├── cmd.ts                # Registers slash commands with the Discord API
+│   └── clean.ts              # Deletes leftover guild-specific slash commands: node dist/src/clean.js <guildId>
 ├── events/                   # One file per Discord event (messageCreate, interactionCreate, …)
 ├── handlers/
 │   ├── slashCommandHandler.js    # Auto-discovers every file in slashCommands/
@@ -268,7 +271,7 @@ Most of the codebase predates this tooling, so don't be surprised if it flags fi
 
 ## Submitting a PR
 
-1. Make sure `node src/cmd.js` succeeds and all touched commands appear correctly in Discord.
+1. Make sure `npm run build && node dist/src/cmd.js` succeeds and all touched commands appear correctly in Discord.
 2. Run `npm test` and make sure it passes.
 3. Run `npm run lint` on the files you changed.
 4. Test the happy path **and** at least one error/edge case (missing permissions, invalid input, target not in server).
