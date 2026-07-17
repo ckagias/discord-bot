@@ -11,7 +11,7 @@ export = (client: Client) => {
 
     for (const folder of folders) {
         const commandsPath = path.join(__dirname, '../slashCommands', folder);
-        const files = fs.readdirSync(commandsPath).filter(f => f.endsWith('.js'));
+        const files = fs.readdirSync(commandsPath).filter(f => f.endsWith('.js') || f.endsWith('.ts'));
 
         for (const file of files) {
             let command;
