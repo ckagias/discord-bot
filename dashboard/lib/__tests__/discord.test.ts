@@ -70,7 +70,6 @@ describe("discord lib", () => {
       const { fetchUserGuilds } = await import("@/lib/discord");
       await fetchUserGuilds("token-c");
 
-      vi.advanceTimersByTimeIfFake?.();
       await expect(fetchUserGuilds("token-c")).resolves.toEqual(guilds);
     });
 

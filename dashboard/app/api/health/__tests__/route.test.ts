@@ -17,7 +17,7 @@ describe("GET /api/health", () => {
 
   it("returns 200 when mongo is connected", async () => {
     const mongoose = (await import("mongoose")).default;
-    mongoose.connection.readyState = 1;
+    (mongoose.connection as any).readyState = 1;
     const { GET } = await import("../route");
 
     const res = await GET();
@@ -28,7 +28,7 @@ describe("GET /api/health", () => {
 
   it("returns 503 when mongo is not connected", async () => {
     const mongoose = (await import("mongoose")).default;
-    mongoose.connection.readyState = 0;
+    (mongoose.connection as any).readyState = 0;
     const { GET } = await import("../route");
 
     const res = await GET();
