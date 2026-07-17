@@ -10,6 +10,8 @@ const STYLES = {
   stack: "flex flex-col gap-8",
 };
 
+const DISCORD_CHANNEL_TYPE_CATEGORY = 4;
+
 export default async function TempVcPage({
   params,
 }: {
@@ -27,8 +29,7 @@ export default async function TempVcPage({
     tempVcCategoryId: null,
   };
 
-  // Discord channel type 4 = GuildCategory
-  const categories = allChannels.filter((c) => c.type === 4);
+  const categories = allChannels.filter((c) => c.type === DISCORD_CHANNEL_TYPE_CATEGORY);
 
   return (
     <>

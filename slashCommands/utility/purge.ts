@@ -46,40 +46,49 @@ module.exports = {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         try {
-            if (!hasFilters) {
-                // Fast path — no filters, original behaviour.
-                const deleted = await (interaction.channel as any).bulkDelete(amount, true);
-                return interaction.editReply({ content: `Successfully deleted **${deleted.size}** messages!` });
-            }
-
-            // Filtered path: fetch first, then filter, then bulk-delete.
-            const fetched = await (interaction.channel as any).messages.fetch({ limit: amount });
-
-            const needle = filterText?.toLowerCase();
-            const cutoff = Date.now() - FOURTEEN_DAYS_MS;
-
-            const toDelete = fetched.filter((m: any) => {
-                // Discord cannot bulk-delete messages older than 14 days.
-                if (m.createdTimestamp < cutoff) return false;
-
-                if (filterUser     && m.author.id !== filterUser.id)                      return false;
-                if (filterBots     && !m.author.bot)                                      return false;
-                if (needle         && !m.content.toLowerCase().includes(needle))          return false;
-                if (filterAttachments && m.attachments.size === 0 && m.embeds.length === 0) return false;
-
-                return true;
-            });
-
-            if (toDelete.size === 0) {
-                return interaction.editReply({ content: `No messages in the last **${amount}** matched those filters.` });
-            }
-
-            const deleted = await (interaction.channel as any).bulkDelete(toDelete, true);
-            return interaction.editReply({ content: `Deleted **${deleted.size}** of the last **${amount}** messages matching your filters.` });
-
+            if (!hasFilters) return await bulkDeleteWithoutFilters(interaction, amount);
+            return await bulkDeleteWithFilters(interaction, amount, { filterUser, filterBots, filterText, filterAttachments });
         } catch (error) {
             logger.error('Error:', error);
             return interaction.editReply({ content: 'I cannot delete messages older than 14 days, or I lack the required permissions.' });
         }
     },
 };
+
+async function bulkDeleteWithoutFilters(interaction: ChatInputCommandInteraction, amount: number) {
+    const deleted = await (interaction.channel as any).bulkDelete(amount, true);
+    return interaction.editReply({ content: `Successfully deleted **${deleted.size}** messages!` });
+}
+
+interface PurgeFilters {
+    filterUser: any;
+    filterBots: boolean | null;
+    filterText: string | null;
+    filterAttachments: boolean | null;
+}
+
+async function bulkDeleteWithFilters(interaction: ChatInputCommandInteraction, amount: number, { filterUser, filterBots, filterText, filterAttachments }: PurgeFilters) {
+    const fetched = await (interaction.channel as any).messages.fetch({ limit: amount });
+
+    const needle = filterText?.toLowerCase();
+    const cutoff = Date.now() - FOURTEEN_DAYS_MS;
+
+    const toDelete = fetched.filter((m: any) => {
+        // Discord cannot bulk-delete messages older than 14 days.
+        if (m.createdTimestamp < cutoff) return false;
+
+        if (filterUser     && m.author.id !== filterUser.id)                      return false;
+        if (filterBots     && !m.author.bot)                                      return false;
+        if (needle         && !m.content.toLowerCase().includes(needle))          return false;
+        if (filterAttachments && m.attachments.size === 0 && m.embeds.length === 0) return false;
+
+        return true;
+    });
+
+    if (toDelete.size === 0) {
+        return interaction.editReply({ content: `No messages in the last **${amount}** matched those filters.` });
+    }
+
+    const deleted = await (interaction.channel as any).bulkDelete(toDelete, true);
+    return interaction.editReply({ content: `Deleted **${deleted.size}** of the last **${amount}** messages matching your filters.` });
+}

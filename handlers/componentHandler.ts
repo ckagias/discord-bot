@@ -36,7 +36,6 @@ function registerComponents(client: Client) {
     }
 }
 
-// Checks exact-id matches first, then prefix matches in registration order.
 function resolveComponent(client: Client, type: 'button' | 'modal', customId: string) {
     const bucket = client.components?.[type];
     if (!bucket) return null;
