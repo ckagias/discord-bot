@@ -312,13 +312,14 @@ If you find this useful, consider leaving a star.
    GITHUB_TOKEN=your_github_token
    ```
 3. **Start a Lavalink server** (see [lavalink-devs/Lavalink](https://github.com/lavalink-devs/Lavalink) for setup)
-4. **Register slash commands:** `node src/cmd.js`
-5. **Start the bot:** `node src/index.js`
+4. **Build the TypeScript source:** `npm run build`
+5. **Register slash commands:** `node dist/src/cmd.js`
+6. **Start the bot:** `node dist/src/index.js`
 
 If you ever see duplicate or leftover guild-specific commands (e.g. from earlier testing), clear them with:
 
 ```bash
-node src/clean.js <guildId>
+node dist/src/clean.js <guildId>
 ```
 
 #### Where to get your keys

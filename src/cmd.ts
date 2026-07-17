@@ -1,8 +1,9 @@
-const { REST, Routes } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-require('dotenv').config();
-const log = require('../utils/log');
+import { REST, Routes } from 'discord.js';
+import fs from 'fs';
+import path from 'path';
+import dotenv from 'dotenv';
+dotenv.config();
+import log from '../utils/log';
 const logger = log.scope('cmd');
 
 const commands = [];
@@ -11,7 +12,7 @@ const folders = fs.readdirSync(slashCommandsDir);
 
 for (const folder of folders) {
     const folderPath = path.join(slashCommandsDir, folder);
-    const files = fs.readdirSync(folderPath).filter(f => f.endsWith('.js'));
+    const files = fs.readdirSync(folderPath).filter(f => f.endsWith('.js') || f.endsWith('.ts'));
 
     logger.info(`Loading files from ${folder}:`, files);
 
@@ -32,13 +33,13 @@ for (const folder of folders) {
     }
 }
 
-const rest = new REST({ version: '10' }).setToken(process.env.Token);
+const rest = new REST({ version: '10' }).setToken(process.env.Token as string);
 
 (async () => {
     try {
         logger.info(`Started refreshing ${commands.length} application (/) commands...`);
         await rest.put(
-            Routes.applicationCommands(process.env.ClientID),
+            Routes.applicationCommands(process.env.ClientID as string),
             { body: commands }
         );
         logger.info('✅ Commands registered successfully');

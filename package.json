@@ -5,7 +5,7 @@
   "license": "MIT",
   "author": "",
   "type": "commonjs",
-  "main": "src/index.js",
+  "main": "dist/src/index.js",
   "engines": {
     "node": ">=22.0.0"
   },
