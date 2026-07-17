@@ -12,5 +12,6 @@ describe('membercount command', () => {
         expect(interaction.reply).toHaveBeenCalledWith(
             expect.objectContaining({ embeds: expect.any(Array) })
         );
+        expect(interaction.guild.iconURL).toHaveBeenCalledWith();
     });
 });

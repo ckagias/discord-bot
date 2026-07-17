@@ -12,11 +12,11 @@ module.exports = {
     permissions: PermissionFlagsBits.Administrator,
 
     async execute(interaction: ChatInputCommandInteraction) {
-        await interaction.deferReply();
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         try {
             if (mongoose.connection.readyState !== 1) {
-                return interaction.editReply({ content: 'The bot is not currently connected to the database.', flags: MessageFlags.Ephemeral } as any);
+                return interaction.editReply({ content: 'The bot is not currently connected to the database.' });
             }
 
             const stats = await mongoose.connection.db.stats();
@@ -41,7 +41,7 @@ module.exports = {
 
         } catch (error) {
             logger.error('Error:', error);
-            await interaction.editReply({ content: 'An error occurred while fetching database statistics.', flags: MessageFlags.Ephemeral } as any);
+            await interaction.editReply({ content: 'An error occurred while fetching database statistics.' });
         }
     },
 };

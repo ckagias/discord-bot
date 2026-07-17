@@ -5,6 +5,7 @@ jest.mock('mongoose', () => ({
     },
 }));
 
+const { MessageFlags } = require('discord.js');
 const mongoose = require('mongoose');
 const database = require('../../../slashCommands/settings/database');
 
@@ -19,6 +20,17 @@ describe('database command', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         mongoose.connection.readyState = 1;
+    });
+
+    test('defers ephemerally', async () => {
+        const interaction = makeInteraction();
+        mongoose.connection.db.stats.mockResolvedValue({
+            db: 'discordbot', collections: 12, objects: 5000, dataSize: 1048576, storageSize: 2097152,
+        });
+
+        await database.execute(interaction);
+
+        expect(interaction.deferReply).toHaveBeenCalledWith({ flags: MessageFlags.Ephemeral });
     });
 
     test('reports not connected when the database connection is down', async () => {
