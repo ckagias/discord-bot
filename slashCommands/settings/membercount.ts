@@ -12,7 +12,7 @@ module.exports = {
             .setTitle(`👥 Members in ${guild.name}`)
             .setColor(Math.floor(Math.random() * 0xFFFFFF))
             .setDescription(`This server has **${guild.memberCount} members**.`)
-            .setThumbnail(guild.iconURL({ dynamic: true } as any))
+            .setThumbnail(guild.iconURL())
             .setTimestamp();
 
         await interaction.reply({ embeds: [embed] });
