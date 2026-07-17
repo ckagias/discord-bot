@@ -66,7 +66,6 @@ module.exports = {
             return interaction.editReply({ content: `You don't have enough coins to start this heist. Your balance is **${formatBalance(wallet.balance)}**.` });
         }
 
-        // Deduct leader's fee immediately
         await updateBalance(interaction.user.id, interaction.guild.id, -entryFee);
 
         const heist = await HeistSchema.create({
@@ -80,13 +79,12 @@ module.exports = {
 
         const message = await interaction.editReply({
             embeds: [lobbyEmbed(heist)],
-            components: [lobbyRow()], // Begin Early starts disabled; unlocks after 2nd member joins
+            components: [lobbyRow()],
         });
 
         heist.messageId = message.id;
         await heist.save();
 
-        // Auto-launch after JOIN_WINDOW_MS
         setTimeout(async () => {
             const { launchHeist } = require('../../utils/heist');
             await launchHeist(message, interaction.guild);

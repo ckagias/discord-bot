@@ -77,8 +77,7 @@ describe('suggest command', () => {
                 expect.objectContaining({ content: expect.stringContaining('Jump to message') })
             );
 
-            // Only the vote/review row is posted publicly — Approve/Deny/Implement must never
-            // appear on the public message, only in the ephemeral view opened via "Review".
+            // Approve/Deny/Implement must never appear on the public message, only via "Review".
             const [{ components }] = (channel.send as jest.Mock).mock.calls[0];
             expect(components).toHaveLength(1);
             const buttonLabels = components[0].components.map((c: any) => c.data.label);

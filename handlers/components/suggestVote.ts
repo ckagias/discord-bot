@@ -43,8 +43,7 @@ function canReview(config: any, member: GuildMember) {
     return Boolean(hasRole || hasManageGuild);
 }
 
-// Public message only ever shows vote buttons + this "Review" button, never the staff action
-// buttons directly, so non-approvers never see Approve/Deny/Implement to begin with.
+// Public message shows only vote + Review buttons, so non-approvers never see staff actions directly.
 async function handleReview(interaction: ButtonInteraction) {
     const suggestionId = interaction.customId.split(':')[1];
     const config = await getGuildConfig(interaction.guild!.id);

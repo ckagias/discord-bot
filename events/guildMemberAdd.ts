@@ -15,8 +15,6 @@ module.exports = {
             getGuildConfig(member.guild.id).catch(() => null),
         ]);
 
-        // Anti-raid check: returns true synchronously if the member should be quarantined.
-        // The role is assigned after a short delay so Discord's join log fires cleanly first.
         // Autorole and welcome are skipped for quarantined members; the join log still runs.
         const quarantined = handleJoin(member, guildConfig);
 

@@ -22,7 +22,6 @@ interface Props {
   bodyClassName?: string;
 }
 
-// Fuses a <form> with a single SettingsCard so the Save button lives inside the card's own flex layout.
 export default function SettingsCardForm({
   action,
   title,

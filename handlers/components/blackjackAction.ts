@@ -82,7 +82,6 @@ async function settlePvp(interaction: ButtonInteraction, game: any) {
     });
 }
 
-// Settle single-player game
 async function finish(interaction: ButtonInteraction, game: any, outcome: string) {
     const { bet, playerHand, dealerHand, userId, guildId } = game;
 
@@ -114,15 +113,12 @@ async function handleHit(interaction: ButtonInteraction, isOpponent: boolean) {
 
     if (isPvp) {
         if (total > 21) {
-            // Bust — mark this player done
             if (isOpponent) {
                 game.opponentDone = true;
                 await game.save();
-                // Check if challenger is also done (they stood earlier — not tracked separately,
-                // but in PvP the challenger always goes first, so if opponent just busted we settle)
+                // Challenger always goes first, so if opponent busted here both players are done.
                 return settlePvp(interaction, game);
             } else {
-                // Challenger busted — switch to opponent's turn
                 game.markModified('playerHand');
                 await game.save();
                 const opponent = await interaction.client.users.fetch(game.opponentId).catch(() => ({ username: 'Opponent' }));

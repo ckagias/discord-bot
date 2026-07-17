@@ -31,23 +31,18 @@ module.exports = {
             InventorySchema.findOne({ userId: target.id, guildId: guild.id }),
         ]);
 
-        // Level / XP
         const level = levelData?.level ?? 0;
         const xp = levelData?.xp ?? 0;
         const xpNeeded = 100 * Math.pow(level + 1, 2);
 
-        // Economy
         const balanceValue = `${formatBalance(wallet.balance)} coins`;
 
-        // Discord badges
         const flags = fetchedUser.flags?.toArray();
         const discordBadges = flags?.length ? flags.map(f => f.replace(/_/g, ' ')).join(', ') : null;
 
-        // Shop badges
         const shopBadges = inventory?.items.filter(i => i.type === 'badge').map(i => i.emoji) ?? [];
         const badgeText = [discordBadges ? `\`${discordBadges}\`` : null, shopBadges.join(' ')].filter(Boolean).join(' ') || '`None`';
 
-        // Dates
         const createdAt = `<t:${Math.floor(target.createdTimestamp / 1000)}:D>`;
         const joinedAt = member ? `<t:${Math.floor(member.joinedTimestamp / 1000)}:D>` : 'N/A';
 

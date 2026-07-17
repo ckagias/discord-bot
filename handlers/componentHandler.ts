@@ -36,8 +36,7 @@ function registerComponents(client: Client) {
     }
 }
 
-// Resolves the handler for a given interaction type ('button' | 'modal') and customId,
-// checking exact-id matches first, then prefix matches in registration order.
+// Checks exact-id matches first, then prefix matches in registration order.
 function resolveComponent(client: Client, type: 'button' | 'modal', customId: string) {
     const bucket = client.components?.[type];
     if (!bucket) return null;

@@ -158,7 +158,6 @@ async function handleRenameModal(interaction: ModalSubmitInteraction) {
 
     try {
         await channel.setName(name);
-        // Update the panel message in the channel.
         const messages = await channel.messages.fetch({ limit: 20 });
         const panelMsg = messages.find(m => m.author.id === interaction.client.user!.id && m.components.length > 0);
         const panel = buildPanel(channel);

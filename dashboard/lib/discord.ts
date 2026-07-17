@@ -143,7 +143,7 @@ export interface GuildStats {
   createdAt: string;
 }
 
-// Short cache (mirroring fetchUserGuilds above) absorbs rate-limit bursts from rapid tab-switching; 429s serve stale data if we have it.
+// Short cache (mirroring fetchUserGuilds above) absorbs rate-limit bursts from rapid tab-switching.
 const guildChannelsCache = new Map<string, { channels: DiscordChannel[]; expiresAt: number }>();
 const guildRolesCache = new Map<string, { roles: DiscordRole[]; expiresAt: number }>();
 const guildStatsCache = new Map<string, { stats: GuildStats; expiresAt: number }>();
@@ -241,7 +241,7 @@ export async function fetchGuildRoles(guildId: string): Promise<DiscordRole[]> {
   return roles;
 }
 
-// Discord has no bulk "get members by ID" endpoint, so this is one request per unique user; cached per guild+user, null on miss so callers fall back to the raw ID.
+// Discord has no bulk "get members by ID" endpoint, so this is one request per unique user.
 const guildMemberCache = new Map<string, { name: string | null; expiresAt: number }>();
 
 export async function fetchGuildMemberName(guildId: string, userId: string): Promise<string | null> {

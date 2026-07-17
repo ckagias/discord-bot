@@ -10,7 +10,6 @@ module.exports = {
     async execute(interaction: ChatInputCommandInteraction) {
         await interaction.deferReply();
 
-        // Read current state for cooldown check and streak calculation
         const wallet = await EconomySchema.findOneAndUpdate(
             { userId: interaction.user.id, guildId: interaction.guild.id },
             { $setOnInsert: { userId: interaction.user.id, guildId: interaction.guild.id } },
@@ -36,9 +35,7 @@ module.exports = {
         const newStreak = streakAlive ? wallet.dailyStreak + 1 : 1;
         const earned = dailyStreakAmount(newStreak);
 
-        // Atomic: stamp cooldown, update streak, and credit coins in one operation.
-        // This prevents a crash between steps from locking the user out without paying them,
-        // and closes the first-claim race where two concurrent calls both pass the cooldown check.
+        // Atomic: closes the race where two concurrent calls both pass the cooldown check.
         const updated = await claimCooldown(interaction.user.id, interaction.guild.id, 'lastDailyAt', DAILY_COOLDOWN_MS, {
             $set: { dailyStreak: newStreak },
             $inc: { balance: earned },

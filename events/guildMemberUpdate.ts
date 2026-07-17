@@ -9,7 +9,6 @@ module.exports = {
 
         const embeds = [];
 
-        // Nickname change
         if (oldMember.nickname !== newMember.nickname) {
             await new Promise(r => setTimeout(r, 500));
 
@@ -46,7 +45,6 @@ module.exports = {
             embeds.push(embed);
         }
 
-        // Role changes
         const addedRoles = newMember.roles.cache.filter(r => !oldMember.roles.cache.has(r.id));
         const removedRoles = oldMember.roles.cache.filter(r => !newMember.roles.cache.has(r.id));
 

@@ -2,8 +2,7 @@ import { SlashCommandBuilder, EmbedBuilder, MessageFlags, ChatInputCommandIntera
 import ReminderSchema from '../../models/ReminderSchema';
 
 const MAX_ACTIVE_PER_USER = 25;
-// setTimeout's delay is a 32-bit signed int internally; anything larger overflows and fires almost
-// immediately, so long waits are re-armed in chunks no larger than this.
+// setTimeout's delay is a 32-bit signed int; anything larger overflows and fires almost immediately.
 const MAX_TIMEOUT_MS = 2 ** 31 - 1;
 
 const activeTimers = new Map();
@@ -34,8 +33,6 @@ async function sendReminder(client: Client, reminder: any) {
     await (channel as any).send({ content: `<@${reminder.userId}>`, embeds: [embed] }).catch(() => {});
 }
 
-// Schedules a reminder, re-arming in MAX_TIMEOUT_MS-sized chunks so waits longer than
-// ~24.8 days don't overflow setTimeout's delay and fire immediately.
 function scheduleReminder(client: Client, reminder: any, remaining: number) {
     const id = String(reminder._id);
 

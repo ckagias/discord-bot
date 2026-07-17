@@ -4,7 +4,6 @@ function getGuildConfig(guildId: string) {
     return GuildSchema.findOne({ guildId });
 }
 
-// Ensures a config document exists for the guild and returns it, creating one with schema defaults if needed.
 function ensureGuildConfig(guildId: string) {
     return GuildSchema.findOneAndUpdate(
         { guildId },
@@ -13,7 +12,6 @@ function ensureGuildConfig(guildId: string) {
     );
 }
 
-// Upserts the given fields onto the guild's config document.
 function updateGuildConfig(guildId: string, fields: Record<string, unknown>) {
     return GuildSchema.findOneAndUpdate(
         { guildId },

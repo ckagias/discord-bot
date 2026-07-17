@@ -26,8 +26,7 @@ module.exports = {
     async execute(client: Client) {
         logger.info(`Logged in as ${client.user.tag}`);
 
-        // Init after READY so client.user.id is guaranteed populated and the gateway
-        // is fully connected before Lavalink starts forwarding voice state.
+        // Deferred to READY so client.user.id is populated and the gateway is fully connected.
         await client.lavalink.init({ id: client.user.id, username: client.user.username });
 
         const activityName = process.env.BOT_ACTIVITY_NAME;
@@ -79,8 +78,7 @@ module.exports = {
     }
 };
 
-// Runs the birthday check once now (covers birthdays missed while offline), then re-aligns
-// to fire once every local midnight.
+// Runs once now to cover birthdays missed while offline, then re-aligns to local midnight.
 function scheduleBirthdayCheck(client: Client) {
     const runAndReschedule = async () => {
         await checkBirthdays(client).catch(err => birthdayLogger.error('Birthday check failed:', err));
@@ -96,8 +94,7 @@ function msUntilNextMidnight() {
     return nextMidnight.getTime() - now.getTime();
 }
 
-// Cancel any heists that were in-flight when the bot restarted and refund all entry fees.
-// The in-memory setTimeout is lost on restart so these would never resolve otherwise.
+// The in-memory setTimeout is lost on restart, so these would never resolve otherwise.
 async function cancelStaleHeists() {
     const stale = await HeistSchema.find({ finished: false }).catch(() => []);
     if (!stale.length) return;

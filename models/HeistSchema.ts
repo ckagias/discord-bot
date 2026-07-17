@@ -11,7 +11,6 @@ interface IHeist extends Document {
     guildId: string;
     leaderId: string;
     entryFee: number;
-    // array of { userId, username } objects
     members: HeistMember[];
     finished: boolean;
 }
@@ -22,7 +21,6 @@ const heistSchema = new Schema<IHeist>({
     guildId:    { type: String, required: true },
     leaderId:   { type: String, required: true },
     entryFee:   { type: Number, required: true },
-    // array of { userId, username } objects
     members:    { type: [{ userId: String, username: String }], default: [] },
     finished:   { type: Boolean, default: false },
 });

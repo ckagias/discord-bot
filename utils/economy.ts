@@ -21,8 +21,7 @@ function getWallet(userId: string, guildId: string) {
     );
 }
 
-// Atomically add `amount` (negative to subtract) to a user's balance.
-// Returns null if the resulting balance would go below 0 (insufficient funds).
+// Returns null instead of going negative when subtracting more than the balance holds.
 async function updateBalance(userId: string, guildId: string, amount: number) {
     if (amount < 0) {
         const wallet = await EconomySchema.findOneAndUpdate(
@@ -30,7 +29,7 @@ async function updateBalance(userId: string, guildId: string, amount: number) {
             { $inc: { balance: amount }, $setOnInsert: { userId, guildId } },
             { upsert: false, returnDocument: 'after' }
         );
-        return wallet; // null if balance was too low
+        return wallet;
     }
     return upsertWithRetry(
         EconomySchema,
@@ -49,9 +48,7 @@ interface ExtraUpdate {
     $inc?: Record<string, unknown>;
 }
 
-// Atomically checks a cooldown field and stamps it in one operation, closing the race where
-// two concurrent calls both pass the cooldown check. Returns the updated wallet on success,
-// or null if another call already claimed the cooldown first.
+// Check-and-stamp in one atomic op, closing the race between two concurrent cooldown claims.
 function claimCooldown(userId: string, guildId: string, cooldownField: string, cooldownMs: number, extraUpdate: ExtraUpdate = {}) {
     const now = Date.now();
     return EconomySchema.findOneAndUpdate(

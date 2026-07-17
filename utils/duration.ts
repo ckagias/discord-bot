@@ -1,5 +1,4 @@
-// Formats a duration in milliseconds as an exact compound string (e.g. "1h 30m"),
-// never rounding away the remainder the way a single-unit label like "2h" would.
+// Compound format (e.g. "1h 30m") never rounds away the remainder like a single-unit label would.
 function formatDuration(ms: number): string {
     let seconds = Math.round(ms / 1000);
 

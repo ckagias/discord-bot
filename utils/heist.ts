@@ -7,8 +7,7 @@ function successChance(memberCount: number): number {
     return Math.min(0.30 + (memberCount - 1) * 0.05, 0.75);
 }
 
-// Each surviving member gets an equal share of the total pot, plus a random bonus multiplier (1.5x–3x).
-// Remainder coins (from floor division) go to the first survivor so no coins are destroyed.
+// Remainder coins from floor division go to the first survivor so no coins are destroyed.
 function calcPayout(totalPot: number, survivors: number) {
     const multiplier = 1.5 + Math.random() * 1.5; // 1.5x–3x
     const total = Math.floor(totalPot * multiplier);
@@ -32,7 +31,6 @@ async function launchHeist(message: Message, guild: Guild) {
     );
 
     if (heist.members.length < 2) {
-        // Refund leader
         await updateBalance(heist.leaderId, guild.id, heist.entryFee);
 
         const embed = new EmbedBuilder()
@@ -49,7 +47,6 @@ async function launchHeist(message: Message, guild: Guild) {
     const heistSucceeds = Math.random() < chance;
 
     if (!heistSucceeds) {
-        // Everyone loses their entry fee
         const embed = new EmbedBuilder()
             .setTitle('Heist Failed — Busted!')
             .setDescription(
