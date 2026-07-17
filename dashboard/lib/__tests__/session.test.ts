@@ -48,7 +48,7 @@ describe("getSession", () => {
 
   it("marks the cookie secure in production", async () => {
     process.env.SESSION_SECRET = "a".repeat(32);
-    process.env.NODE_ENV = "production";
+    (process.env as any).NODE_ENV = "production";
     const { getSession } = await import("@/lib/session");
 
     await getSession();
@@ -58,7 +58,7 @@ describe("getSession", () => {
 
   it("marks the cookie insecure outside production", async () => {
     process.env.SESSION_SECRET = "a".repeat(32);
-    process.env.NODE_ENV = "development";
+    (process.env as any).NODE_ENV = "development";
     const { getSession } = await import("@/lib/session");
 
     await getSession();
