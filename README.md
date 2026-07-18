@@ -405,8 +405,6 @@ The dashboard is entirely optional. The bot runs fine standalone if you never se
 | [mongoose](https://mongoosejs.com/)                              | MongoDB object modeling                             |
 | [axios](https://axios-http.com/)                                 | HTTP requests (weather, GitHub APIs)                |
 | [@resvg/resvg-js](https://github.com/yisibl/resvg-js)            | SVG to PNG conversion for GitHub contribution chart |
-| [moment](https://momentjs.com/)                                  | Date/time formatting                                |
-| [outdent](https://www.npmjs.com/package/outdent)                 | Multi-line string formatting                        |
 | [dotenv](https://www.npmjs.com/package/dotenv)                   | Loads environment variables from `.env`             |
 
 ---

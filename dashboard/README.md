@@ -33,7 +33,7 @@ Discord OAuth2 (`identify guilds` scopes). Only users with **Manage Server** per
 
 | Variable | Description |
 | --- | --- |
-| `MONGODB_URI` | MongoDB connection string (shared with the bot) |
+| `MONGODB_URL` | MongoDB connection string (shared with the bot) |
 | `ClientID` | Discord application client ID |
 | `CLIENT_SECRET` | Discord application client secret |
 | `DASHBOARD_URL` | Public base URL, e.g. `http://localhost:3000` |
