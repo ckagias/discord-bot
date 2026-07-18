@@ -3,7 +3,8 @@ jest.mock('../../models/PunishmentSchema', () => ({
     find: jest.fn().mockResolvedValue([]),
 }));
 
-import { schedulePunishment } from '../../utils/punishments';
+import { schedulePunishment, liftMute, liftBan } from '../../utils/punishments';
+import PunishmentSchema from '../../models/PunishmentSchema';
 
 const MAX_TIMEOUT_MS = 2 ** 31 - 1;
 
@@ -88,5 +89,95 @@ describe('schedulePunishment', () => {
 
         const [, delay] = setTimeoutSpy.mock.calls[0];
         expect(delay).toBeLessThanOrEqual(MAX_TIMEOUT_MS);
+    });
+});
+
+describe('liftMute', () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    test('deletes the punishment record when the role removal succeeds', async () => {
+        const remove = jest.fn().mockResolvedValue(undefined);
+        const client = {
+            guilds: {
+                fetch: jest.fn().mockResolvedValue({
+                    members: { fetch: jest.fn().mockResolvedValue({ roles: { remove } }) },
+                }),
+            },
+        } as any;
+
+        await liftMute(client, makePunishment());
+
+        expect(remove).toHaveBeenCalledWith('r1', 'Timed mute expired');
+        expect(PunishmentSchema.deleteOne).toHaveBeenCalledWith({ _id: 'p1' });
+    });
+
+    test('keeps the punishment record for retry when the role removal fails', async () => {
+        const remove = jest.fn().mockRejectedValue(Object.assign(new Error('outage'), { code: 500 }));
+        const client = {
+            guilds: {
+                fetch: jest.fn().mockResolvedValue({
+                    members: { fetch: jest.fn().mockResolvedValue({ roles: { remove } }) },
+                }),
+            },
+        } as any;
+
+        await liftMute(client, makePunishment());
+
+        expect(PunishmentSchema.deleteOne).not.toHaveBeenCalled();
+    });
+
+    test('deletes the record when the member is already gone (unknown member)', async () => {
+        const remove = jest.fn().mockRejectedValue(Object.assign(new Error('unknown member'), { code: 10007 }));
+        const client = {
+            guilds: {
+                fetch: jest.fn().mockResolvedValue({
+                    members: { fetch: jest.fn().mockResolvedValue({ roles: { remove } }) },
+                }),
+            },
+        } as any;
+
+        await liftMute(client, makePunishment());
+
+        expect(PunishmentSchema.deleteOne).toHaveBeenCalledWith({ _id: 'p1' });
+    });
+
+    test('deletes the record when the guild no longer exists', async () => {
+        const client = { guilds: { fetch: jest.fn().mockResolvedValue(null) } } as any;
+
+        await liftMute(client, makePunishment());
+
+        expect(PunishmentSchema.deleteOne).toHaveBeenCalledWith({ _id: 'p1' });
+    });
+});
+
+describe('liftBan', () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    test('deletes the punishment record when the unban succeeds', async () => {
+        const unban = jest.fn().mockResolvedValue(undefined);
+        const client = { guilds: { fetch: jest.fn().mockResolvedValue({ members: { unban } }) } } as any;
+
+        await liftBan(client, makePunishment({ type: 'ban' }));
+
+        expect(unban).toHaveBeenCalledWith('u1', 'Temp ban expired');
+        expect(PunishmentSchema.deleteOne).toHaveBeenCalledWith({ _id: 'p1' });
+    });
+
+    test('keeps the punishment record for retry when the unban fails', async () => {
+        const unban = jest.fn().mockRejectedValue(Object.assign(new Error('outage'), { code: 500 }));
+        const client = { guilds: { fetch: jest.fn().mockResolvedValue({ members: { unban } }) } } as any;
+
+        await liftBan(client, makePunishment({ type: 'ban' }));
+
+        expect(PunishmentSchema.deleteOne).not.toHaveBeenCalled();
+    });
+
+    test('deletes the record when the ban is already gone (unknown ban)', async () => {
+        const unban = jest.fn().mockRejectedValue(Object.assign(new Error('unknown ban'), { code: 10026 }));
+        const client = { guilds: { fetch: jest.fn().mockResolvedValue({ members: { unban } }) } } as any;
+
+        await liftBan(client, makePunishment({ type: 'ban' }));
+
+        expect(PunishmentSchema.deleteOne).toHaveBeenCalledWith({ _id: 'p1' });
     });
 });
