@@ -16,6 +16,7 @@ interface IBlackjack extends Document {
     opponentBet: number;
     opponentDone: boolean;
     opponentDeck: string[]; // opponent draws from same deck position
+    processing: boolean;
 }
 
 const blackjackSchema = new Schema<IBlackjack>({
@@ -34,6 +35,7 @@ const blackjackSchema = new Schema<IBlackjack>({
     opponentBet:    { type: Number, default: 0 },
     opponentDone:   { type: Boolean, default: false },
     opponentDeck:   { type: [String], default: [] }, // opponent draws from same deck position
+    processing:     { type: Boolean, default: false },
 });
 
 // Auto-delete abandoned games after 7 days so stale PvP bets don't sit forever

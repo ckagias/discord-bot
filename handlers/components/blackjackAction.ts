@@ -32,7 +32,22 @@ async function resolveGame(interaction: ButtonInteraction, isOpponent = false) {
         return null;
     }
 
-    return game;
+    // Atomically claim the turn so a fast double-click on the same button can't process twice before the first save() lands.
+    const claimed = await BlackjackGame.findOneAndUpdate(
+        { messageId: interaction.message.id, finished: false, processing: { $ne: true } },
+        { $set: { processing: true } },
+        { new: true },
+    );
+    if (!claimed) {
+        await interaction.reply({ content: 'Your previous action is still being processed.', flags: MessageFlags.Ephemeral });
+        return null;
+    }
+
+    return claimed;
+}
+
+async function releaseLock(interaction: ButtonInteraction) {
+    await BlackjackGame.updateOne({ messageId: interaction.message.id }, { $set: { processing: false } }).catch(() => {});
 }
 
 async function settlePvpWhenBothDone(interaction: ButtonInteraction, game: any) {
@@ -134,119 +149,131 @@ async function handleHit(interaction: ButtonInteraction, isOpponent: boolean) {
     const game = await resolveGame(interaction, isOpponent);
     if (!game) return;
 
-    const hand = isOpponent ? game.opponentHand : game.playerHand;
-    hand.push(game.deck.pop() as string);
-    game.markModified(isOpponent ? 'opponentHand' : 'playerHand');
-    game.markModified('deck');
+    try {
+        const hand = isOpponent ? game.opponentHand : game.playerHand;
+        hand.push(game.deck.pop() as string);
+        game.markModified(isOpponent ? 'opponentHand' : 'playerHand');
+        game.markModified('deck');
 
-    const total = handValue(hand);
-    const isPvp = !!game.opponentId;
+        const total = handValue(hand);
+        const isPvp = !!game.opponentId;
 
-    if (!isPvp) return handleSinglePlayerHit(interaction, game, total);
+        if (!isPvp) return await handleSinglePlayerHit(interaction, game, total);
 
-    if (total > 21) {
-        if (isOpponent) {
-            game.opponentDone = true;
-            await game.save();
-            // Challenger always goes first, so if opponent busted here both players are done.
-            return settlePvpWhenBothDone(interaction, game);
+        if (total > 21) {
+            if (isOpponent) {
+                game.opponentDone = true;
+                await game.save();
+                // Challenger always goes first, so if opponent busted here both players are done.
+                return await settlePvpWhenBothDone(interaction, game);
+            }
+            game.markModified('playerHand');
+            return await switchTurnToOpponent(interaction, game);
         }
-        game.markModified('playerHand');
-        return switchTurnToOpponent(interaction, game);
-    }
 
-    if (isAutoStandTotal(total)) {
-        if (isOpponent) {
-            game.opponentDone = true;
-            await game.save();
-            return settlePvpWhenBothDone(interaction, game);
+        if (isAutoStandTotal(total)) {
+            if (isOpponent) {
+                game.opponentDone = true;
+                await game.save();
+                return await settlePvpWhenBothDone(interaction, game);
+            }
+            return await switchTurnToOpponent(interaction, game);
         }
-        return switchTurnToOpponent(interaction, game);
-    }
 
-    await game.save();
-    const opponent = await interaction.client.users.fetch(game.opponentId).catch(() => ({ username: 'Opponent' }));
-    const challenger = isOpponent ? await interaction.client.users.fetch(game.userId).catch(() => ({ username: 'Challenger' })) : interaction.user;
-    const pvpGame = { playerHand: game.playerHand, opponentHand: game.opponentHand, dealerHand: game.dealerHand, bet: game.bet, opponentBet: game.opponentBet };
-    const canDouble = isOpponent
-        ? (await getWallet(game.opponentId, game.guildId)).balance >= game.opponentBet && game.opponentHand.length === 2
-        : (await getWallet(game.userId, game.guildId)).balance >= game.bet && game.playerHand.length === 2;
-    return (interaction as any).update({
-        embeds: [buildPvpEmbed(pvpGame, { challenger: challenger as any, opponent: opponent as any })],
-        components: [buildPvpRow(isOpponent, canDouble)],
-    });
+        await game.save();
+        const opponent = await interaction.client.users.fetch(game.opponentId).catch(() => ({ username: 'Opponent' }));
+        const challenger = isOpponent ? await interaction.client.users.fetch(game.userId).catch(() => ({ username: 'Challenger' })) : interaction.user;
+        const pvpGame = { playerHand: game.playerHand, opponentHand: game.opponentHand, dealerHand: game.dealerHand, bet: game.bet, opponentBet: game.opponentBet };
+        const canDouble = isOpponent
+            ? (await getWallet(game.opponentId, game.guildId)).balance >= game.opponentBet && game.opponentHand.length === 2
+            : (await getWallet(game.userId, game.guildId)).balance >= game.bet && game.playerHand.length === 2;
+        return await (interaction as any).update({
+            embeds: [buildPvpEmbed(pvpGame, { challenger: challenger as any, opponent: opponent as any })],
+            components: [buildPvpRow(isOpponent, canDouble)],
+        });
+    } finally {
+        await releaseLock(interaction);
+    }
 }
 
 async function handleStand(interaction: ButtonInteraction, isOpponent: boolean) {
     const game = await resolveGame(interaction, isOpponent);
     if (!game) return;
 
-    const isPvp = !!game.opponentId;
+    try {
+        const isPvp = !!game.opponentId;
 
-    if (isPvp) {
-        if (isOpponent) {
-            game.opponentDone = true;
-            await game.save();
-            return settlePvpWhenBothDone(interaction, game);
+        if (isPvp) {
+            if (isOpponent) {
+                game.opponentDone = true;
+                await game.save();
+                return await settlePvpWhenBothDone(interaction, game);
+            }
+            return await switchTurnToOpponent(interaction, game);
         }
-        return switchTurnToOpponent(interaction, game);
+
+        dealerPlay(game.dealerHand, game.deck);
+        const playerTotal = handValue(game.playerHand);
+        const dealerTotal = handValue(game.dealerHand);
+
+        let outcome;
+        if (dealerTotal > 21 || playerTotal > dealerTotal) outcome = 'win';
+        else if (playerTotal === dealerTotal) outcome = 'push';
+        else outcome = 'lose';
+
+        return await finish(interaction, game, outcome);
+    } finally {
+        await releaseLock(interaction);
     }
-
-    dealerPlay(game.dealerHand, game.deck);
-    const playerTotal = handValue(game.playerHand);
-    const dealerTotal = handValue(game.dealerHand);
-
-    let outcome;
-    if (dealerTotal > 21 || playerTotal > dealerTotal) outcome = 'win';
-    else if (playerTotal === dealerTotal) outcome = 'push';
-    else outcome = 'lose';
-
-    return finish(interaction, game, outcome);
 }
 
 async function handleDouble(interaction: ButtonInteraction, isOpponent: boolean) {
     const game = await resolveGame(interaction, isOpponent);
     if (!game) return;
 
-    const betAmt = isOpponent ? game.opponentBet : game.bet;
-    const hand = isOpponent ? game.opponentHand : game.playerHand;
-    const ownerId = isOpponent ? game.opponentId : game.userId;
+    try {
+        const betAmt = isOpponent ? game.opponentBet : game.bet;
+        const hand = isOpponent ? game.opponentHand : game.playerHand;
+        const ownerId = isOpponent ? game.opponentId : game.userId;
 
-    const wallet = await getWallet(ownerId as string, game.guildId);
-    if (wallet.balance < betAmt) {
-        return interaction.reply({ content: `You don't have enough coins to double down.`, flags: MessageFlags.Ephemeral });
-    }
-
-    const debit = await updateBalance(ownerId as string, game.guildId, -betAmt);
-    if (!debit) {
-        return interaction.reply({ content: `You don't have enough coins to double down.`, flags: MessageFlags.Ephemeral });
-    }
-    if (isOpponent) game.opponentBet *= 2;
-    else game.bet *= 2;
-
-    hand.push(game.deck.pop() as string);
-    game.markModified(isOpponent ? 'opponentHand' : 'playerHand');
-    game.markModified('deck');
-
-    const total = handValue(hand);
-    const isPvp = !!game.opponentId;
-
-    if (isPvp) {
-        if (total > 21 || isOpponent) {
-            if (isOpponent) game.opponentDone = true;
-            await game.save();
-            if (isOpponent || total > 21) return settlePvpWhenBothDone(interaction, game);
+        const wallet = await getWallet(ownerId as string, game.guildId);
+        if (wallet.balance < betAmt) {
+            return await interaction.reply({ content: `You don't have enough coins to double down.`, flags: MessageFlags.Ephemeral });
         }
-        return switchTurnToOpponent(interaction, game);
+
+        const debit = await updateBalance(ownerId as string, game.guildId, -betAmt);
+        if (!debit) {
+            return await interaction.reply({ content: `You don't have enough coins to double down.`, flags: MessageFlags.Ephemeral });
+        }
+        if (isOpponent) game.opponentBet *= 2;
+        else game.bet *= 2;
+
+        hand.push(game.deck.pop() as string);
+        game.markModified(isOpponent ? 'opponentHand' : 'playerHand');
+        game.markModified('deck');
+
+        const total = handValue(hand);
+        const isPvp = !!game.opponentId;
+
+        if (isPvp) {
+            if (total > 21 || isOpponent) {
+                if (isOpponent) game.opponentDone = true;
+                await game.save();
+                if (isOpponent || total > 21) return await settlePvpWhenBothDone(interaction, game);
+            }
+            return await switchTurnToOpponent(interaction, game);
+        }
+
+        if (total > 21) return await finish(interaction, game, 'bust');
+
+        dealerPlay(game.dealerHand, game.deck);
+        game.markModified('dealerHand');
+        const dealerTotal = handValue(game.dealerHand);
+        const outcome = dealerTotal > 21 || total > dealerTotal ? 'win' : total === dealerTotal ? 'push' : 'lose';
+        return await finish(interaction, game, outcome);
+    } finally {
+        await releaseLock(interaction);
     }
-
-    if (total > 21) return finish(interaction, game, 'bust');
-
-    dealerPlay(game.dealerHand, game.deck);
-    game.markModified('dealerHand');
-    const dealerTotal = handValue(game.dealerHand);
-    const outcome = dealerTotal > 21 || total > dealerTotal ? 'win' : total === dealerTotal ? 'push' : 'lose';
-    return finish(interaction, game, outcome);
 }
 
 const components: ComponentDefinition[] = [

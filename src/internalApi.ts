@@ -1,4 +1,5 @@
 import http, { IncomingMessage, ServerResponse } from 'node:http';
+import { timingSafeEqual } from 'node:crypto';
 import mongoose from 'mongoose';
 import { Client, EmbedBuilder } from 'discord.js';
 const { endGiveaway } = require('../slashCommands/utility/giveaway');
@@ -12,6 +13,13 @@ const logger = log.scope('internal-api');
 
 const PORT = process.env.INTERNAL_API_PORT || 4000;
 const SECRET = process.env.INTERNAL_API_SECRET;
+
+function isValidSecret(provided: string | string[] | undefined): boolean {
+    if (!SECRET || typeof provided !== 'string') return false;
+    const expected = Buffer.from(SECRET);
+    const actual = Buffer.from(provided);
+    return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
 
 function send(res: ServerResponse, status: number, body: unknown) {
     res.writeHead(status, { 'Content-Type': 'application/json' });
@@ -51,7 +59,7 @@ export = function startInternalApi(client: Client) {
             });
         }
 
-        if (!SECRET || req.headers['x-internal-secret'] !== SECRET) {
+        if (!isValidSecret(req.headers['x-internal-secret'])) {
             return send(res, 401, { error: 'Unauthorized' });
         }
 
