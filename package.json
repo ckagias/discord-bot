@@ -1,6 +1,6 @@
 {
   "name": "discord-bot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "license": "MIT",
   "author": "",
@@ -13,6 +13,7 @@
     "start": "docker compose up -d",
     "stop": "docker compose down",
     "restart": "./restart.sh",
+    "backup": "./backup.sh",
     "test": "jest",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

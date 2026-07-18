@@ -9,6 +9,7 @@ temp/
 lavalink/logs/
 lavalink/plugins/
 dist/
+backups/
 
 # Ignore all files with a specific extension
 *.log
