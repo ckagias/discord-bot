@@ -320,5 +320,32 @@ describe('messageCreate', () => {
 
             await expect(messageCreate.execute(message)).resolves.not.toThrow();
         });
+
+        test('advances more than one level when a single XP grant crosses two thresholds', async () => {
+            ensureGuildConfig.mockResolvedValue({ levelingEnabled: true });
+            // Level 0 -> 1 needs 100 XP, level 1 -> 2 needs 400 XP; starting at 550 XP crosses both.
+            upsertWithRetry.mockResolvedValue({ lastXpAt: new Date(), level: 0, xp: 550 });
+            LevelSchema.findOneAndUpdate
+                .mockResolvedValueOnce({ level: 1, xp: 450 })
+                .mockResolvedValueOnce({ level: 2, xp: 50 });
+            const message = makeMessage();
+
+            await messageCreate.execute(message);
+
+            expect(LevelSchema.findOneAndUpdate).toHaveBeenCalledTimes(2);
+            expect(message.channel.send).toHaveBeenCalledWith(expect.stringContaining('Level 1'));
+            expect(message.channel.send).toHaveBeenCalledWith(expect.stringContaining('Level 2'));
+        });
+
+        test('stops advancing once remaining XP is below the next threshold', async () => {
+            ensureGuildConfig.mockResolvedValue({ levelingEnabled: true });
+            upsertWithRetry.mockResolvedValue({ lastXpAt: new Date(), level: 0, xp: 150 });
+            LevelSchema.findOneAndUpdate.mockResolvedValueOnce({ level: 1, xp: 50 });
+            const message = makeMessage();
+
+            await messageCreate.execute(message);
+
+            expect(LevelSchema.findOneAndUpdate).toHaveBeenCalledTimes(1);
+        });
     });
 });

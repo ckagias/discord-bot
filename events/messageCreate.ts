@@ -135,29 +135,36 @@ module.exports = {
             updateBalance(author.id, guild.id, creditsGained).catch(() => {});
 
             // Level formula: 100 * (level + 1)^2 XP needed to advance
-            const xpNeeded = 100 * Math.pow(userData.level + 1, 2);
+            const xpNeeded = (level: number) => 100 * Math.pow(level + 1, 2);
 
-            if (userData.xp >= xpNeeded) {
+            // Loop, not a single if — a big XP grant can cross more than one threshold at once.
+            while (true) {
+                const needed = xpNeeded(userData.level);
+                if (userData.xp < needed) break;
+
                 // Atomic level-up — guards against two concurrent writes both levelling up
                 const levelled = await LevelSchema.findOneAndUpdate(
-                    { userId: author.id, guildId: guild.id, xp: { $gte: xpNeeded } },
-                    { $inc: { xp: -xpNeeded, level: 1 } },
+                    { userId: author.id, guildId: guild.id, xp: { $gte: needed }, level: userData.level },
+                    { $inc: { xp: -needed, level: 1 } },
                     { returnDocument: 'after' }
                 );
-                if (levelled) {
-                    const announceChannel = guildData.levelUpChannelId
-                        ? (guild.channels.cache.get(guildData.levelUpChannelId) ?? channel)
-                        : channel;
-                    await (announceChannel as any).send(
-                        `🎉 Congratulations ${author}! You leveled up to **Level ${levelled.level}**!`
-                    ).catch(() => {});
+                if (!levelled) break;
 
-                    const roleMapping = guildData.levelRoles?.find(lr => lr.level === levelled.level);
-                    if (roleMapping) {
-                        const role = guild.roles.cache.get(roleMapping.roleId);
-                        if (role && message.member && !message.member.roles.cache.has(role.id)) {
-                            await message.member.roles.add(role, `Reached level ${levelled.level}`).catch(() => {});
-                        }
+                userData.level = levelled.level;
+                userData.xp = levelled.xp;
+
+                const announceChannel = guildData.levelUpChannelId
+                    ? (guild.channels.cache.get(guildData.levelUpChannelId) ?? channel)
+                    : channel;
+                await (announceChannel as any).send(
+                    `🎉 Congratulations ${author}! You leveled up to **Level ${levelled.level}**!`
+                ).catch(() => {});
+
+                const roleMapping = guildData.levelRoles?.find(lr => lr.level === levelled.level);
+                if (roleMapping) {
+                    const role = guild.roles.cache.get(roleMapping.roleId);
+                    if (role && message.member && !message.member.roles.cache.has(role.id)) {
+                        await message.member.roles.add(role, `Reached level ${levelled.level}`).catch(() => {});
                     }
                 }
             }
