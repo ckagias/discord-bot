@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-07-19
+
+### Fixed
+
+- `liftMute`/`liftBan` deleted the Mongo punishment record in a `finally` block even when the Discord unmute/unban call itself failed, permanently leaving the user muted or banned with no retry. The record is now only deleted when the lift succeeds, when the member/ban is already gone (Discord error codes 10007/10013/10026), or when the guild no longer exists. Any other failure keeps the record so `restorePunishments` retries it on the next bot restart.
+
 ## [1.0.1] - 2026-07-19
 
 ### Added
@@ -53,6 +59,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Also includes full test coverage for `events/` and `slashCommands/`, and a Vitest and ESLint setup for the dashboard covering its server actions.
 
-[Unreleased]: https://github.com/ckagias/discord-bot/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/ckagias/discord-bot/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/ckagias/discord-bot/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/ckagias/discord-bot/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/ckagias/discord-bot/releases/tag/v1.0.0

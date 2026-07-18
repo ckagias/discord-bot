@@ -14,32 +14,47 @@ function parseDuration(str: string): number | null {
     return value * units[match[2].toLowerCase()];
 }
 
+// Discord error codes meaning there's nothing left to undo, safe to treat as success.
+const UNKNOWN_MEMBER_OR_BAN_CODES = [10007, 10013, 10026];
+
 async function liftMute(client: Client, punishment: any): Promise<void> {
     try {
         const guild = await client.guilds.fetch(punishment.guildId).catch(() => null);
-        if (!guild) return;
+        if (!guild) {
+            await PunishmentSchema.deleteOne({ _id: punishment._id }).catch(() => {});
+            return;
+        }
 
         const member = await guild.members.fetch(punishment.userId).catch(() => null);
         if (member && punishment.muteRoleId) {
-            await member.roles.remove(punishment.muteRoleId, 'Timed mute expired').catch(() => {});
+            await member.roles.remove(punishment.muteRoleId, 'Timed mute expired');
         }
-    } catch (err) {
-        logger.error('Failed to lift mute:', err);
-    } finally {
         await PunishmentSchema.deleteOne({ _id: punishment._id }).catch(() => {});
+    } catch (err) {
+        if (UNKNOWN_MEMBER_OR_BAN_CODES.includes((err as any)?.code)) {
+            await PunishmentSchema.deleteOne({ _id: punishment._id }).catch(() => {});
+            return;
+        }
+        logger.error('Failed to lift mute, will retry on next restart:', err);
     }
 }
 
 async function liftBan(client: Client, punishment: any): Promise<void> {
     try {
         const guild = await client.guilds.fetch(punishment.guildId).catch(() => null);
-        if (!guild) return;
+        if (!guild) {
+            await PunishmentSchema.deleteOne({ _id: punishment._id }).catch(() => {});
+            return;
+        }
 
-        await guild.members.unban(punishment.userId, 'Temp ban expired').catch(() => {});
-    } catch (err) {
-        logger.error('Failed to lift ban:', err);
-    } finally {
+        await guild.members.unban(punishment.userId, 'Temp ban expired');
         await PunishmentSchema.deleteOne({ _id: punishment._id }).catch(() => {});
+    } catch (err) {
+        if (UNKNOWN_MEMBER_OR_BAN_CODES.includes((err as any)?.code)) {
+            await PunishmentSchema.deleteOne({ _id: punishment._id }).catch(() => {});
+            return;
+        }
+        logger.error('Failed to lift ban, will retry on next restart:', err);
     }
 }
 
@@ -63,4 +78,4 @@ async function restorePunishments(client: Client): Promise<void> {
     if (active.length) logger.info(`Restored ${active.length} active timed punishment(s).`);
 }
 
-export { parseDuration, schedulePunishment, restorePunishments };
+export { parseDuration, schedulePunishment, restorePunishments, liftMute, liftBan };
