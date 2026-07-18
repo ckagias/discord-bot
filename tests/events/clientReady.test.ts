@@ -3,6 +3,7 @@ jest.mock('../../models/GuildSchema', () => ({ find: jest.fn() }));
 jest.mock('../../models/PollSchema', () => ({ find: jest.fn() }));
 jest.mock('../../models/HeistSchema', () => ({ find: jest.fn(), updateOne: jest.fn() }));
 jest.mock('../../models/ReminderSchema', () => ({ find: jest.fn() }));
+jest.mock('../../models/TempVCSchema', () => ({ find: jest.fn(), deleteOne: jest.fn() }));
 jest.mock('../../slashCommands/utility/giveaway', () => ({
     endGiveaway: jest.fn(),
     scheduleGiveawayEnd: jest.fn(),
@@ -21,6 +22,7 @@ const GuildSchema = require('../../models/GuildSchema');
 const PollSchema = require('../../models/PollSchema');
 const HeistSchema = require('../../models/HeistSchema');
 const ReminderSchema = require('../../models/ReminderSchema');
+const TempVCSchema = require('../../models/TempVCSchema');
 const { endGiveaway, scheduleGiveawayEnd } = require('../../slashCommands/utility/giveaway');
 const { closePoll } = require('../../slashCommands/fun/poll');
 const { sendReminder, scheduleReminder } = require('../../slashCommands/utility/remind');
@@ -48,6 +50,8 @@ describe('clientReady', () => {
         PollSchema.find.mockResolvedValue([]);
         HeistSchema.find.mockResolvedValue([]);
         ReminderSchema.find.mockResolvedValue([]);
+        TempVCSchema.find.mockResolvedValue([]);
+        TempVCSchema.deleteOne.mockResolvedValue({});
         restorePunishments.mockResolvedValue({});
         restoreLockdowns.mockResolvedValue({});
     });
@@ -239,6 +243,67 @@ describe('clientReady', () => {
             await clientReady.execute(client);
 
             expect(addRole).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('temp VC restoration', () => {
+        test('does nothing when there are no persisted temp VCs', async () => {
+            TempVCSchema.find.mockResolvedValue([]);
+            const client = makeClient();
+
+            await clientReady.execute(client);
+
+            expect((client as any).tempVCs).toBeUndefined();
+        });
+
+        test('restores ownership for a temp VC that still has members', async () => {
+            const channel = { members: { size: 1 }, delete: jest.fn() };
+            const guild = { channels: { cache: { get: jest.fn().mockReturnValue(channel) } } };
+            TempVCSchema.find.mockResolvedValue([{ _id: 'r1', guildId: 'g1', channelId: 'vc1', ownerId: 'user1' }]);
+            const client = makeClient();
+            client.guilds.cache.get.mockReturnValue(guild);
+
+            await clientReady.execute(client);
+
+            expect((client as any).tempVCs.get('vc1')).toBe('user1');
+            expect(TempVCSchema.deleteOne).not.toHaveBeenCalled();
+        });
+
+        test('deletes the channel and cleans up the record when the channel is empty', async () => {
+            const deleteChannel = jest.fn().mockResolvedValue({});
+            const channel = { members: { size: 0 }, delete: deleteChannel };
+            const guild = { channels: { cache: { get: jest.fn().mockReturnValue(channel) } } };
+            TempVCSchema.find.mockResolvedValue([{ _id: 'r1', guildId: 'g1', channelId: 'vc1', ownerId: 'user1' }]);
+            const client = makeClient();
+            client.guilds.cache.get.mockReturnValue(guild);
+
+            await clientReady.execute(client);
+
+            expect(deleteChannel).toHaveBeenCalled();
+            expect(TempVCSchema.deleteOne).toHaveBeenCalledWith({ _id: 'r1' });
+            expect((client as any).tempVCs.has('vc1')).toBe(false);
+        });
+
+        test('cleans up the record when the channel no longer exists', async () => {
+            const guild = { channels: { cache: { get: jest.fn().mockReturnValue(undefined) } } };
+            TempVCSchema.find.mockResolvedValue([{ _id: 'r1', guildId: 'g1', channelId: 'vc1', ownerId: 'user1' }]);
+            const client = makeClient();
+            client.guilds.cache.get.mockReturnValue(guild);
+
+            await clientReady.execute(client);
+
+            expect(TempVCSchema.deleteOne).toHaveBeenCalledWith({ _id: 'r1' });
+            expect((client as any).tempVCs.has('vc1')).toBe(false);
+        });
+
+        test('cleans up the record when the bot is no longer in the guild', async () => {
+            TempVCSchema.find.mockResolvedValue([{ _id: 'r1', guildId: 'gone1', channelId: 'vc1', ownerId: 'user1' }]);
+            const client = makeClient();
+            client.guilds.cache.get.mockReturnValue(undefined);
+
+            await clientReady.execute(client);
+
+            expect(TempVCSchema.deleteOne).toHaveBeenCalledWith({ _id: 'r1' });
         });
     });
 });

@@ -1,6 +1,8 @@
 jest.mock('../../utils/logger', () => ({ getLogChannel: jest.fn() }));
+jest.mock('../../models/TempVCSchema', () => ({ deleteOne: jest.fn() }));
 
 const { getLogChannel } = require('../../utils/logger');
+const TempVCSchema = require('../../models/TempVCSchema');
 const voiceStateUpdate = require('../../events/voiceStateUpdate');
 
 function makeState({ channelId = null, channel = null, serverDeaf = false, serverMute = false, member = null } = {}) {
@@ -15,6 +17,7 @@ describe('voiceStateUpdate', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         getLogChannel.mockResolvedValue(null);
+        TempVCSchema.deleteOne.mockResolvedValue({});
     });
 
     test('ignores updates with no resolvable member', async () => {
@@ -48,6 +51,7 @@ describe('voiceStateUpdate', () => {
 
         expect(deleteChannel).toHaveBeenCalled();
         expect(client.tempVCs.has('vc1')).toBe(false);
+        expect(TempVCSchema.deleteOne).toHaveBeenCalledWith({ channelId: 'vc1' });
     });
 
     test('does not delete a temp VC that still has members', async () => {

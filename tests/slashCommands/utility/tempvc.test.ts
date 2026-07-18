@@ -3,8 +3,10 @@ jest.mock('../../../utils/guildConfig', () => ({
     getGuildConfig: jest.fn(),
     updateGuildConfig: jest.fn(),
 }));
+jest.mock('../../../models/TempVCSchema', () => ({ create: jest.fn() }));
 
 const { getGuildConfig, updateGuildConfig } = require('../../../utils/guildConfig');
+const TempVCSchema = require('../../../models/TempVCSchema');
 const tempvc = require('../../../slashCommands/utility/tempvc');
 
 function makeMember({ id = 'user1', voiceChannel = null, hasPermission = true }: { id?: string; voiceChannel?: any; hasPermission?: boolean } = {}) {
@@ -42,6 +44,7 @@ function makeInteraction({ sub, member = makeMember(), category = null, name = '
 describe('tempvc command', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        TempVCSchema.create.mockResolvedValue({});
     });
 
     describe('setup', () => {
@@ -101,9 +104,23 @@ describe('tempvc command', () => {
                 expect.objectContaining({ name: 'My VC', userLimit: 5 })
             );
             expect(interaction.client.tempVCs.get('vc1')).toBe('user1');
+            expect(TempVCSchema.create).toHaveBeenCalledWith({ guildId: 'g1', channelId: 'vc1', ownerId: 'user1' });
             expect(member.voice.setChannel).toHaveBeenCalled();
             expect(interaction.reply).toHaveBeenCalledWith(
                 expect.objectContaining({ content: expect.stringContaining('locked, 5 slots') })
+            );
+        });
+
+        test('still moves the member and replies if persisting the temp VC fails', async () => {
+            const member = makeMember({ voiceChannel: { parentId: 'cat1' } });
+            const interaction = makeInteraction({ sub: 'create', member });
+            getGuildConfig.mockResolvedValue({});
+            TempVCSchema.create.mockRejectedValue(new Error('db down'));
+
+            await expect(tempvc.execute(interaction)).resolves.not.toThrow();
+            expect(member.voice.setChannel).toHaveBeenCalled();
+            expect(interaction.reply).toHaveBeenCalledWith(
+                expect.objectContaining({ content: expect.stringContaining('Created') })
             );
         });
 

@@ -1,5 +1,6 @@
 import { EmbedBuilder, VoiceState, Client } from 'discord.js';
 const { getLogChannel } = require('../utils/logger');
+const TempVCSchema = require('../models/TempVCSchema');
 
 module.exports = {
     name: 'voiceStateUpdate',
@@ -11,6 +12,7 @@ module.exports = {
             const channel = oldState.channel;
             if (channel && channel.members.size === 0) {
                 client.tempVCs.delete(oldState.channelId);
+                await TempVCSchema.deleteOne({ channelId: oldState.channelId }).catch(() => {});
                 await channel.delete().catch(() => {});
             }
         }
