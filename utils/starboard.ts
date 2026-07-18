@@ -49,13 +49,21 @@ async function handleStarReaction(reaction: MessageReaction): Promise<void> {
 
         if (!posted) return;
 
-        await StarboardSchema.create({
-            guildId,
-            channelId,
-            messageId,
-            starboardMessageId: posted.id,
-            starCount: count,
-        }).catch(err => logger.error('Failed to save doc:', err));
+        try {
+            await StarboardSchema.create({
+                guildId,
+                channelId,
+                messageId,
+                starboardMessageId: posted.id,
+                starCount: count,
+            });
+        } catch (err: any) {
+            if (err?.code === 11000) {
+                await posted.delete().catch(() => null);
+            } else {
+                logger.error('Failed to save doc:', err);
+            }
+        }
 
     } else if (count >= config.starboardThreshold) {
         const postedMsg = await starboardChannel.messages.fetch(existing.starboardMessageId).catch(() => null);
