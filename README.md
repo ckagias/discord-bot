@@ -346,6 +346,30 @@ See `.env.example` for the full list with inline comments. Summary:
 | `CLIENT_SECRET` / `SESSION_SECRET` / `DASHBOARD_URL`    | Dashboard only      | See [Dashboard](#dashboard)                                                                                                                                 |
 | `INTERNAL_API_PORT` / `INTERNAL_API_SECRET`             | Dashboard only      | Internal HTTP bridge the dashboard uses to trigger giveaway end/reroll on the bot. Without `INTERNAL_API_SECRET` set, those dashboard buttons silently fail |
 
+#### Backups
+
+The `mongo_data` Docker volume is the bot's only copy of its data. Deleting or recreating it (e.g. `docker volume rm`) loses everything permanently, so back it up regularly:
+
+```bash
+npm run backup       # or ./backup.sh
+```
+
+This dumps the `discordbot` database from the running `mongodb` container into a timestamped, gzipped archive under `backups/` (git-ignored), and prunes archives older than 14 days. Override the destination or retention window with `BACKUP_DIR` / `RETENTION_DAYS` env vars.
+
+To restore from an archive:
+
+```bash
+./restore.sh backups/discordbot-20260719-030000.gz
+```
+
+This drops and replaces the existing `discordbot` collections, so it prompts for confirmation first.
+
+To back up automatically, add a cron entry (daily at 3am shown here):
+
+```
+0 3 * * * cd /path/to/discord-bot && ./backup.sh >> backups/backup.log 2>&1
+```
+
 ---
 
 ## Dashboard

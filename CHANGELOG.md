@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-07-19
+
+### Added
+
+- `backup.sh` (`npm run backup`) dumps the `mongodb` container's `discordbot` database to a timestamped, gzipped archive under `backups/` and prunes archives older than 14 days. `restore.sh` restores from one of those archives, prompting for confirmation since it drops existing collections. No backup strategy existed before this: a `docker volume rm` on `mongo_data` lost everything permanently.
+
 ## [1.0.0] - 2026-07-18
 
 ### Added
@@ -47,5 +53,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Also includes full test coverage for `events/` and `slashCommands/`, and a Vitest and ESLint setup for the dashboard covering its server actions.
 
-[Unreleased]: https://github.com/ckagias/discord-bot/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/ckagias/discord-bot/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/ckagias/discord-bot/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/ckagias/discord-bot/releases/tag/v1.0.0
