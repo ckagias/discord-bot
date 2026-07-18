@@ -16,6 +16,6 @@ const starboardSchema = new Schema<IStarboard>({
     starCount:          { type: Number, default: 0 },
 });
 
-starboardSchema.index({ guildId: 1, messageId: 1 });
+starboardSchema.index({ guildId: 1, messageId: 1 }, { unique: true });
 
 export = model<IStarboard>('Starboard', starboardSchema);
