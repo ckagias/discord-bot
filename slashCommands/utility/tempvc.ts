@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, ChannelType, PermissionFlagsBits, MessageFlags, ChatInputCommandInteraction, GuildMember } from 'discord.js';
 import { buildPanel } from '../../handlers/components/tempvcPanel';
 import { getGuildConfig, updateGuildConfig } from '../../utils/guildConfig';
+import TempVCSchema from '../../models/TempVCSchema';
 const log = require('../../utils/log');
 const logger = log.scope('tempvc');
 
@@ -105,6 +106,12 @@ module.exports = {
 
             if (!interaction.client.tempVCs) interaction.client.tempVCs = new Map();
             interaction.client.tempVCs.set(tempChannel.id, member.id);
+
+            await TempVCSchema.create({
+                guildId: interaction.guild.id,
+                channelId: tempChannel.id,
+                ownerId: member.id,
+            }).catch(err => logger.error('Failed to persist temp VC:', err));
 
             await member.voice.setChannel(tempChannel).catch(err => {
                 logger.error('Failed to move member:', err);

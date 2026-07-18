@@ -1,4 +1,4 @@
-import { ActivityType, Client } from 'discord.js';
+import { ActivityType, Client, VoiceChannel } from 'discord.js';
 const GiveawaySchema = require('../models/GiveawaySchema');
 const { endGiveaway, scheduleGiveawayEnd } = require('../slashCommands/utility/giveaway');
 const { restorePunishments } = require('../utils/punishments');
@@ -11,6 +11,7 @@ const { updateBalance } = require('../utils/economy');
 const ReminderSchema = require('../models/ReminderSchema');
 const { sendReminder, scheduleReminder } = require('../slashCommands/utility/remind');
 const { checkBirthdays } = require('../utils/birthday');
+const TempVCSchema = require('../models/TempVCSchema');
 const log = require('../utils/log');
 const logger = log.scope('clientReady');
 const giveawayLogger = log.scope('giveaway');
@@ -19,6 +20,7 @@ const remindLogger = log.scope('remind');
 const heistLogger = log.scope('heist');
 const autoroleLogger = log.scope('autorole');
 const birthdayLogger = log.scope('birthday');
+const tempvcLogger = log.scope('tempvc');
 
 module.exports = {
     name: 'clientReady',
@@ -74,6 +76,7 @@ module.exports = {
         await restorePunishments(client);
         await restoreLockdowns(client);
         await restoreAutoroles(client);
+        await restoreTempVCs(client);
         scheduleBirthdayCheck(client);
     }
 };
@@ -132,4 +135,32 @@ async function restoreAutoroles(client: Client) {
     }
 
     if (assigned) autoroleLogger.info(`Assigned missing autorole to ${assigned} member(s) on startup.`);
+}
+
+// Temp VC ownership only lives in client.tempVCs at runtime, so restart-missed voiceStateUpdate events can leave stale channels or orphan ownership.
+async function restoreTempVCs(client: Client) {
+    const persisted = await TempVCSchema.find({}).catch(() => []);
+    if (!persisted.length) return;
+
+    client.tempVCs = new Map();
+    let restored = 0;
+    let cleaned = 0;
+
+    for (const doc of persisted) {
+        const guild = client.guilds.cache.get(doc.guildId);
+        const channel = guild?.channels.cache.get(doc.channelId) as VoiceChannel | undefined;
+
+        if (!channel || channel.members.size === 0) {
+            await channel?.delete().catch(() => {});
+            await TempVCSchema.deleteOne({ _id: doc._id }).catch(() => {});
+            cleaned++;
+            continue;
+        }
+
+        client.tempVCs.set(doc.channelId, doc.ownerId);
+        restored++;
+    }
+
+    if (restored) tempvcLogger.info(`Restored ${restored} active temp VC(s).`);
+    if (cleaned) tempvcLogger.info(`Cleaned up ${cleaned} stale temp VC record(s).`);
 }
