@@ -3,6 +3,9 @@ import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBu
 const log = require('../../utils/log');
 const logger = log.scope('weather');
 
+const COOLDOWN_MS = 60_000;
+const lastUsedAt = new Map<string, number>();
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('weather')
@@ -15,6 +18,15 @@ module.exports = {
     async execute(interaction: ChatInputCommandInteraction) {
         const location = interaction.options.getString('location');
         const apiKey = process.env.WEATHER_API_KEY;
+
+        const now = Date.now();
+        const lastUsed = lastUsedAt.get(interaction.user.id) ?? 0;
+        const remaining = COOLDOWN_MS - (now - lastUsed);
+        if (remaining > 0) {
+            const availableAt = Math.floor((now + remaining) / 1000);
+            return interaction.reply({ content: `⏳ Slow down! Try again <t:${availableAt}:R>.`, flags: MessageFlags.Ephemeral });
+        }
+        lastUsedAt.set(interaction.user.id, now);
 
         try {
             const geoRes = await axios.get(`https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(location)}&limit=5&appid=${apiKey}`, { timeout: 5000 });

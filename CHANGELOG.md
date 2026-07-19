@@ -6,6 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-07-20
+
+### Added
+
+- `/weather` now enforces a 60-second per-user cooldown. Previously any user could spam the command and burn through the bot's shared OpenWeatherMap API quota across every guild.
+- `LOG_LEVEL` documented in `.env.example` and the README env var table. It was already read by `utils/log.ts` but wasn't listed anywhere, so operators had no way to discover it short of reading the source.
+
 ## [1.0.4] - 2026-07-19
 
 ### Changed
@@ -71,7 +78,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Also includes full test coverage for `events/` and `slashCommands/`, and a Vitest and ESLint setup for the dashboard covering its server actions.
 
-[Unreleased]: https://github.com/ckagias/discord-bot/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/ckagias/discord-bot/compare/v1.0.5...HEAD
+[1.0.5]: https://github.com/ckagias/discord-bot/compare/v1.0.4...v1.0.5
+[1.0.4]: https://github.com/ckagias/discord-bot/compare/v1.0.3...v1.0.4
+[1.0.3]: https://github.com/ckagias/discord-bot/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/ckagias/discord-bot/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/ckagias/discord-bot/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/ckagias/discord-bot/releases/tag/v1.0.0

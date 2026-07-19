@@ -8,12 +8,14 @@ function makeCollector() {
     return { on: jest.fn((event: string, fn: (...args: any[]) => void) => { handlers[event] = fn; }), handlers };
 }
 
-function makeInteraction({ location = 'Athens' } = {}) {
+let nextUserId = 0;
+
+function makeInteraction({ location = 'Athens', userId = `user${++nextUserId}` } = {}) {
     const collector = makeCollector();
     const response = { createMessageComponentCollector: jest.fn().mockReturnValue(collector) };
     return {
         options: { getString: jest.fn().mockReturnValue(location) },
-        user: { id: 'user1', tag: 'User#0001', displayAvatarURL: jest.fn().mockReturnValue('https://example.com/user.png') },
+        user: { id: userId, tag: 'User#0001', displayAvatarURL: jest.fn().mockReturnValue('https://example.com/user.png') },
         replied: false,
         isStringSelectMenu: () => false,
         reply: jest.fn().mockResolvedValue(response),
@@ -115,7 +117,7 @@ describe('weather command', () => {
         await weather.execute(interaction);
 
         const i = {
-            user: { id: 'user1', tag: 'User#0001', displayAvatarURL: jest.fn().mockReturnValue('https://example.com/user.png') },
+            user: { id: interaction.user.id, tag: 'User#0001', displayAvatarURL: jest.fn().mockReturnValue('https://example.com/user.png') },
             values: ['0'],
             isStringSelectMenu: () => true,
             update: jest.fn().mockResolvedValue({}),
@@ -126,6 +128,22 @@ describe('weather command', () => {
         expect(i.update).toHaveBeenCalledWith(
             expect.objectContaining({ embeds: expect.any(Array), components: [] })
         );
+    });
+
+    test('rejects a second call from the same user within the cooldown window', async () => {
+        const interaction1 = makeInteraction();
+        (axios.get as jest.Mock)
+            .mockResolvedValueOnce({ data: [{ lat: 1, lon: 2, name: 'Athens', country: 'GR', state: null }] })
+            .mockResolvedValueOnce({ data: makeWeatherData() });
+        await weather.execute(interaction1);
+
+        const interaction2 = makeInteraction({ userId: interaction1.user.id });
+        await weather.execute(interaction2);
+
+        expect(interaction2.reply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('Slow down'), flags: expect.anything() })
+        );
+        expect(axios.get).toHaveBeenCalledTimes(2);
     });
 
     test('picker end handler shows a timeout message when nothing was collected', async () => {
