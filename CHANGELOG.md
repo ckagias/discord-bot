@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-07-19
+
+### Fixed
+
+- `events/messageCreate.ts`'s passive credit-on-message grant swallowed `updateBalance` failures with an empty `.catch(() => {})`, silently dropping currency on any transient Mongo error with no log trace. It now logs the failure like every other error path in the file.
+
 ## [1.0.2] - 2026-07-19
 
 ### Fixed
