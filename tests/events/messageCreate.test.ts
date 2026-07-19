@@ -321,6 +321,24 @@ describe('messageCreate', () => {
             await expect(messageCreate.execute(message)).resolves.not.toThrow();
         });
 
+        test('logs an error instead of silently dropping credits when updateBalance fails', async () => {
+            const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+            ensureGuildConfig.mockResolvedValue({ levelingEnabled: true });
+            upsertWithRetry.mockResolvedValue({ lastXpAt: new Date(), level: 0, xp: 10 });
+            updateBalance.mockRejectedValue(new Error('db down'));
+            const message = makeMessage();
+
+            await messageCreate.execute(message);
+            await Promise.resolve(); // let the updateBalance rejection's .catch handler run
+
+            expect(consoleError).toHaveBeenCalledWith(
+                expect.stringContaining('[ERROR]'),
+                'Failed to credit passive earnings:',
+                expect.any(Error)
+            );
+            consoleError.mockRestore();
+        });
+
         test('advances more than one level when a single XP grant crosses two thresholds', async () => {
             ensureGuildConfig.mockResolvedValue({ levelingEnabled: true });
             // Level 0 -> 1 needs 100 XP, level 1 -> 2 needs 400 XP; starting at 550 XP crosses both.

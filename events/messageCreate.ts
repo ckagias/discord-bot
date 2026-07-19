@@ -132,7 +132,7 @@ module.exports = {
 
             // Passive credit earnings — fires on the same cooldown as XP so it's never spammed.
             const creditsGained = Math.floor(Math.random() * 11) + 5; // 5–15 credits per message
-            updateBalance(author.id, guild.id, creditsGained).catch(() => {});
+            updateBalance(author.id, guild.id, creditsGained).catch(error => logger.error('Failed to credit passive earnings:', error));
 
             // Level formula: 100 * (level + 1)^2 XP needed to advance
             const xpNeeded = (level: number) => 100 * Math.pow(level + 1, 2);
