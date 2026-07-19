@@ -49,20 +49,27 @@ attachConnectionLogging(mongoose.connection);
     require('./internalApi')(client);
 })();
 
+async function shutdown(signal: string, exitCode = 0) {
+    logger.info(`[${signal}] Shutting down gracefully...`);
+    try {
+        client.destroy();
+        await mongoose.connection.close();
+    } catch (err) {
+        logger.error('Error during shutdown:', err);
+    }
+    process.exit(exitCode);
+}
+
+// Process state is undefined after either of these fires, so crash and let Docker restart clean.
 process.on('unhandledRejection', (reason) => {
     logger.error('[Unhandled Rejection]', reason);
+    shutdown('unhandledRejection', 1);
 });
 
 process.on('uncaughtException', (err) => {
     logger.error('[Uncaught Exception]', err);
+    shutdown('uncaughtException', 1);
 });
-
-async function shutdown(signal: string) {
-    logger.info(`[${signal}] Shutting down gracefully...`);
-    client.destroy();
-    await mongoose.connection.close();
-    process.exit(0);
-}
 
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));

@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-07-19
+
+### Changed
+
+- `uncaughtException` and `unhandledRejection` handlers in `src/index.ts` now log and then shut down the process (client destroy, Mongo close, exit) instead of only logging and continuing. Node's guidance is to treat the process as being in an undefined state after either fires; letting it limp on risked stuck locks or corrupted in-memory state until a manual restart. Docker's `restart: unless-stopped` now recovers automatically within seconds.
+
 ## [1.0.3] - 2026-07-19
 
 ### Fixed
