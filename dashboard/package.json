@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "iron-session": "^8.0.4",
-    "mongoose": "^9.8.1",
+    "mongoose": "^9.9.1",
     "next": "16.2.12",
     "react": "19.2.8",
     "react-dom": "19.2.8"
