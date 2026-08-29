@@ -438,6 +438,8 @@ The dashboard is entirely optional. The bot runs fine standalone if you never se
 
 Run `npm test` to run the test suite (Jest).
 
+[![CI](https://github.com/ckagias/discord-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/ckagias/discord-bot/actions/workflows/ci.yml) / [![CD](https://github.com/ckagias/discord-bot/actions/workflows/cd.yml/badge.svg)](https://github.com/ckagias/discord-bot/actions/workflows/cd.yml)
+
 ---
 
 ## Contributing
