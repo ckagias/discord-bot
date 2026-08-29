@@ -86,7 +86,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Also includes full test coverage for `events/` and `slashCommands/`, and a Vitest and ESLint setup for the dashboard covering its server actions.
 
-[Unreleased]: https://github.com/ckagias/discord-bot/compare/v1.0.5...HEAD
+[Unreleased]: https://github.com/ckagias/discord-bot/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/ckagias/discord-bot/compare/v1.0.5...v1.1.0
 [1.0.5]: https://github.com/ckagias/discord-bot/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/ckagias/discord-bot/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/ckagias/discord-bot/compare/v1.0.2...v1.0.3
