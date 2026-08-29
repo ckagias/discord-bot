@@ -6,6 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-08-29
+
+### Added
+
+- CI/CD pipeline: a `CD` GitHub Actions workflow now auto-deploys to the self-hosted runner (`git pull` + `restart.sh`) whenever `CI` passes on `main`, replacing manual `restart.sh` invocations after every merge.
+- CI and CD status badges in the README's Testing section.
+- Test coverage for `utils/economy.ts`, `handlers/componentHandler.ts`, and `utils/antiRaid.ts`, closing the last gaps noted in `CONTRIBUTING.md`'s testing section.
+
 ## [1.0.5] - 2026-07-20
 
 ### Added
