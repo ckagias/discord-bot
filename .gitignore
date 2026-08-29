@@ -10,6 +10,7 @@ lavalink/logs/
 lavalink/plugins/
 dist/
 backups/
+coverage/
 
 # Ignore all files with a specific extension
 *.log
