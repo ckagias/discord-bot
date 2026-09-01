@@ -419,6 +419,8 @@ Sign in with Discord OAuth2, pick a server where you have Manage Server and the 
 
 The dashboard is entirely optional. The bot runs fine standalone if you never set these variables or visit the dashboard URL.
 
+Want to see what it looks like without setting it up? Check out [discord-bot-dashboard](https://github.com/ckagias/discord-bot-dashboard), a mock version populated with sample data.
+
 ---
 
 ## Dependencies
