@@ -48,6 +48,6 @@ module.exports = [
         },
     },
     {
-        ignores: ['node_modules/', 'dashboard/', 'data/', 'lavalink/'],
+        ignores: ['node_modules/', 'dashboard/', 'data/', 'lavalink/', 'dist/'],
     },
 ];
