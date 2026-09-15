@@ -138,9 +138,8 @@ async function closePoll(client: Client, pollId: unknown) {
     const message = await (channel as any)?.messages.fetch(poll.messageId).catch(() => null);
     if (!message) return;
 
-    const { buildEmbed: be, buildButtons: bb } = require('./poll');
-    const finalEmbed = be(poll.question, poll.options, poll.votes, message.embeds[0]?.footer?.text?.split(' • ')[0].replace('Poll by ', '') ?? 'Unknown', null, true);
-    await message.edit({ embeds: [finalEmbed], components: [bb(poll.options, true)] });
+    const finalEmbed = buildEmbed(poll.question, poll.options, poll.votes, message.embeds[0]?.footer?.text?.split(' • ')[0].replace('Poll by ', '') ?? 'Unknown', null, true);
+    await message.edit({ embeds: [finalEmbed], components: [buildButtons(poll.options, true)] });
 }
 
 module.exports.closePoll = closePoll;
