@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction, GuildMember } from 'discord.js';
 const PollSchema = require('../../models/PollSchema');
 const { closePoll } = require('./poll');
 
@@ -20,7 +20,7 @@ module.exports = {
             return interaction.reply({ content: 'No active poll found with that message ID.', ephemeral: true });
 
         const isHost = poll.hostId === interaction.user.id;
-        const isAdmin = (interaction.member.permissions as any).has(PermissionFlagsBits.ManageGuild);
+        const isAdmin = (interaction.member as GuildMember).permissions.has(PermissionFlagsBits.ManageGuild);
 
         if (!isHost && !isAdmin)
             return interaction.reply({ content: 'Only the poll creator or a server admin can end this poll.', ephemeral: true });
