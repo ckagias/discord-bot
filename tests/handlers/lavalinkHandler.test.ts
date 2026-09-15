@@ -60,10 +60,20 @@ describe('lavalinkHandler', () => {
         const lavalinkHandler = require('../../handlers/lavalinkHandler');
         await lavalinkHandler(makeClient());
 
-        const node = { id: 'main', updateSession: jest.fn().mockResolvedValue(undefined) };
+        // updateSession() reads node.sessionId internally and throws "not ready" if it isn't set yet,
+        // so this fake mirrors that real behavior instead of always resolving regardless of state.
+        const node: any = {
+            id: 'main',
+            sessionId: undefined,
+            updateSession: jest.fn().mockImplementation(function (this: any) {
+                if (!this.sessionId) return Promise.reject(new Error('the Lavalink-Node is either not ready, or not up to date!'));
+                return Promise.resolve(undefined);
+            }),
+        };
         fakeManager.nodeManager.emit('raw', node, { op: 'ready', sessionId: 'new-session-id', resumed: false });
         await Promise.resolve();
 
+        expect(node.sessionId).toBe('new-session-id');
         expect(node.updateSession).toHaveBeenCalledWith(true, expect.any(Number));
         expect(mockedSaveSessionId).toHaveBeenCalledWith('main', 'new-session-id');
     });
