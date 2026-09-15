@@ -1,7 +1,7 @@
 import { PermissionFlagsBits, EmbedBuilder, ChannelType, Guild, GuildMember, Role, Client } from 'discord.js';
 import GuildSchema from '../models/GuildSchema';
 import { getLogChannel } from './logger';
-import { updateGuildConfig } from './guildConfig';
+import { updateGuildConfig, invalidateGuildConfig } from './guildConfig';
 import { randomColor } from './embeds';
 import log = require('./log');
 const logger = log.scope('antiraid');
@@ -108,6 +108,7 @@ async function startLockdown(guild: Guild, guildData: any, { auto = false, trigg
         { new: true },
     );
     if (!updated) return; // another call already won
+    invalidateGuildConfig(guild.id);
     await ensureQuarantineOverwrites(guild, role);
 
     const alertChannel = await resolveAlertChannel(guild, guildData);
