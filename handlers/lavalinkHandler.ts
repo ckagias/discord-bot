@@ -53,10 +53,12 @@ export = async (client: Client) => {
         logger.error(`Node "${node.id}" error:`, error.message);
     });
 
-    // The "ready" op is when sessionId first becomes available; updateSession() throws before that.
+    // The "raw" event fires before the library's own "ready" handling sets node.sessionId, so updateSession()
+    // (which reads node.sessionId internally) would throw "not ready" unless we set it from the payload first.
     (client.lavalink as any).nodeManager.on('raw', (node: any, payload: any) => {
         if (payload?.op !== 'ready') return;
 
+        node.sessionId = payload.sessionId;
         node.updateSession(true, RESUME_TIMEOUT_MS).catch((err: unknown) =>
             logger.error(`Failed to enable resuming on node "${node.id}":`, err)
         );
