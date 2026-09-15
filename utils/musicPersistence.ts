@@ -5,28 +5,35 @@ import LavalinkSessionSchema from '../models/LavalinkSessionSchema';
 import { upsertWithRetry } from './upsertRetry';
 
 // Mongo-backed queueStore so lavalink-client's own save/sync calls persist queues across bot restarts.
-const mongoQueueStore: QueueStoreManager = {
-    async get(guildId) {
+// Must be a class: lavalink-client validates queueStore methods via Object.getPrototypeOf, which a plain object literal fails.
+class MongoQueueStore implements QueueStoreManager {
+    async get(guildId: string) {
         const doc = await MusicQueueSchema.findOne({ guildId });
         return doc?.data;
-    },
-    async set(guildId, value) {
+    }
+
+    async set(guildId: string, value: StoredQueue | string) {
         await upsertWithRetry(
             MusicQueueSchema,
             { guildId },
             { $set: { data: value as string }, $setOnInsert: { guildId } }
         );
-    },
-    async delete(guildId) {
+    }
+
+    async delete(guildId: string) {
         await MusicQueueSchema.deleteOne({ guildId });
-    },
-    stringify(value) {
+    }
+
+    stringify(value: StoredQueue | string) {
         return JSON.stringify(value);
-    },
-    parse(value) {
+    }
+
+    parse(value: StoredQueue | string) {
         return JSON.parse(value as string) as Partial<StoredQueue>;
-    },
-};
+    }
+}
+
+const mongoQueueStore: QueueStoreManager = new MongoQueueStore();
 
 // voiceChannelId/textChannelId aren't part of Lavalink's own player state, so they're tracked separately per guild.
 async function saveMusicPlayer(guildId: string, nodeId: string, voiceChannelId: string, textChannelId: string, selfDeaf: boolean, selfMute: boolean, requesterId: string | null) {
