@@ -344,6 +344,7 @@ See `.env.example` for the full list with inline comments. Summary:
 | `BOT_ACTIVITY_TYPE`                                     | No                  | Activity type for the status (e.g. `Watching`, `Playing`, `Listening`). Defaults to `Watching`                                                              |
 | `LOG_LEVEL`                                             | No                  | Logging verbosity: `error`, `warn`, `info`, `debug`. Defaults to `info`                                                                                     |
 | `LAVALINK_HOST` / `LAVALINK_PORT` / `LAVALINK_PASSWORD` | Manual install only | Lavalink connection details. Docker sets these for you                                                                                                      |
+| `LAVALINK_RESUME_TIMEOUT_MS`                            | No                  | How long Lavalink keeps a guild's player alive after a bot disconnect, so a quick `restart.sh --bot` resumes playback. Defaults to `60000` (60s)           |
 | `CLIENT_SECRET` / `SESSION_SECRET` / `DASHBOARD_URL`    | Dashboard only      | See [Dashboard](#dashboard)                                                                                                                                 |
 | `INTERNAL_API_PORT` / `INTERNAL_API_SECRET`             | Dashboard only      | Internal HTTP bridge the dashboard uses to trigger giveaway end/reroll on the bot. Without `INTERNAL_API_SECRET` set, those dashboard buttons silently fail |
 

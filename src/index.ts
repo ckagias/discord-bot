@@ -39,7 +39,7 @@ attachConnectionLogging(mongoose.connection);
     require('../handlers/eventHandler')(client);
     require('../handlers/slashCommandHandler')(client);
     require('../handlers/componentHandler')(client);
-    require('../handlers/lavalinkHandler')(client);
+    await require('../handlers/lavalinkHandler')(client);
 
     // Forward raw gateway packets to Lavalink for voice state tracking
     client.on(Events.Raw, (d: unknown) => client.lavalink.sendRawData(d as any));
