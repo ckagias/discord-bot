@@ -1,5 +1,5 @@
 import { PermissionFlagsBits, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, ButtonInteraction } from 'discord.js';
-import { getGuildConfig } from '../../utils/guildConfig';
+import { getGuildConfig, invalidateGuildConfig } from '../../utils/guildConfig';
 import GuildSchema from '../../models/GuildSchema';
 import TicketSchema from '../../models/TicketSchema';
 import { ComponentDefinition } from '../../types/discord';
@@ -38,6 +38,7 @@ const component: ComponentDefinition = {
             { $inc: { ticketCount: 1 } },
             { returnDocument: 'after' }
         );
+        invalidateGuildConfig(guild.id);
         const ticketNumber = updated!.ticketCount;
 
         const channel = await guild.channels.create({

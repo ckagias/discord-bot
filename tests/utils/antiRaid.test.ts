@@ -1,12 +1,12 @@
 jest.mock('../../models/GuildSchema', () => ({ findOneAndUpdate: jest.fn(), find: jest.fn() }));
 jest.mock('../../utils/logger', () => ({ getLogChannel: jest.fn() }));
-jest.mock('../../utils/guildConfig', () => ({ updateGuildConfig: jest.fn() }));
+jest.mock('../../utils/guildConfig', () => ({ updateGuildConfig: jest.fn(), invalidateGuildConfig: jest.fn() }));
 jest.mock('../../utils/embeds', () => ({ randomColor: () => 0x000000 }));
 
 import { PermissionFlagsBits, Collection } from 'discord.js';
 import GuildSchema from '../../models/GuildSchema';
 import { getLogChannel } from '../../utils/logger';
-import { updateGuildConfig } from '../../utils/guildConfig';
+import { updateGuildConfig, invalidateGuildConfig } from '../../utils/guildConfig';
 import {
     handleJoin,
     startLockdown,
@@ -19,6 +19,7 @@ import {
 const mockedGuildSchema = GuildSchema as any;
 const mockedGetLogChannel = getLogChannel as jest.Mock;
 const mockedUpdateGuildConfig = updateGuildConfig as jest.Mock;
+const mockedInvalidateGuildConfig = invalidateGuildConfig as jest.Mock;
 
 function makeMember({ id = 'member1', bot = false, perms = [] as any[], hasRole = false } = {}) {
     return {
@@ -235,6 +236,7 @@ describe('startLockdown', () => {
         await startLockdown(guild, { antiRaidQuarantineRoleId: 'role1' });
 
         expect(mockedGetLogChannel).not.toHaveBeenCalled();
+        expect(mockedInvalidateGuildConfig).not.toHaveBeenCalled();
     });
 
     test('posts an alert embed to the resolved alert channel on success', async () => {
@@ -248,6 +250,7 @@ describe('startLockdown', () => {
         await startLockdown(guild, { antiRaidQuarantineRoleId: 'role1', antiRaidAlertChannelId: null }, { auto: true });
 
         expect(send).toHaveBeenCalledWith(expect.objectContaining({ embeds: expect.any(Array) }));
+        expect(mockedInvalidateGuildConfig).toHaveBeenCalledWith(guild.id);
     });
 
     test('does nothing further when no alert channel can be resolved', async () => {

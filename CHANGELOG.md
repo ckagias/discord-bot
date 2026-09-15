@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Guild config lookups (`getGuildConfig`) are now cached in-memory for 30 seconds instead of hitting MongoDB on every message, voice state change, and member event. Cache is invalidated immediately on any config write.
+
 ### Added
 
 - Music queue and playback state now survive a bot restart. Lavalink session resuming keeps a guild's player alive across a quick `restart.sh --bot`, and the queue is persisted to MongoDB so it can be restored instead of lost.
