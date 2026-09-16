@@ -45,7 +45,10 @@ module.exports = {
             ? `<t:${Math.floor(member.premiumSinceTimestamp / 1000)}:D>`
             : null;
 
-        const joinPosition = member
+        // Fetching the full member list is only worth it on small guilds — on large ones it
+        // pulls the entire membership over the gateway just to compute a single rank number.
+        const JOIN_POSITION_MEMBER_LIMIT = 1000;
+        const joinPosition = member && interaction.guild.memberCount <= JOIN_POSITION_MEMBER_LIMIT
             ? await interaction.guild.members.fetch()
                 .then(members => members
                     .sort((a, b) => a.joinedTimestamp - b.joinedTimestamp)

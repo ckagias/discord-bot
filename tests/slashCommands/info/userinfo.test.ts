@@ -21,7 +21,7 @@ function makeUser(overrides: Record<string, unknown> = {}) {
     };
 }
 
-function makeInteraction({ user = null, member = null, allMembers = null }: { user?: any; member?: any; allMembers?: any } = {}) {
+function makeInteraction({ user = null, member = null, allMembers = null, memberCount = 100 }: { user?: any; member?: any; allMembers?: any; memberCount?: number } = {}) {
     const self = makeUser({ id: 'self1' });
     const fetchedUser = makeUser({ flags: { toArray: () => [] }, accentColor: null, banner: null });
     self.fetch = jest.fn().mockResolvedValue(fetchedUser);
@@ -32,6 +32,7 @@ function makeInteraction({ user = null, member = null, allMembers = null }: { us
         user: self,
         guild: {
             id: 'g1',
+            memberCount,
             members: {
                 fetch: jest.fn((id) => {
                     if (id === undefined) return Promise.resolve(allMembers ?? makeCollection([]));
@@ -85,6 +86,49 @@ describe('userinfo command', () => {
             .mockImplementation((id) => (id ? Promise.resolve(member) : Promise.resolve(makeCollection([]))));
 
         await expect(userinfo.execute(interaction)).resolves.not.toThrow();
+        expect(interaction.reply).toHaveBeenCalledWith(
+            expect.objectContaining({ embeds: expect.any(Array) })
+        );
+    });
+
+    test('computes join position on a small guild by fetching the full member list', async () => {
+        const target = makeUser({ id: 'target1' });
+        const member = {
+            joinedTimestamp: Date.now(),
+            nickname: null,
+            roles: { cache: makeCollection([{ id: 'g1', position: 0 }]) },
+            displayAvatarURL: jest.fn().mockReturnValue('https://example.com/member.png'),
+            presence: null,
+            voice: { channel: null },
+            premiumSinceTimestamp: null,
+        };
+        const interaction = makeInteraction({ user: target, member, memberCount: 100 });
+        interaction.guild.members.fetch = jest.fn()
+            .mockImplementation((id) => (id ? Promise.resolve(member) : Promise.resolve(makeCollection([]))));
+
+        await userinfo.execute(interaction);
+
+        expect(interaction.guild.members.fetch).toHaveBeenCalledWith();
+    });
+
+    test('skips fetching the full member list on a large guild', async () => {
+        const target = makeUser({ id: 'target1' });
+        const member = {
+            joinedTimestamp: Date.now(),
+            nickname: null,
+            roles: { cache: makeCollection([{ id: 'g1', position: 0 }]) },
+            displayAvatarURL: jest.fn().mockReturnValue('https://example.com/member.png'),
+            presence: null,
+            voice: { channel: null },
+            premiumSinceTimestamp: null,
+        };
+        const interaction = makeInteraction({ user: target, member, memberCount: 5000 });
+        interaction.guild.members.fetch = jest.fn()
+            .mockImplementation((id) => (id ? Promise.resolve(member) : Promise.resolve(makeCollection([]))));
+
+        await userinfo.execute(interaction);
+
+        expect(interaction.guild.members.fetch).not.toHaveBeenCalledWith();
         expect(interaction.reply).toHaveBeenCalledWith(
             expect.objectContaining({ embeds: expect.any(Array) })
         );

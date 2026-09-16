@@ -12,6 +12,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Trigger lists are now cached in-memory for 30 seconds instead of hitting MongoDB on every non-bot message, even in guilds with no triggers configured. Cache is invalidated immediately on `/addtrigger` and `/removetrigger`.
 - `voiceStateUpdate` now checks whether anything worth logging happened (join/leave/move/mute/deafen) before fetching the log channel, instead of fetching it unconditionally on every voice state change.
 - `/economyleaderboard` now bulk-fetches its top-10 members in a single call instead of fetching each user one at a time, matching the pattern already used by `/leaderboard`.
+- `/userinfo`'s join-rank feature now skips fetching the full member list on guilds over 1,000 members, showing "N/A" instead of pulling the entire membership over the gateway just to compute one rank number.
 
 ### Added
 
