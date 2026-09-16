@@ -20,14 +20,15 @@ module.exports = {
 
         const medals = ['🥇', '🥈', '🥉'];
 
-        const rows = await Promise.all(
-            top.map(async (entry, i) => {
-                const user = await interaction.client.users.fetch(entry.userId).catch(() => null);
-                const name = user ? user.username : `Unknown (${entry.userId})`;
-                const prefix = medals[i] ?? `**#${i + 1}**`;
-                return `${prefix} ${name} — 💰 ${formatBalance(entry.balance)}`;
-            })
-        );
+        const userIds = top.map(entry => entry.userId);
+        const members = await interaction.guild.members.fetch({ user: userIds } as any).catch(() => null);
+
+        const rows = top.map((entry, i) => {
+            const member = (members as any)?.get(entry.userId);
+            const name = member ? member.user.username : `Unknown (${entry.userId})`;
+            const prefix = medals[i] ?? `**#${i + 1}**`;
+            return `${prefix} ${name} — 💰 ${formatBalance(entry.balance)}`;
+        });
 
         const embed = new EmbedBuilder()
             .setTitle(`💰 ${interaction.guild.name} — Richest Members`)
