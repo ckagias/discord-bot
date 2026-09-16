@@ -89,6 +89,17 @@ describe('voiceStateUpdate', () => {
         expect(logChannel.send).not.toHaveBeenCalled();
     });
 
+    test('skips the log channel lookup entirely when nothing relevant changed', async () => {
+        const member = makeMember();
+        const oldState = makeState({ channelId: 'vc1', member });
+        const newState = makeState({ channelId: 'vc1', member });
+        const client = {};
+
+        await voiceStateUpdate.execute(oldState, newState, client);
+
+        expect(getLogChannel).not.toHaveBeenCalled();
+    });
+
     test('logs a channel join', async () => {
         const logChannel = { send: jest.fn().mockResolvedValue({}) };
         getLogChannel.mockResolvedValue(logChannel);
