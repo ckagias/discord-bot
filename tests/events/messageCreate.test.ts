@@ -1,18 +1,18 @@
 jest.mock('../../models/LevelSchema', () => ({ findOneAndUpdate: jest.fn() }));
 jest.mock('../../models/AfkSchema', () => ({ findOne: jest.fn(), find: jest.fn(), deleteOne: jest.fn() }));
-jest.mock('../../models/TriggerSchema', () => ({ find: jest.fn() }));
 jest.mock('../../models/MessageActivitySchema', () => ({ updateOne: jest.fn() }));
 jest.mock('../../utils/automod', () => ({ runAutoMod: jest.fn() }));
 jest.mock('../../utils/guildConfig', () => ({ ensureGuildConfig: jest.fn() }));
+jest.mock('../../utils/triggerCache', () => ({ getTriggers: jest.fn() }));
 jest.mock('../../utils/economy', () => ({ updateBalance: jest.fn() }));
 jest.mock('../../utils/upsertRetry', () => ({ upsertWithRetry: jest.fn() }));
 
 const LevelSchema = require('../../models/LevelSchema');
 const AfkSchema = require('../../models/AfkSchema');
-const TriggerSchema = require('../../models/TriggerSchema');
 const MessageActivitySchema = require('../../models/MessageActivitySchema');
 const { runAutoMod } = require('../../utils/automod');
 const { ensureGuildConfig } = require('../../utils/guildConfig');
+const { getTriggers } = require('../../utils/triggerCache');
 const { updateBalance } = require('../../utils/economy');
 const { upsertWithRetry } = require('../../utils/upsertRetry');
 const messageCreate = require('../../events/messageCreate');
@@ -23,9 +23,6 @@ function leanable(mockFn, value) {
 }
 function leanableOnce(mockFn, value) {
     mockFn.mockReturnValueOnce({ lean: jest.fn().mockResolvedValue(value) });
-}
-function leanableRejects(mockFn, error) {
-    mockFn.mockReturnValue({ lean: jest.fn().mockRejectedValue(error) });
 }
 function leanableRejectsOnce(mockFn, error) {
     mockFn.mockReturnValueOnce({ lean: jest.fn().mockRejectedValue(error) });
@@ -54,7 +51,7 @@ describe('messageCreate', () => {
         jest.clearAllMocks();
         jest.useFakeTimers();
         ensureGuildConfig.mockResolvedValue({});
-        leanable(TriggerSchema.find, []);
+        getTriggers.mockResolvedValue([]);
         leanable(AfkSchema.findOne, null);
         leanable(AfkSchema.find, []);
         runAutoMod.mockResolvedValue(false);
@@ -98,7 +95,7 @@ describe('messageCreate', () => {
             await messageCreate.execute(message);
 
             expect(runAutoMod).toHaveBeenCalledWith(message, { automodEnabled: true });
-            expect(TriggerSchema.find).not.toHaveBeenCalled();
+            expect(getTriggers).not.toHaveBeenCalled();
         });
 
         test('continues to triggers/leveling when automod did not action the message', async () => {
@@ -108,7 +105,7 @@ describe('messageCreate', () => {
 
             await messageCreate.execute(message);
 
-            expect(TriggerSchema.find).toHaveBeenCalled();
+            expect(getTriggers).toHaveBeenCalled();
         });
 
         test('skips automod entirely when disabled', async () => {
@@ -123,7 +120,7 @@ describe('messageCreate', () => {
 
     describe('triggers', () => {
         test('replies with the configured response on a trigger match', async () => {
-            leanable(TriggerSchema.find, [{ trigger: 'hello', response: 'hi there' }]);
+            getTriggers.mockResolvedValue([{ trigger: 'hello', response: 'hi there' }]);
             const message = makeMessage({ content: 'oh hello world' });
 
             await messageCreate.execute(message);
@@ -134,7 +131,7 @@ describe('messageCreate', () => {
         });
 
         test('does not match a trigger inside a larger word', async () => {
-            leanable(TriggerSchema.find, [{ trigger: 'cat', response: 'meow' }]);
+            getTriggers.mockResolvedValue([{ trigger: 'cat', response: 'meow' }]);
             const message = makeMessage({ content: 'concatenate this' });
 
             await messageCreate.execute(message);
@@ -143,7 +140,7 @@ describe('messageCreate', () => {
         });
 
         test('only replies to the first matching trigger, not all matches', async () => {
-            leanable(TriggerSchema.find, [
+            getTriggers.mockResolvedValue([
                 { trigger: 'hello', response: 'first' },
                 { trigger: 'world', response: 'second' },
             ]);
@@ -156,7 +153,7 @@ describe('messageCreate', () => {
         });
 
         test('continues processing when the trigger lookup fails', async () => {
-            leanableRejects(TriggerSchema.find, new Error('db down'));
+            getTriggers.mockRejectedValue(new Error('db down'));
             const message = makeMessage();
 
             await expect(messageCreate.execute(message)).resolves.not.toThrow();

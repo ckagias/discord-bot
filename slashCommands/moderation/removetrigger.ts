@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, ChatInputCommandInteraction } from 'discord.js';
 const TriggerSchema = require('../../models/TriggerSchema');
+const { invalidateTriggers } = require('../../utils/triggerCache');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -23,6 +24,7 @@ module.exports = {
             return interaction.editReply({ content: `No trigger found for \`${trigger}\`.` });
         }
 
+        invalidateTriggers(interaction.guild.id);
         return interaction.editReply({ content: `Removed trigger \`${trigger}\`.` });
     },
 };

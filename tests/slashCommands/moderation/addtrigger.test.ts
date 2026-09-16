@@ -1,6 +1,8 @@
 jest.mock('../../../models/TriggerSchema', () => ({ findOne: jest.fn(), create: jest.fn() }));
+jest.mock('../../../utils/triggerCache', () => ({ invalidateTriggers: jest.fn() }));
 
 const TriggerSchema = require('../../../models/TriggerSchema');
+const { invalidateTriggers } = require('../../../utils/triggerCache');
 const addtrigger = require('../../../slashCommands/moderation/addtrigger');
 
 function makeInteraction({ trigger = 'HELLO', response = 'Hi there!' } = {}) {
@@ -25,6 +27,7 @@ describe('addtrigger command', () => {
 
         expect(TriggerSchema.findOne).toHaveBeenCalledWith({ guildId: 'g1', trigger: 'hello' });
         expect(TriggerSchema.create).toHaveBeenCalledWith({ guildId: 'g1', trigger: 'hello', response: 'Hi there!' });
+        expect(invalidateTriggers).toHaveBeenCalledWith('g1');
     });
 
     test('rejects a duplicate trigger', async () => {
@@ -37,5 +40,6 @@ describe('addtrigger command', () => {
             expect.objectContaining({ content: expect.stringContaining('already exists') })
         );
         expect(TriggerSchema.create).not.toHaveBeenCalled();
+        expect(invalidateTriggers).not.toHaveBeenCalled();
     });
 });

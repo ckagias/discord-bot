@@ -1,6 +1,8 @@
 jest.mock('../../../models/TriggerSchema', () => ({ deleteOne: jest.fn() }));
+jest.mock('../../../utils/triggerCache', () => ({ invalidateTriggers: jest.fn() }));
 
 const TriggerSchema = require('../../../models/TriggerSchema');
+const { invalidateTriggers } = require('../../../utils/triggerCache');
 const removetrigger = require('../../../slashCommands/moderation/removetrigger');
 
 function makeInteraction({ trigger = 'HELLO' } = {}) {
@@ -27,6 +29,7 @@ describe('removetrigger command', () => {
         expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Removed trigger') })
         );
+        expect(invalidateTriggers).toHaveBeenCalledWith('g1');
     });
 
     test('reports when no matching trigger was found', async () => {
@@ -38,5 +41,6 @@ describe('removetrigger command', () => {
         expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('No trigger found') })
         );
+        expect(invalidateTriggers).not.toHaveBeenCalled();
     });
 });
