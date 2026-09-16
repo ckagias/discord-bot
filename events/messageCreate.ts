@@ -1,10 +1,10 @@
 import { Message } from 'discord.js';
 const LevelSchema = require('../models/LevelSchema');
 const AfkSchema = require('../models/AfkSchema');
-const TriggerSchema = require('../models/TriggerSchema');
 const MessageActivitySchema = require('../models/MessageActivitySchema');
 const { runAutoMod } = require('../utils/automod');
 const { ensureGuildConfig } = require('../utils/guildConfig');
+const { getTriggers } = require('../utils/triggerCache');
 const { updateBalance } = require('../utils/economy');
 const { upsertWithRetry } = require('../utils/upsertRetry');
 const log = require('../utils/log');
@@ -43,7 +43,7 @@ module.exports = {
         }
 
         try {
-            const triggers = await TriggerSchema.find({ guildId: guild.id }).lean();
+            const triggers = await getTriggers(guild.id);
             for (const { trigger, response } of triggers) {
                 const regex = new RegExp(`(?<![\\p{L}\\p{N}])${trigger.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{N}])`, 'iu');
                 if (regex.test(message.content)) {

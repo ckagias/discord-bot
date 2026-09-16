@@ -9,6 +9,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - Guild config lookups (`getGuildConfig`) are now cached in-memory for 30 seconds instead of hitting MongoDB on every message, voice state change, and member event. Cache is invalidated immediately on any config write.
+- Trigger lists are now cached in-memory for 30 seconds instead of hitting MongoDB on every non-bot message, even in guilds with no triggers configured. Cache is invalidated immediately on `/addtrigger` and `/removetrigger`.
 
 ### Added
 
