@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, ChatInputCommandInteraction } from 'discord.js';
 const TriggerSchema = require('../../models/TriggerSchema');
+const { invalidateTriggers } = require('../../utils/triggerCache');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -29,6 +30,7 @@ module.exports = {
         }
 
         await TriggerSchema.create({ guildId: interaction.guild.id, trigger, response });
+        invalidateTriggers(interaction.guild.id);
         return interaction.editReply({ content: `Trigger added: \`${trigger}\` → ${response}` });
     },
 };
