@@ -18,9 +18,6 @@ module.exports = {
         }
 
 
-        const logChannel = await getLogChannel(member.guild).catch(() => null);
-        if (!logChannel) return;
-
         const joined = !oldState.channelId && newState.channelId;
         const left = oldState.channelId && !newState.channelId;
         const moved = oldState.channelId && newState.channelId && oldState.channelId !== newState.channelId;
@@ -30,6 +27,9 @@ module.exports = {
         const serverUnmuted = oldState.serverMute && !newState.serverMute;
 
         if (!joined && !left && !moved && !serverDeafened && !serverUndeafened && !serverMuted && !serverUnmuted) return;
+
+        const logChannel = await getLogChannel(member.guild).catch(() => null);
+        if (!logChannel) return;
 
         let description;
 
