@@ -12,8 +12,11 @@ function makeQuery(result) {
 
 function makeInteraction() {
     return {
-        guild: { id: 'g1', name: 'Test Guild' },
-        client: { users: { fetch: jest.fn().mockResolvedValue({ username: 'Someone' }) } },
+        guild: {
+            id: 'g1',
+            name: 'Test Guild',
+            members: { fetch: jest.fn().mockResolvedValue(new Map([['u1', { user: { username: 'Someone' } }]])) },
+        },
         deferReply: jest.fn().mockResolvedValue({}),
         editReply: jest.fn().mockResolvedValue({}),
     };
@@ -49,14 +52,38 @@ describe('economyleaderboard command', () => {
         );
     });
 
-    test('falls back to "Unknown" when a user can no longer be fetched', async () => {
+    test('falls back to "Unknown" when a member can no longer be fetched', async () => {
         const interaction = makeInteraction();
-        interaction.client.users.fetch.mockResolvedValue(null);
+        interaction.guild.members.fetch.mockResolvedValue(new Map());
         EconomySchema.find.mockReturnValue(makeQuery([{ userId: 'gone1', balance: 100 }]));
 
         await expect(economyleaderboard.execute(interaction)).resolves.not.toThrow();
         expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ embeds: expect.any(Array) })
         );
+    });
+
+    test('falls back to "Unknown" for every entry when the bulk member fetch fails entirely', async () => {
+        const interaction = makeInteraction();
+        interaction.guild.members.fetch.mockResolvedValue(null);
+        EconomySchema.find.mockReturnValue(makeQuery([{ userId: 'gone1', balance: 100 }]));
+
+        await expect(economyleaderboard.execute(interaction)).resolves.not.toThrow();
+        expect(interaction.editReply).toHaveBeenCalledWith(
+            expect.objectContaining({ embeds: expect.any(Array) })
+        );
+    });
+
+    test('fetches all top members in a single bulk call instead of one per entry', async () => {
+        const interaction = makeInteraction();
+        EconomySchema.find.mockReturnValue(makeQuery([
+            { userId: 'u1', balance: 500 },
+            { userId: 'u2', balance: 300 },
+        ]));
+
+        await economyleaderboard.execute(interaction);
+
+        expect(interaction.guild.members.fetch).toHaveBeenCalledTimes(1);
+        expect(interaction.guild.members.fetch).toHaveBeenCalledWith({ user: ['u1', 'u2'] });
     });
 });
