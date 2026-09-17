@@ -6,7 +6,7 @@ module.exports = {
     name: 'guildMemberRemove',
     async execute(member: GuildMember | PartialGuildMember) {
         const [logChannel, farewellConfig] = await Promise.all([
-            getLogChannel(member.guild).catch(() => null),
+            getLogChannel(member.guild, 'member').catch(() => null),
             getFarewellConfig(member.guild).catch(() => null),
         ]);
 

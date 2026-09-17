@@ -17,7 +17,7 @@ function resolveThreshold(thresholds: WarnThreshold[], totalWarnings: number): W
 }
 
 async function logEscalation(guild: Guild, member: GuildMember, action: string, reason: string): Promise<void> {
-    const logChannel = await getLogChannel(guild).catch(() => null);
+    const logChannel = await getLogChannel(guild, 'moderation').catch(() => null);
     if (!logChannel) return;
 
     const embed = new EmbedBuilder()

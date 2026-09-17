@@ -4,7 +4,7 @@ const { getLogChannel } = require('../utils/logger');
 module.exports = {
     name: 'guildBanRemove',
     async execute(ban: GuildBan) {
-        const logChannel = await getLogChannel(ban.guild).catch(() => null);
+        const logChannel = await getLogChannel(ban.guild, 'moderation').catch(() => null);
         if (!logChannel) return;
 
         await new Promise(r => setTimeout(r, 500));

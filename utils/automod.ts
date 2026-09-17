@@ -120,7 +120,7 @@ async function applyAction(message: Message, guildData: any, filter: string): Pr
         }
     }
 
-    const logChannel = await getLogChannel(message.guild!).catch(() => null);
+    const logChannel = await getLogChannel(message.guild!, 'moderation').catch(() => null);
     if (logChannel) {
         const embed = new EmbedBuilder()
             .setColor(0xED4245)

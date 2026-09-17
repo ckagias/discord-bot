@@ -4,7 +4,7 @@ const { getLogChannel } = require('../utils/logger');
 module.exports = {
     name: 'guildMemberUpdate',
     async execute(oldMember: GuildMember | PartialGuildMember, newMember: GuildMember) {
-        const logChannel = await getLogChannel(newMember.guild).catch(() => null);
+        const logChannel = await getLogChannel(newMember.guild, 'member').catch(() => null);
         if (!logChannel) return;
 
         const embeds = [];
