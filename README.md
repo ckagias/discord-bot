@@ -201,8 +201,8 @@ If you find this useful, consider leaving a star.
 | `/addtrigger`           | Add a keyword and the bot's response to it (Manage Messages)                                                       |
 | `/removetrigger`        | Remove a trigger keyword (Manage Messages)                                                                         |
 | `/triggers`             | List all trigger keywords configured for this server                                                               |
-| `/log set`              | Set the channel where server events will be logged (Manage Server)                                                 |
-| `/log unset`            | Disable event logging for this server (Manage Server)                                                              |
+| `/log set`              | Set the log channel; optionally scope to a category (member/moderation/message/voice), defaults to all (Manage Server) |
+| `/log unset`            | Disable event logging; optionally scope to a category, defaults to all (Manage Server)                             |
 | `/welcome set`          | Set the channel and optional message for member join announcements (Manage Server)                                 |
 | `/welcome unset`        | Disable welcome messages for this server (Manage Server)                                                           |
 | `/farewell set`         | Set the channel and optional message for member leave announcements (Manage Server)                                |

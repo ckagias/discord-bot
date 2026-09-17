@@ -28,7 +28,7 @@ module.exports = {
 
         if (!joined && !left && !moved && !serverDeafened && !serverUndeafened && !serverMuted && !serverUnmuted) return;
 
-        const logChannel = await getLogChannel(member.guild).catch(() => null);
+        const logChannel = await getLogChannel(member.guild, 'voice').catch(() => null);
         if (!logChannel) return;
 
         let description;

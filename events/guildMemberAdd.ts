@@ -10,7 +10,7 @@ module.exports = {
     name: 'guildMemberAdd',
     async execute(member: GuildMember) {
         const [logChannel, welcomeConfig, guildConfig] = await Promise.all([
-            getLogChannel(member.guild).catch(() => null),
+            getLogChannel(member.guild, 'member').catch(() => null),
             getWelcomeConfig(member.guild).catch(() => null),
             getGuildConfig(member.guild.id).catch(() => null),
         ]);

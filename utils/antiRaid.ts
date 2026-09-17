@@ -91,7 +91,7 @@ async function resolveAlertChannel(guild: Guild, guildData: any) {
     if (guildData?.antiRaidAlertChannelId) {
         return guild.channels.cache.get(guildData.antiRaidAlertChannelId) ?? null;
     }
-    return getLogChannel(guild).catch(() => null);
+    return getLogChannel(guild, 'moderation').catch(() => null);
 }
 
 // Activates a lockdown, sets channel overwrites, and posts an alert embed.

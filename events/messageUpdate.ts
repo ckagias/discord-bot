@@ -24,7 +24,7 @@ module.exports = {
             }, 5 * 60 * 1000);
         }
 
-        const logChannel = await getLogChannel(newMessage.guild).catch(() => null);
+        const logChannel = await getLogChannel(newMessage.guild, 'message').catch(() => null);
         if (!logChannel) return;
 
         const author = newMessage.author;
