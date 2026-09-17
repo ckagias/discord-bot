@@ -16,6 +16,10 @@ export interface GuildDoc {
   guildId: string;
   levelingEnabled: boolean;
   logChannelId: string | null;
+  memberLogChannelId: string | null;
+  moderationLogChannelId: string | null;
+  messageLogChannelId: string | null;
+  voiceLogChannelId: string | null;
   welcomeChannelId: string | null;
   welcomeMessage: string | null;
   farewellChannelId: string | null;
@@ -61,6 +65,10 @@ const guildSchema = new Schema<GuildDoc>({
   guildId: { type: String, required: true, unique: true },
   levelingEnabled: { type: Boolean, default: false },
   logChannelId: { type: String, default: null },
+  memberLogChannelId: { type: String, default: null },
+  moderationLogChannelId: { type: String, default: null },
+  messageLogChannelId: { type: String, default: null },
+  voiceLogChannelId: { type: String, default: null },
   welcomeChannelId: { type: String, default: null },
   welcomeMessage: { type: String, default: null },
   farewellChannelId: { type: String, default: null },

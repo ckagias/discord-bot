@@ -29,10 +29,23 @@ export default async function ModerationSettingsPage({
   const assignableRoles = roles.filter((r) => r.id !== guildId && !r.managed);
   const textChannels = channels.filter((c) => c.type === TEXT_CHANNEL_TYPE);
 
-  const guild: Pick<GuildDoc, "muteRoleId" | "autoroleId" | "logChannelId"> = guildDoc ?? {
+  const guild: Pick<
+    GuildDoc,
+    | "muteRoleId"
+    | "autoroleId"
+    | "logChannelId"
+    | "memberLogChannelId"
+    | "moderationLogChannelId"
+    | "messageLogChannelId"
+    | "voiceLogChannelId"
+  > = guildDoc ?? {
     muteRoleId: null,
     autoroleId: null,
     logChannelId: null,
+    memberLogChannelId: null,
+    moderationLogChannelId: null,
+    messageLogChannelId: null,
+    voiceLogChannelId: null,
   };
 
   return (
@@ -46,9 +59,37 @@ export default async function ModerationSettingsPage({
         >
           <ChannelField
             label="Log channel"
-            description="Where moderation and member events are posted."
+            description="Default channel for events. Overridden by the category channels below when set."
             name="logChannelId"
             defaultValue={guild.logChannelId}
+            channels={textChannels}
+          />
+          <ChannelField
+            label="Member log channel"
+            description="Joins, leaves, and member updates. Falls back to the log channel above when unset."
+            name="memberLogChannelId"
+            defaultValue={guild.memberLogChannelId}
+            channels={textChannels}
+          />
+          <ChannelField
+            label="Moderation log channel"
+            description="Bans, warns, automod, and antiraid actions. Falls back to the log channel above when unset."
+            name="moderationLogChannelId"
+            defaultValue={guild.moderationLogChannelId}
+            channels={textChannels}
+          />
+          <ChannelField
+            label="Message log channel"
+            description="Message edits and deletes. Falls back to the log channel above when unset."
+            name="messageLogChannelId"
+            defaultValue={guild.messageLogChannelId}
+            channels={textChannels}
+          />
+          <ChannelField
+            label="Voice log channel"
+            description="Voice state changes. Falls back to the log channel above when unset."
+            name="voiceLogChannelId"
+            defaultValue={guild.voiceLogChannelId}
             channels={textChannels}
           />
           <RoleField
