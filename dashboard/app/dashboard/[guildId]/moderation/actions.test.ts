@@ -24,19 +24,31 @@ describe("updateModerationSettings", () => {
     expect(findOneAndUpdate).not.toHaveBeenCalled();
   });
 
-  it("persists muteRoleId, autoroleId, and logChannelId, then revalidates", async () => {
+  it("persists muteRoleId, autoroleId, and all log channel fields, then revalidates", async () => {
     requireGuildAccess.mockResolvedValue(undefined);
     const formData = new FormData();
     formData.set("muteRoleId", "role1");
     formData.set("autoroleId", "role2");
     formData.set("logChannelId", "channel1");
+    formData.set("memberLogChannelId", "channel2");
+    formData.set("moderationLogChannelId", "channel3");
+    formData.set("messageLogChannelId", "channel4");
+    formData.set("voiceLogChannelId", "channel5");
 
     await updateModerationSettings("guild1", formData);
 
     expect(findOneAndUpdate).toHaveBeenCalledWith(
       { guildId: "guild1" },
       {
-        $set: { muteRoleId: "role1", autoroleId: "role2", logChannelId: "channel1" },
+        $set: {
+          muteRoleId: "role1",
+          autoroleId: "role2",
+          logChannelId: "channel1",
+          memberLogChannelId: "channel2",
+          moderationLogChannelId: "channel3",
+          messageLogChannelId: "channel4",
+          voiceLogChannelId: "channel5",
+        },
         $setOnInsert: { guildId: "guild1" },
       },
       { upsert: true }
@@ -52,7 +64,15 @@ describe("updateModerationSettings", () => {
     expect(findOneAndUpdate).toHaveBeenCalledWith(
       { guildId: "guild1" },
       {
-        $set: { muteRoleId: null, autoroleId: null, logChannelId: null },
+        $set: {
+          muteRoleId: null,
+          autoroleId: null,
+          logChannelId: null,
+          memberLogChannelId: null,
+          moderationLogChannelId: null,
+          messageLogChannelId: null,
+          voiceLogChannelId: null,
+        },
         $setOnInsert: { guildId: "guild1" },
       },
       { upsert: true }

@@ -14,6 +14,10 @@ export async function updateModerationSettings(guildId: string, formData: FormDa
     muteRoleId: emptyToNull(formData.get("muteRoleId")),
     autoroleId: emptyToNull(formData.get("autoroleId")),
     logChannelId: emptyToNull(formData.get("logChannelId")),
+    memberLogChannelId: emptyToNull(formData.get("memberLogChannelId")),
+    moderationLogChannelId: emptyToNull(formData.get("moderationLogChannelId")),
+    messageLogChannelId: emptyToNull(formData.get("messageLogChannelId")),
+    voiceLogChannelId: emptyToNull(formData.get("voiceLogChannelId")),
   };
 
   await Guild.findOneAndUpdate({ guildId }, { $set: update, $setOnInsert: { guildId } }, { upsert: true });
