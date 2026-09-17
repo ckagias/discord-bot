@@ -4,12 +4,12 @@ jest.mock('../../../models/WarnSchema', () => ({
 }));
 jest.mock('../../../utils/guildConfig', () => ({ getGuildConfig: jest.fn() }));
 jest.mock('../../../utils/warnThresholds', () => ({ checkWarnThresholds: jest.fn() }));
-jest.mock('../../../utils/cases', () => ({ createCase: jest.fn() }));
+jest.mock('../../../utils/cases', () => ({ createCase: jest.fn(), logModAction: jest.fn() }));
 
 const WarnSchema = require('../../../models/WarnSchema');
 const { getGuildConfig } = require('../../../utils/guildConfig');
 const { checkWarnThresholds } = require('../../../utils/warnThresholds');
-const { createCase } = require('../../../utils/cases');
+const { createCase, logModAction } = require('../../../utils/cases');
 const warn = require('../../../slashCommands/moderation/warn');
 
 function makeTarget(overrides: Record<string, unknown> = {}) {
@@ -108,6 +108,9 @@ describe('warn command', () => {
         expect(checkWarnThresholds).toHaveBeenCalledWith(interaction.guild, target, 3, guildData);
         expect(interaction.reply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Case #9') })
+        );
+        expect(logModAction).toHaveBeenCalledWith(
+            expect.objectContaining({ guild: interaction.guild, action: 'Warn (#3)', reason: 'spam', caseId: 9 })
         );
     });
 

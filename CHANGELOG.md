@@ -6,6 +6,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `/log set` and `/log unset` now take an optional `category` (member, moderation, message, voice), letting events be routed to separate channels instead of one general log channel. Falls back to the general log channel when a category is left unset. Same fields added to the dashboard's moderation settings page.
+- Manual moderation commands (`/ban`, `/kick`, `/timeout`, `/mute`, `/unmute`, `/unban`, `/warn`) now post an embed to the moderation log channel when used, matching the logging automod/antiraid/warn-escalation actions already had. Previously these only wrote a case to the database with no channel post.
+
+### Fixed
+
+- Added a `{guildId, xp}` index to the leveling schema so `/leaderboard` no longer does a full collection scan per guild, matching the index `/economyleaderboard` already had.
+- Bumped `undici` and transitive `browserslist`/`baseline-browser-mapping` versions to resolve `npm audit` findings (response desync, CRLF/cookie injection in undici; DoS bugs in the test-only browserslist chain).
+
 ## [1.2.0] - 2026-09-16
 
 ### Changed

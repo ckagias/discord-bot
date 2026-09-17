@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, ChatInputCommandInteraction, GuildMember } from 'discord.js';
-const { createCase } = require('../../utils/cases');
+const { createCase, logModAction } = require('../../utils/cases');
 const log = require('../../utils/log');
 const logger = log.scope('kick');
 
@@ -40,6 +40,7 @@ module.exports = {
                 target.kick(reason),
                 createCase({ guildId: interaction.guild.id, type: 'kick', userId: target.id, moderatorId: interaction.user.id, reason }),
             ]);
+            await logModAction({ guild: interaction.guild, action: 'Kick', target: target.user, moderator: interaction.user, reason, caseId: modCase.caseId });
             return interaction.reply({ content: `Kicked **${target.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
         } catch (err) {
             logger.error('Error:', err);

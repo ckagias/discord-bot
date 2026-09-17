@@ -1,4 +1,6 @@
+import { EmbedBuilder, Guild, User } from 'discord.js';
 import CaseSchema from '../models/CaseSchema';
+import { getLogChannel } from './logger';
 
 // Deleting the highest-numbered case frees its number; on conflict, recompute and retry rather than crash.
 const MAX_ATTEMPTS = 5;
@@ -27,4 +29,39 @@ async function createCase({ guildId, type, userId, moderatorId, reason, duration
     throw new Error(`Failed to allocate a case number for guild ${guildId} after ${MAX_ATTEMPTS} attempts.`);
 }
 
-export { createCase };
+interface LogModActionInput {
+    guild: Guild;
+    action: string;
+    target: User;
+    moderator: User;
+    reason: string;
+    caseId: number;
+    duration?: string | null;
+}
+
+// Manual mod commands (ban/kick/timeout/mute/unmute/unban/warn) previously only wrote a case to the DB
+// with no channel post, unlike automod/antiraid/warn-escalation actions, which already log via getLogChannel.
+async function logModAction({ guild, action, target, moderator, reason, caseId, duration }: LogModActionInput): Promise<void> {
+    const logChannel = await getLogChannel(guild, 'moderation').catch(() => null);
+    if (!logChannel) return;
+
+    const embed = new EmbedBuilder()
+        .setColor(0xED4245)
+        .setAuthor({ name: target.tag, iconURL: target.displayAvatarURL({ size: 64 }) })
+        .addFields(
+            { name: 'User',      value: `${target} (\`${target.id}\`)`, inline: true },
+            { name: 'Moderator', value: `${moderator}`,                  inline: true },
+            { name: 'Action',    value: action,                          inline: true },
+            { name: 'Reason',    value: reason,                          inline: false },
+        )
+        .setFooter({ text: `Case #${caseId}` })
+        .setTimestamp();
+
+    if (duration) {
+        embed.addFields({ name: 'Duration', value: duration, inline: true });
+    }
+
+    await (logChannel as any).send({ embeds: [embed] }).catch(() => {});
+}
+
+export { createCase, logModAction };

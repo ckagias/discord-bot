@@ -5,12 +5,12 @@ jest.mock('../../../utils/punishments', () => ({
     formatDuration: jest.fn(),
     schedulePunishment: jest.fn(),
 }));
-jest.mock('../../../utils/cases', () => ({ createCase: jest.fn() }));
+jest.mock('../../../utils/cases', () => ({ createCase: jest.fn(), logModAction: jest.fn() }));
 
 const { getGuildConfig } = require('../../../utils/guildConfig');
 const PunishmentSchema = require('../../../models/PunishmentSchema');
 const { parseDuration, formatDuration, schedulePunishment } = require('../../../utils/punishments');
-const { createCase } = require('../../../utils/cases');
+const { createCase, logModAction } = require('../../../utils/cases');
 const mute = require('../../../slashCommands/moderation/mute');
 
 function makeCollection(items: any[] = []) {
@@ -152,6 +152,9 @@ describe('mute command', () => {
         expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Case #4') })
         );
+        expect(logModAction).toHaveBeenCalledWith(
+            expect.objectContaining({ guild: interaction.guild, action: 'Mute', reason: 'spam', caseId: 4 })
+        );
     });
 
     test('temp-mutes, persists a punishment, and schedules it when a duration is given', async () => {
@@ -171,6 +174,9 @@ describe('mute command', () => {
         expect(schedulePunishment).toHaveBeenCalledWith(interaction.client, { _id: 'p1', type: 'mute' });
         expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Case #5') })
+        );
+        expect(logModAction).toHaveBeenCalledWith(
+            expect.objectContaining({ guild: interaction.guild, action: 'Mute', reason: 'spam', caseId: 5, duration: '30m' })
         );
     });
 });

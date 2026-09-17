@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction, GuildMember } from 'discord.js';
 const { getGuildConfig } = require('../../utils/guildConfig');
-const { createCase } = require('../../utils/cases');
+const { createCase, logModAction } = require('../../utils/cases');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -48,6 +48,7 @@ module.exports = {
             target.roles.remove(muteRole, reason),
             createCase({ guildId: interaction.guild.id, type: 'unmute', userId: target.id, moderatorId: interaction.user.id, reason }),
         ]);
+        await logModAction({ guild: interaction.guild, action: 'Unmute', target: target.user, moderator: interaction.user, reason, caseId: modCase.caseId });
         return interaction.editReply({ content: `Unmuted **${target.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
     },
 };

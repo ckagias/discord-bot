@@ -1,6 +1,6 @@
-jest.mock('../../../utils/cases', () => ({ createCase: jest.fn() }));
+jest.mock('../../../utils/cases', () => ({ createCase: jest.fn(), logModAction: jest.fn() }));
 
-const { createCase } = require('../../../utils/cases');
+const { createCase, logModAction } = require('../../../utils/cases');
 const unban = require('../../../slashCommands/moderation/unban');
 
 function makeInteraction({ userId = 'user1', reason = null, fetchBan = jest.fn().mockResolvedValue({ user: { tag: 'Target#0001' } }) } = {}) {
@@ -47,6 +47,9 @@ describe('unban command', () => {
         );
         expect(interaction.reply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Case #6') })
+        );
+        expect(logModAction).toHaveBeenCalledWith(
+            expect.objectContaining({ guild: interaction.guild, action: 'Unban', reason: 'appealed', caseId: 6 })
         );
     });
 });

@@ -1,6 +1,6 @@
-jest.mock('../../../utils/cases', () => ({ createCase: jest.fn() }));
+jest.mock('../../../utils/cases', () => ({ createCase: jest.fn(), logModAction: jest.fn() }));
 
-const { createCase } = require('../../../utils/cases');
+const { createCase, logModAction } = require('../../../utils/cases');
 const timeout = require('../../../slashCommands/moderation/timeout');
 
 function makeTarget(overrides: Record<string, unknown> = {}) {
@@ -83,6 +83,9 @@ describe('timeout command', () => {
         expect(interaction.reply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Timed out') })
         );
+        expect(logModAction).toHaveBeenCalledWith(
+            expect.objectContaining({ guild: interaction.guild, action: 'Timed out', reason: 'spam', caseId: 2 })
+        );
     });
 
     test('edit: rejects when the target has no active timeout', async () => {
@@ -135,6 +138,9 @@ describe('timeout command', () => {
         );
         expect(interaction.reply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Removed timeout from') })
+        );
+        expect(logModAction).toHaveBeenCalledWith(
+            expect.objectContaining({ guild: interaction.guild, action: 'Timeout removed', reason: 'appealed', caseId: 4 })
         );
     });
 });

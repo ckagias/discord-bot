@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, ChatInputCommandInteraction, GuildMember } from 'discord.js';
-const { createCase } = require('../../utils/cases');
+const { createCase, logModAction } = require('../../utils/cases');
 
 const DURATION_CHOICES = [
     { name: '60 seconds', value: 60 },
@@ -96,6 +96,7 @@ module.exports = {
             ]);
 
             const verb = sub === 'add' ? 'Timed out' : 'Updated timeout for';
+            await logModAction({ guild: interaction.guild, action: verb, target: target.user, moderator: interaction.user, reason, caseId: modCase.caseId, duration: durationLabel });
             return interaction.reply({ content: `${verb} **${target.user.tag}** until <t:${untilTs}:R> for \`${reason}\` | Case #${modCase.caseId}` });
         }
 
@@ -108,6 +109,7 @@ module.exports = {
                 target.timeout(null, reason),
                 createCase({ guildId: interaction.guild.id, type: 'timeout_remove', userId: target.id, moderatorId: interaction.user.id, reason }),
             ]);
+            await logModAction({ guild: interaction.guild, action: 'Timeout removed', target: target.user, moderator: interaction.user, reason, caseId: modCase.caseId });
             return interaction.reply({ content: `Removed timeout from **${target.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
         }
     },
