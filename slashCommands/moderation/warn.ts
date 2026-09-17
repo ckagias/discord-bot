@@ -2,7 +2,7 @@ import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, ChatInputComman
 const WarnSchema = require('../../models/WarnSchema');
 const { getGuildConfig } = require('../../utils/guildConfig');
 const { checkWarnThresholds } = require('../../utils/warnThresholds');
-const { createCase } = require('../../utils/cases');
+const { createCase, logModAction } = require('../../utils/cases');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -58,6 +58,7 @@ module.exports = {
         ).catch(() => {});
 
         await checkWarnThresholds(interaction.guild, target, totalWarnings, guildData);
+        await logModAction({ guild: interaction.guild, action: `Warn (#${totalWarnings})`, target: target.user, moderator: interaction.user, reason, caseId: modCase.caseId });
 
         return interaction.reply({ content: `Warned **${target.user.tag}** (warning #${totalWarnings}) for \`${reason}\` | Case #${modCase.caseId}` });
     },

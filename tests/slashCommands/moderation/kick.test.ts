@@ -1,6 +1,6 @@
-jest.mock('../../../utils/cases', () => ({ createCase: jest.fn() }));
+jest.mock('../../../utils/cases', () => ({ createCase: jest.fn(), logModAction: jest.fn() }));
 
-const { createCase } = require('../../../utils/cases');
+const { createCase, logModAction } = require('../../../utils/cases');
 const kick = require('../../../slashCommands/moderation/kick');
 
 function makeTarget(overrides: Record<string, unknown> = {}) {
@@ -83,6 +83,9 @@ describe('kick command', () => {
         );
         expect(interaction.reply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Case #3') })
+        );
+        expect(logModAction).toHaveBeenCalledWith(
+            expect.objectContaining({ guild: interaction.guild, action: 'Kick', reason: 'toxicity', caseId: 3 })
         );
     });
 

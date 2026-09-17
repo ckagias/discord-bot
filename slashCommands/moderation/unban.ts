@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, ChatInputCommandInteraction } from 'discord.js';
-const { createCase } = require('../../utils/cases');
+const { createCase, logModAction } = require('../../utils/cases');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -32,6 +32,7 @@ module.exports = {
             interaction.guild.members.unban(userId, reason),
             createCase({ guildId: interaction.guild.id, type: 'unban', userId, moderatorId: interaction.user.id, reason }),
         ]);
+        await logModAction({ guild: interaction.guild, action: 'Unban', target: ban.user, moderator: interaction.user, reason, caseId: modCase.caseId });
         return interaction.reply({ content: `Unbanned **${ban.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
     },
 };

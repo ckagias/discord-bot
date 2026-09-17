@@ -1,8 +1,8 @@
 jest.mock('../../../utils/guildConfig', () => ({ getGuildConfig: jest.fn() }));
-jest.mock('../../../utils/cases', () => ({ createCase: jest.fn() }));
+jest.mock('../../../utils/cases', () => ({ createCase: jest.fn(), logModAction: jest.fn() }));
 
 const { getGuildConfig } = require('../../../utils/guildConfig');
-const { createCase } = require('../../../utils/cases');
+const { createCase, logModAction } = require('../../../utils/cases');
 const unmute = require('../../../slashCommands/moderation/unmute');
 
 function makeTarget(overrides: Record<string, unknown> = {}) {
@@ -101,6 +101,9 @@ describe('unmute command', () => {
         );
         expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Case #11') })
+        );
+        expect(logModAction).toHaveBeenCalledWith(
+            expect.objectContaining({ guild: interaction.guild, action: 'Unmute', reason: 'served time', caseId: 11 })
         );
     });
 });

@@ -4,11 +4,11 @@ jest.mock('../../../utils/punishments', () => ({
     formatDuration: jest.fn(),
     schedulePunishment: jest.fn(),
 }));
-jest.mock('../../../utils/cases', () => ({ createCase: jest.fn() }));
+jest.mock('../../../utils/cases', () => ({ createCase: jest.fn(), logModAction: jest.fn() }));
 
 const PunishmentSchema = require('../../../models/PunishmentSchema');
 const { parseDuration, formatDuration, schedulePunishment } = require('../../../utils/punishments');
-const { createCase } = require('../../../utils/cases');
+const { createCase, logModAction } = require('../../../utils/cases');
 const ban = require('../../../slashCommands/moderation/ban');
 
 function makeTarget(overrides: Record<string, unknown> = {}) {
@@ -112,6 +112,9 @@ describe('ban command', () => {
         expect(interaction.reply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Case #7') })
         );
+        expect(logModAction).toHaveBeenCalledWith(
+            expect.objectContaining({ guild: interaction.guild, action: 'Ban', reason: 'spam', caseId: 7 })
+        );
     });
 
     test('temp-bans, persists a punishment, and schedules it when a duration is given', async () => {
@@ -131,6 +134,9 @@ describe('ban command', () => {
         expect(schedulePunishment).toHaveBeenCalledWith(interaction.client, { _id: 'p1', type: 'ban' });
         expect(interaction.reply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Case #8') })
+        );
+        expect(logModAction).toHaveBeenCalledWith(
+            expect.objectContaining({ guild: interaction.guild, action: 'Ban', reason: 'raiding', caseId: 8, duration: '1w' })
         );
     });
 

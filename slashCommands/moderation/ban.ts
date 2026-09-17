@@ -2,7 +2,7 @@ import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, ChatInputComman
 const PunishmentSchema = require('../../models/PunishmentSchema');
 const { parseDuration, schedulePunishment } = require('../../utils/punishments');
 const { formatDuration } = require('../../utils/duration');
-const { createCase } = require('../../utils/cases');
+const { createCase, logModAction } = require('../../utils/cases');
 const log = require('../../utils/log');
 const logger = log.scope('ban');
 
@@ -75,12 +75,14 @@ module.exports = {
                     createCase({ guildId: interaction.guild.id, type: 'ban', userId: target.id, moderatorId: interaction.user.id, reason, duration: durationLabel }),
                 ]);
                 schedulePunishment(interaction.client, punishment);
+                await logModAction({ guild: interaction.guild, action: 'Ban', target: target.user, moderator: interaction.user, reason, caseId: modCase.caseId, duration: durationLabel });
                 return interaction.reply({
                     content: `Banned **${target.user.tag}** for **${durationLabel}** for \`${reason}\` | Case #${modCase.caseId}`,
                 });
             }
 
             const modCase = await createCase({ guildId: interaction.guild.id, type: 'ban', userId: target.id, moderatorId: interaction.user.id, reason });
+            await logModAction({ guild: interaction.guild, action: 'Ban', target: target.user, moderator: interaction.user, reason, caseId: modCase.caseId });
             return interaction.reply({ content: `Banned **${target.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
         } catch (err) {
             logger.error('Error:', err);

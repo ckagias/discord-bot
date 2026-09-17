@@ -3,7 +3,7 @@ const { getGuildConfig } = require('../../utils/guildConfig');
 const PunishmentSchema = require('../../models/PunishmentSchema');
 const { parseDuration, schedulePunishment } = require('../../utils/punishments');
 const { formatDuration } = require('../../utils/duration');
-const { createCase } = require('../../utils/cases');
+const { createCase, logModAction } = require('../../utils/cases');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -92,12 +92,14 @@ module.exports = {
                 createCase({ guildId: interaction.guild.id, type: 'mute', userId: target.id, moderatorId: interaction.user.id, reason, duration: durationLabel }),
             ]);
             schedulePunishment(interaction.client, punishment);
+            await logModAction({ guild: interaction.guild, action: 'Mute', target: target.user, moderator: interaction.user, reason, caseId: modCase.caseId, duration: durationLabel });
             return interaction.editReply({
                 content: `Muted **${target.user.tag}** for **${durationLabel}** for \`${reason}\` | Case #${modCase.caseId}`,
             });
         }
 
         const modCase = await createCase({ guildId: interaction.guild.id, type: 'mute', userId: target.id, moderatorId: interaction.user.id, reason });
+        await logModAction({ guild: interaction.guild, action: 'Mute', target: target.user, moderator: interaction.user, reason, caseId: modCase.caseId });
         return interaction.editReply({ content: `Muted **${target.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
     },
 };
