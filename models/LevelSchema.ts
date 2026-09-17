@@ -19,5 +19,6 @@ const levelSchema = new Schema<ILevel>({
 });
 
 levelSchema.index({ userId: 1, guildId: 1 }, { unique: true });
+levelSchema.index({ guildId: 1, xp: -1 });
 
 export = model<ILevel>('Level', levelSchema);
