@@ -150,3 +150,63 @@ describe('internal API secret check on protected routes', () => {
         expect(res.status).not.toBe(401);
     });
 });
+
+describe('internal API rate limiting', () => {
+    let server: http.Server | undefined, port: number;
+
+    beforeAll(done => {
+        process.env.INTERNAL_API_PORT = '0';
+        process.env.INTERNAL_API_SECRET = 'correct-secret';
+        const client = { isReady: jest.fn().mockReturnValue(true), ws: { ping: 1 }, uptime: 1 };
+
+        const originalListen = http.Server.prototype.listen;
+        (http.Server.prototype.listen as any) = function (this: http.Server, _port: number, hostOrCb?: any, maybeCb?: any) {
+            const cb = typeof hostOrCb === 'function' ? hostOrCb : maybeCb;
+            // eslint-disable-next-line @typescript-eslint/no-this-alias -- need to capture the server instance for later assertions/cleanup
+            server = this;
+            return (originalListen as any).call(this, 0, () => {
+                port = ((server as http.Server).address() as any).port;
+                http.Server.prototype.listen = originalListen;
+                cb();
+                done();
+            });
+        };
+
+        jest.isolateModules(() => {
+            const startInternalApi = require('../../src/internalApi');
+            startInternalApi(client);
+        });
+    });
+
+    afterAll(() => {
+        server?.close();
+        delete process.env.INTERNAL_API_SECRET;
+    });
+
+    function authedRequest() {
+        return request(port, '/internal/giveaway/end', {
+            method: 'POST',
+            headers: { 'x-internal-secret': 'correct-secret', 'content-type': 'application/json' },
+        });
+    }
+
+    test('allows requests up to the limit', async () => {
+        for (let i = 0; i < 10; i++) {
+            const res = await authedRequest();
+            expect(res.status).not.toBe(429);
+        }
+    });
+
+    test('rejects the 11th request in the same window with 429', async () => {
+        const res = await authedRequest();
+        expect(res.status).toBe(429);
+        expect(res.body).toEqual({ error: 'Too many requests' });
+    });
+
+    test('does not rate limit /internal/health', async () => {
+        for (let i = 0; i < 15; i++) {
+            const res = await request(port, '/internal/health');
+            expect(res.status).not.toBe(429);
+        }
+    });
+});
