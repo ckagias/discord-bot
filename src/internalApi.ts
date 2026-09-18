@@ -26,6 +26,19 @@ function send(res: ServerResponse, status: number, body: unknown) {
     res.end(JSON.stringify(body));
 }
 
+const RATE_LIMIT_WINDOW_MS = 10_000;
+const RATE_LIMIT_MAX = 10;
+const rateLimitBuckets = new Map<string, number[]>();
+
+// Fixed-window limiter per route, since the only caller is the dashboard container.
+function isRateLimited(route: string): boolean {
+    const now = Date.now();
+    const hits = (rateLimitBuckets.get(route) ?? []).filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+    hits.push(now);
+    rateLimitBuckets.set(route, hits);
+    return hits.length > RATE_LIMIT_MAX;
+}
+
 const MAX_BODY_BYTES = 1024 * 1024; // 1 MB
 
 function readBody(req: IncomingMessage): Promise<string> {
@@ -61,6 +74,11 @@ export = function startInternalApi(client: Client) {
 
         if (!isValidSecret(req.headers['x-internal-secret'])) {
             return send(res, 401, { error: 'Unauthorized' });
+        }
+
+        if (isRateLimited(url.pathname)) {
+            res.setHeader('Retry-After', String(RATE_LIMIT_WINDOW_MS / 1000));
+            return send(res, 429, { error: 'Too many requests' });
         }
 
         if (req.method === 'POST' && url.pathname === '/internal/giveaway/end') {

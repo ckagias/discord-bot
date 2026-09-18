@@ -10,6 +10,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - `/log set` and `/log unset` now take an optional `category` (member, moderation, message, voice), letting events be routed to separate channels instead of one general log channel. Falls back to the general log channel when a category is left unset. Same fields added to the dashboard's moderation settings page.
 - Manual moderation commands (`/ban`, `/kick`, `/timeout`, `/mute`, `/unmute`, `/unban`, `/warn`) now post an embed to the moderation log channel when used, matching the logging automod/antiraid/warn-escalation actions already had. Previously these only wrote a case to the database with no channel post.
+- The internal API now rate limits authenticated routes to 10 requests per 10 seconds per route, returning 429 past that. `/internal/health` is exempt.
 
 ### Fixed
 
