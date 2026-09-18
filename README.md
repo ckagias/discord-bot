@@ -2,7 +2,7 @@
 
 ### A Discord bot built with [discord.js](https://github.com/discordjs/discord.js), Lavalink, and MongoDB
 
-[About](#about) • [Features](#features) • [Highlights](#highlights) • [Commands](#commands) • [Installation](#installation) • [Dashboard](#dashboard) • [Dependencies](#dependencies) • [Testing](#testing) • [Contributing](#contributing) • [Changelog](#changelog) • [Security](#security) • [License](#license)
+[About](#about) • [Features](#features) • [Highlights](#highlights) • [Commands](#commands) • [Installation](#installation) • [Dashboard](#dashboard) • [Dependencies](#dependencies) • [Testing](#testing) • [Documentation](#documentation) • [Contributing](#contributing) • [Changelog](#changelog) • [Security](#security) • [License](#license)
 
 ---
 
@@ -201,8 +201,8 @@ If you find this useful, consider leaving a star.
 | `/addtrigger`           | Add a keyword and the bot's response to it (Manage Messages)                                                       |
 | `/removetrigger`        | Remove a trigger keyword (Manage Messages)                                                                         |
 | `/triggers`             | List all trigger keywords configured for this server                                                               |
-| `/log set`              | Set the log channel; optionally scope to a category (member/moderation/message/voice), defaults to all (Manage Server) |
-| `/log unset`            | Disable event logging; optionally scope to a category, defaults to all (Manage Server)                             |
+| `/log set`              | Set the log channel, optionally scope to a category (member/moderation/message/voice), defaults to all (Manage Server) |
+| `/log unset`            | Disable event logging, optionally scope to a category, defaults to all (Manage Server)                             |
 | `/welcome set`          | Set the channel and optional message for member join announcements (Manage Server)                                 |
 | `/welcome unset`        | Disable welcome messages for this server (Manage Server)                                                           |
 | `/farewell set`         | Set the channel and optional message for member leave announcements (Manage Server)                                |
@@ -442,6 +442,12 @@ Want to see what it looks like without setting it up? Check out [discord-bot-das
 Run `npm test` to run the test suite (Jest).
 
 [![CI](https://github.com/ckagias/discord-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/ckagias/discord-bot/actions/workflows/ci.yml) / [![CD](https://github.com/ckagias/discord-bot/actions/workflows/cd.yml/badge.svg)](https://github.com/ckagias/discord-bot/actions/workflows/cd.yml)
+
+---
+
+## Documentation
+
+See [DOCS.md](DOCS.md) for architecture, commands, data models, environment variables, the internal API, and deployment details.
 
 ---
 
