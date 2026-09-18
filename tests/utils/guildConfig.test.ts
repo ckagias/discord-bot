@@ -7,8 +7,7 @@ let updateGuildConfig: typeof import('../../utils/guildConfig').updateGuildConfi
 let invalidateGuildConfig: typeof import('../../utils/guildConfig').invalidateGuildConfig;
 let mockedGuildSchema: any;
 
-// The module keeps its cache Map in module-level state, so reset the module registry
-// between tests rather than relying on distinct guildIds to avoid cross-test bleed.
+// Resets the module registry since the cache Map lives in module-level state.
 beforeEach(() => {
     jest.resetModules();
     jest.useRealTimers();

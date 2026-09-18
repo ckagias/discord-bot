@@ -45,8 +45,7 @@ module.exports = {
             ? `<t:${Math.floor(member.premiumSinceTimestamp / 1000)}:D>`
             : null;
 
-        // Fetching the full member list is only worth it on small guilds — on large ones it
-        // pulls the entire membership over the gateway just to compute a single rank number.
+        // Full member fetch is too expensive on large guilds just to compute a rank.
         const JOIN_POSITION_MEMBER_LIMIT = 1000;
         const joinPosition = member && interaction.guild.memberCount <= JOIN_POSITION_MEMBER_LIMIT
             ? await interaction.guild.members.fetch()

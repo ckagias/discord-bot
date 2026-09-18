@@ -39,8 +39,7 @@ interface LogModActionInput {
     duration?: string | null;
 }
 
-// Manual mod commands (ban/kick/timeout/mute/unmute/unban/warn) previously only wrote a case to the DB
-// with no channel post, unlike automod/antiraid/warn-escalation actions, which already log via getLogChannel.
+// Brings manual mod commands in line with automod/antiraid logging via getLogChannel.
 async function logModAction({ guild, action, target, moderator, reason, caseId, duration }: LogModActionInput): Promise<void> {
     const logChannel = await getLogChannel(guild, 'moderation').catch(() => null);
     if (!logChannel) return;

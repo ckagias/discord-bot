@@ -10,8 +10,7 @@ const CATEGORY_FIELDS: Record<LogCategory, string> = {
     voice: 'voiceLogChannelId',
 };
 
-// Category channel overrides the general logChannelId when set, so existing servers
-// keep working unconfigured while admins can opt into splitting categories out.
+// Category channel overrides the general logChannelId when set.
 async function getLogChannel(guild: Guild, category?: LogCategory) {
     const guildData = await getGuildConfig(guild.id);
     if (!guildData) return null;
