@@ -4,6 +4,9 @@ import GuildSchema from '../../models/GuildSchema';
 import TicketSchema from '../../models/TicketSchema';
 import { ComponentDefinition } from '../../types/discord';
 
+// Prevents a double-click from creating two tickets before the first create() lands.
+const openInFlight = new Set<string>();
+
 const component: ComponentDefinition = {
     type: 'button',
     id: 'ticket_open',
@@ -21,7 +24,17 @@ const component: ComponentDefinition = {
             return interaction.editReply({ content: 'The configured ticket category no longer exists. Ask an admin to run `/ticket setup` again.' });
 
         const isStaff = (interaction.member as any).permissions.has(PermissionFlagsBits.ManageChannels);
-        if (!isStaff) {
+        if (isStaff)
+            return openTicket(interaction, guild, config, category);
+
+        const claimKey = `${guild.id}:${interaction.user.id}`;
+        if (openInFlight.has(claimKey))
+            return interaction.editReply({ content: 'Your ticket is already being created. Please wait a moment.' });
+
+        // Claim before the first await so a concurrent call can't pass the check above.
+        openInFlight.add(claimKey);
+
+        try {
             const existing = await TicketSchema.findOne({ guildId: guild.id, userId: interaction.user.id, status: 'open' });
             if (existing) {
                 const channel = await guild.channels.fetch(existing.channelId).catch(() => null);
@@ -31,53 +44,59 @@ const component: ComponentDefinition = {
                     return interaction.editReply({ content: `You already have an open ticket: ${channel}.` });
                 }
             }
+
+            return await openTicket(interaction, guild, config, category);
+        } finally {
+            openInFlight.delete(claimKey);
         }
-
-        const updated = await GuildSchema.findOneAndUpdate(
-            { guildId: guild.id },
-            { $inc: { ticketCount: 1 } },
-            { returnDocument: 'after' }
-        );
-        invalidateGuildConfig(guild.id);
-        const ticketNumber = updated!.ticketCount;
-
-        const channel = await guild.channels.create({
-            name: `ticket-${String(ticketNumber).padStart(4, '0')}`,
-            type: ChannelType.GuildText,
-            parent: category.id,
-            permissionOverwrites: [
-                { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
-                { id: interaction.client.user!.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.ManageChannels] },
-                { id: interaction.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
-                { id: config.ticketSupportRoleId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.ManageChannels] },
-            ],
-        });
-
-        await TicketSchema.create({
-            guildId: guild.id,
-            channelId: channel.id,
-            userId: interaction.user.id,
-            ticketNumber,
-        });
-
-        const embed = new EmbedBuilder()
-            .setTitle(`Ticket #${String(ticketNumber).padStart(4, '0')}`)
-            .setDescription(`Hello ${interaction.user}, thank you for opening a ticket. Please describe your issue and a staff member will assist you shortly.`)
-            .setColor(Math.floor(Math.random() * 0xFFFFFF))
-            .setTimestamp();
-
-        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-            new ButtonBuilder()
-                .setCustomId('ticket_close_btn')
-                .setLabel('Close Ticket')
-                .setStyle(ButtonStyle.Danger)
-                .setEmoji('🔒')
-        );
-
-        await channel.send({ content: `${interaction.user} | <@&${config.ticketSupportRoleId}>`, embeds: [embed], components: [row] });
-
-        return interaction.editReply({ content: `Your ticket has been created: ${channel}.` });
     },
 };
+
+async function openTicket(interaction: ButtonInteraction, guild: any, config: any, category: any) {
+    const updated = await GuildSchema.findOneAndUpdate(
+        { guildId: guild.id },
+        { $inc: { ticketCount: 1 } },
+        { returnDocument: 'after' }
+    );
+    invalidateGuildConfig(guild.id);
+    const ticketNumber = updated!.ticketCount;
+
+    const channel = await guild.channels.create({
+        name: `ticket-${String(ticketNumber).padStart(4, '0')}`,
+        type: ChannelType.GuildText,
+        parent: category.id,
+        permissionOverwrites: [
+            { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
+            { id: interaction.client.user!.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.ManageChannels] },
+            { id: interaction.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
+            { id: config.ticketSupportRoleId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.ManageChannels] },
+        ],
+    });
+
+    await TicketSchema.create({
+        guildId: guild.id,
+        channelId: channel.id,
+        userId: interaction.user.id,
+        ticketNumber,
+    });
+
+    const embed = new EmbedBuilder()
+        .setTitle(`Ticket #${String(ticketNumber).padStart(4, '0')}`)
+        .setDescription(`Hello ${interaction.user}, thank you for opening a ticket. Please describe your issue and a staff member will assist you shortly.`)
+        .setColor(Math.floor(Math.random() * 0xFFFFFF))
+        .setTimestamp();
+
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+            .setCustomId('ticket_close_btn')
+            .setLabel('Close Ticket')
+            .setStyle(ButtonStyle.Danger)
+            .setEmoji('🔒')
+    );
+
+    await channel.send({ content: `${interaction.user} | <@&${config.ticketSupportRoleId}>`, embeds: [embed], components: [row] });
+
+    return interaction.editReply({ content: `Your ticket has been created: ${channel}.` });
+}
 
 export = component;
