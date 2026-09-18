@@ -15,6 +15,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Added a `{guildId, xp}` index to the leveling schema so `/leaderboard` no longer does a full collection scan per guild, matching the index `/economyleaderboard` already had.
 - Bumped `undici` and transitive `browserslist`/`baseline-browser-mapping` versions to resolve `npm audit` findings (response desync, CRLF/cookie injection in undici; DoS bugs in the test-only browserslist chain).
+- The anti-raid join tracker and auto-mod spam tracker now periodically evict entries whose timestamps have fully aged out, instead of growing forever as more guilds/users trigger them over the bot's uptime.
 
 ## [1.2.0] - 2026-09-16
 

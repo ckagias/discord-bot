@@ -21,6 +21,17 @@ const SPAM_THRESHOLD = 5;
 // guildId:userId -> array of message timestamps (ms). In-memory only — resets on restart, which is fine for a flood filter.
 const spamTracker = new Map<string, number[]>();
 
+// Evicts entries whose newest timestamp aged out, since isSpamming never shrinks the Map on its own.
+const SPAM_TRACKER_SWEEP_MS = 10 * 60 * 1_000;
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, timestamps] of spamTracker) {
+        if (!timestamps.length || now - timestamps[timestamps.length - 1] > SPAM_WINDOW_MS) {
+            spamTracker.delete(key);
+        }
+    }
+}, SPAM_TRACKER_SWEEP_MS).unref();
+
 function isExempt(member: GuildMember | null): boolean {
     if (!member) return true;
     return EXEMPT_PERMISSIONS.some(perm => member.permissions.has(perm));
@@ -155,4 +166,4 @@ async function runAutoMod(message: Message, guildData: any): Promise<boolean> {
     }
 }
 
-export { runAutoMod };
+export { runAutoMod, spamTracker };
