@@ -1,8 +1,6 @@
 import GuildSchema from '../models/GuildSchema';
 
-// Guild config changes rarely (settings commands) but is read on nearly every event (messages, voice
-// states, member updates), so a short TTL cache avoids a DB round-trip per event without risking
-// serving stale data for long after a config change.
+// Short TTL cache: guild config changes rarely but is read on nearly every event.
 type GuildConfig = Awaited<ReturnType<typeof GuildSchema.findOne>>;
 
 const CACHE_TTL_MS = 30_000;

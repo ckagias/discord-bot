@@ -1,7 +1,6 @@
 const TriggerSchema = require('../models/TriggerSchema');
 
-// Trigger lists change rarely (mod commands) but are read on every non-bot message, even in guilds
-// with zero triggers configured, so a short TTL cache avoids a DB round-trip per message.
+// Short TTL cache: trigger lists change rarely but are read on every non-bot message.
 type Trigger = { trigger: string; response: string };
 
 const CACHE_TTL_MS = 30_000;

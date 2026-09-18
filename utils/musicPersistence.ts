@@ -4,8 +4,7 @@ import MusicPlayerSchema from '../models/MusicPlayerSchema';
 import LavalinkSessionSchema from '../models/LavalinkSessionSchema';
 import { upsertWithRetry } from './upsertRetry';
 
-// Mongo-backed queueStore so lavalink-client's own save/sync calls persist queues across bot restarts.
-// Must be a class: lavalink-client validates queueStore methods via Object.getPrototypeOf, which a plain object literal fails.
+// Must be a class: lavalink-client validates queueStore methods via Object.getPrototypeOf.
 class MongoQueueStore implements QueueStoreManager {
     async get(guildId: string) {
         const doc = await MusicQueueSchema.findOne({ guildId });

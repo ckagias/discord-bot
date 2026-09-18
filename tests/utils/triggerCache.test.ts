@@ -4,8 +4,7 @@ let TriggerSchema: any;
 let getTriggers: typeof import('../../utils/triggerCache').getTriggers;
 let invalidateTriggers: typeof import('../../utils/triggerCache').invalidateTriggers;
 
-// The module keeps its cache Map in module-level state, so reset the module registry
-// between tests rather than relying on distinct guildIds to avoid cross-test bleed.
+// Resets the module registry since the cache Map lives in module-level state.
 beforeEach(() => {
     jest.resetModules();
     jest.useRealTimers();

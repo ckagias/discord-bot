@@ -60,8 +60,7 @@ describe('lavalinkHandler', () => {
         const lavalinkHandler = require('../../handlers/lavalinkHandler');
         await lavalinkHandler(makeClient());
 
-        // updateSession() reads node.sessionId internally and throws "not ready" if it isn't set yet,
-        // so this fake mirrors that real behavior instead of always resolving regardless of state.
+        // Mirrors updateSession() throwing "not ready" when node.sessionId isn't set yet.
         const node: any = {
             id: 'main',
             sessionId: undefined,
