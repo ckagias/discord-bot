@@ -14,6 +14,7 @@ import {
     quarantineMember,
     ensureQuarantineOverwrites,
     restoreLockdowns,
+    joinTracker,
 } from '../../utils/antiRaid';
 
 const mockedGuildSchema = GuildSchema as any;
@@ -209,6 +210,27 @@ describe('handleJoin', () => {
         const result = handleJoin(member as any, guildData);
 
         expect(result).toBe(false);
+    });
+
+    test('the join tracker sweep evicts stale guild entries instead of leaking them forever', () => {
+        // Fake timers must be active before the module loads its module-level setInterval.
+        jest.resetModules();
+        jest.useFakeTimers();
+        const fresh = require('../../utils/antiRaid');
+
+        const guild = makeGuild({ id: 'sweep-guild' });
+        const guildData = { antiRaidEnabled: true, antiRaidQuarantineRoleId: 'role1', antiRaidJoinThreshold: 5, antiRaidJoinWindow: 10 };
+        const member = makeMember();
+        member.guild = guild;
+
+        fresh.handleJoin(member as any, guildData);
+        expect(fresh.joinTracker.has('sweep-guild')).toBe(true);
+
+        jest.advanceTimersByTime(25 * 60 * 60 * 1_000);
+
+        expect(fresh.joinTracker.has('sweep-guild')).toBe(false);
+
+        jest.useRealTimers();
     });
 });
 

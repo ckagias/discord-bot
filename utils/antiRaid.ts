@@ -16,6 +16,18 @@ const STAFF_PERMISSIONS = [
 // In-memory only; lockdown state itself is persisted on the Guild doc.
 const joinTracker = new Map<string, number[]>();
 
+// Evicts entries whose newest timestamp aged out, since recordJoin never shrinks the Map on its own.
+const JOIN_TRACKER_SWEEP_MS = 60 * 60 * 1_000;
+const JOIN_TRACKER_MAX_AGE_MS = 24 * 60 * 60 * 1_000;
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, timestamps] of joinTracker) {
+        if (!timestamps.length || now - timestamps[timestamps.length - 1] > JOIN_TRACKER_MAX_AGE_MS) {
+            joinTracker.delete(key);
+        }
+    }
+}, JOIN_TRACKER_SWEEP_MS).unref();
+
 function isStaff(member: GuildMember | null): boolean {
     if (!member) return false;
     return STAFF_PERMISSIONS.some(perm => member.permissions.has(perm));
@@ -261,4 +273,5 @@ export {
     quarantineMember,
     ensureQuarantineOverwrites,
     restoreLockdowns,
+    joinTracker,
 };
