@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-09-21
+
 ### Added
 
 - `/log set` and `/log unset` now take an optional `category` (member, moderation, message, voice), letting events be routed to separate channels instead of one general log channel. Falls back to the general log channel when a category is left unset. Same fields added to the dashboard's moderation settings page.
@@ -17,6 +19,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Added a `{guildId, xp}` index to the leveling schema so `/leaderboard` no longer does a full collection scan per guild, matching the index `/economyleaderboard` already had.
 - Bumped `undici` and transitive `browserslist`/`baseline-browser-mapping` versions to resolve `npm audit` findings (response desync, CRLF/cookie injection in undici; DoS bugs in the test-only browserslist chain).
 - The anti-raid join tracker and auto-mod spam tracker now periodically evict entries whose timestamps have fully aged out, instead of growing forever as more guilds/users trigger them over the bot's uptime.
+- Fixed a double-click race in ticket close: a separate read-then-write let two rapid clicks both pass the open-ticket check before either write landed. The status check and update are now a single atomic `findOneAndUpdate`, matching the pattern already used for ticket open.
 
 ## [1.2.0] - 2026-09-16
 
@@ -112,7 +115,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Also includes full test coverage for `events/` and `slashCommands/`, and a Vitest and ESLint setup for the dashboard covering its server actions.
 
-[Unreleased]: https://github.com/ckagias/discord-bot/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/ckagias/discord-bot/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/ckagias/discord-bot/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/ckagias/discord-bot/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/ckagias/discord-bot/compare/v1.0.5...v1.1.0
 [1.0.5]: https://github.com/ckagias/discord-bot/compare/v1.0.4...v1.0.5
