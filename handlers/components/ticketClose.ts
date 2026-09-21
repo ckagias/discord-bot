@@ -20,9 +20,12 @@ const component: ComponentDefinition = {
         if (!isSupport && !isOwner)
             return interaction.reply({ content: 'You do not have permission to close this ticket.', flags: MessageFlags.Ephemeral });
 
-        await interaction.reply({ content: `Ticket closed by ${interaction.user}. This channel will be deleted in 5 seconds.` });
+        // Atomic claim so a double-click can't both pass the check above and both schedule a delete.
+        const closed = await TicketSchema.findOneAndUpdate({ channelId: interaction.channel!.id, status: 'open' }, { status: 'closed' });
+        if (!closed)
+            return interaction.reply({ content: 'This ticket is already closed.', flags: MessageFlags.Ephemeral });
 
-        await TicketSchema.findOneAndUpdate({ channelId: interaction.channel!.id }, { status: 'closed' });
+        await interaction.reply({ content: `Ticket closed by ${interaction.user}. This channel will be deleted in 5 seconds.` });
 
         setTimeout(() => {
             (interaction.channel as any).delete().catch((err: unknown) => logger.error('Failed to delete closed ticket channel:', err));
