@@ -23,7 +23,7 @@
     "@resvg/resvg-js": "^2.6.2",
     "axios": "^1.13.2",
     "discord.js": "^14.24.2",
-    "dotenv": "^17.2.3",
+    "dotenv": "^18.0.1",
     "lavalink-client": "^2.10.2",
     "mongoose": "^9.7.4"
   },
