@@ -28,4 +28,4 @@ Technical reference for how this project works and why it's built the way it is.
 
 ## Maintenance
 
-Whenever a change adds, removes, or alters a route, page, component, env var, or architectural decision, update the relevant file here in the same change (per `CLAUDE.md`). Most changes only touch one of the linked files below, not this index.
+Whenever a change adds, removes, or alters a route, page, component, env var, or architectural decision, update the relevant file here in the same change. Most changes only touch one of the linked files below, not this index.
