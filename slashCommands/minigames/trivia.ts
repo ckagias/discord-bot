@@ -8,7 +8,6 @@ const TIMEOUT_MS = 20_000;
 
 function decode(str: string) {
     return str
-        .replace(/&amp;/g, '&')
         .replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')
         .replace(/&quot;/g, '"')
@@ -16,7 +15,8 @@ function decode(str: string) {
         .replace(/&ldquo;/g, '“')
         .replace(/&rdquo;/g, '”')
         .replace(/&lsquo;/g, '‘')
-        .replace(/&rsquo;/g, '’');
+        .replace(/&rsquo;/g, '’')
+        .replace(/&amp;/g, '&');
 }
 
 function shuffle<T>(arr: T[]): T[] {
