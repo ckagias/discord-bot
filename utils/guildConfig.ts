@@ -10,7 +10,7 @@ function getGuildConfig(guildId: string) {
     const cached = cache.get(guildId);
     if (cached && cached.expiresAt > Date.now()) return Promise.resolve(cached.value);
 
-    return GuildSchema.findOne({ guildId }).then((value) => {
+    return GuildSchema.findOne({ guildId: String(guildId) }).then((value) => {
         cache.set(guildId, { value, expiresAt: Date.now() + CACHE_TTL_MS });
         return value;
     });
@@ -22,8 +22,8 @@ function invalidateGuildConfig(guildId: string) {
 
 async function ensureGuildConfig(guildId: string) {
     const config = await GuildSchema.findOneAndUpdate(
-        { guildId },
-        { $setOnInsert: { guildId } },
+        { guildId: String(guildId) },
+        { $setOnInsert: { guildId: String(guildId) } },
         { upsert: true, returnDocument: 'after' }
     );
     invalidateGuildConfig(guildId);
@@ -32,8 +32,8 @@ async function ensureGuildConfig(guildId: string) {
 
 async function updateGuildConfig(guildId: string, fields: Record<string, unknown>) {
     const result = await GuildSchema.findOneAndUpdate(
-        { guildId },
-        { $set: fields, $setOnInsert: { guildId } },
+        { guildId: String(guildId) },
+        { $set: fields, $setOnInsert: { guildId: String(guildId) } },
         { upsert: true }
     );
     invalidateGuildConfig(guildId);
