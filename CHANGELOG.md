@@ -21,6 +21,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The dashboard's anti-raid form now limits the join threshold to 2–100 and the window to 3–300 seconds, the same limits as `/antiraid config`. Before, it accepted any positive number, including a window longer than the hour of join history the bot keeps for restarts, or a threshold of 1 that would lock the server on every join.
 - The dashboard's `Guild` and `Suggestion` models were missing the `enum` on warn threshold `action` and suggestion `status` that the bot's schemas enforce. Found by the new drift test.
 
 ## [1.3.2] - 2026-10-26

@@ -36,6 +36,17 @@ function parsePositiveInt(value: FormDataEntryValue | null, fallback: number): n
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
+// Same limits as `/antiraid config`, so the dashboard can't save a value the command would refuse. The window cap also
+// keeps the bot's persisted join history (one hour) longer than any window.
+const JOIN_THRESHOLD_MIN = 2;
+const JOIN_THRESHOLD_MAX = 100;
+const JOIN_WINDOW_MIN = 3;
+const JOIN_WINDOW_MAX = 300;
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.min(Math.max(n, min), max);
+}
+
 export async function updateAntiRaidSettings(guildId: string, formData: FormData) {
   await requireGuildAccess(guildId);
   await connectDB();
@@ -44,8 +55,8 @@ export async function updateAntiRaidSettings(guildId: string, formData: FormData
   const update = {
     antiRaidEnabled: formData.get("antiRaidEnabled") === "on",
     antiRaidQuarantineRoleId: emptyToNull(formData.get("antiRaidQuarantineRoleId")),
-    antiRaidJoinThreshold: parsePositiveInt(formData.get("antiRaidJoinThreshold"), 10),
-    antiRaidJoinWindow: parsePositiveInt(formData.get("antiRaidJoinWindow"), 10),
+    antiRaidJoinThreshold: clamp(parsePositiveInt(formData.get("antiRaidJoinThreshold"), 10), JOIN_THRESHOLD_MIN, JOIN_THRESHOLD_MAX),
+    antiRaidJoinWindow: clamp(parsePositiveInt(formData.get("antiRaidJoinWindow"), 10), JOIN_WINDOW_MIN, JOIN_WINDOW_MAX),
     antiRaidAlertChannelId: emptyToNull(formData.get("antiRaidAlertChannelId")),
   };
 
