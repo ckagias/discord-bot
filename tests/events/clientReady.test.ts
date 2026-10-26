@@ -14,7 +14,7 @@ jest.mock('../../slashCommands/utility/remind', () => ({
     scheduleReminder: jest.fn(),
 }));
 jest.mock('../../utils/punishments', () => ({ restorePunishments: jest.fn() }));
-jest.mock('../../utils/antiRaid', () => ({ restoreLockdowns: jest.fn() }));
+jest.mock('../../utils/antiRaid', () => ({ restoreLockdowns: jest.fn(), restoreJoinTracker: jest.fn() }));
 jest.mock('../../utils/economy', () => ({ updateBalance: jest.fn() }));
 jest.mock('../../utils/wealthTax', () => ({ startWealthTax: jest.fn() }));
 
@@ -28,7 +28,7 @@ const { endGiveaway, scheduleGiveawayEnd } = require('../../slashCommands/utilit
 const { closePoll } = require('../../slashCommands/fun/poll');
 const { sendReminder, scheduleReminder } = require('../../slashCommands/utility/remind');
 const { restorePunishments } = require('../../utils/punishments');
-const { restoreLockdowns } = require('../../utils/antiRaid');
+const { restoreLockdowns, restoreJoinTracker } = require('../../utils/antiRaid');
 const { updateBalance } = require('../../utils/economy');
 const { startWealthTax } = require('../../utils/wealthTax');
 const clientReady = require('../../events/clientReady');
@@ -68,6 +68,12 @@ describe('clientReady', () => {
         await clientReady.execute(client);
 
         expect(client.lavalink.init).toHaveBeenCalledWith({ id: 'bot1', username: 'Bot' });
+    });
+
+    test('restores the anti-raid join tracker', async () => {
+        await clientReady.execute(makeClient());
+
+        expect(restoreJoinTracker).toHaveBeenCalledTimes(1);
     });
 
     test('starts the wealth tax sweep', async () => {
