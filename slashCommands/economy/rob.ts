@@ -3,9 +3,9 @@ const EconomySchema = require('../../models/EconomySchema');
 const { getWallet, updateBalance, claimCooldown, formatBalance } = require('../../utils/economy');
 
 const ROB_COOLDOWN_MS = 3_600_000; // 1 hour
-const ROB_SUCCESS_CHANCE = 0.45;   // 45% success rate
+const ROB_SUCCESS_CHANCE = 0.35;   // 35% success rate
 const ROB_MIN_BALANCE = 100;       // target needs at least this many credits
-const ROB_FINE_RATE = 0.25;        // on fail, robber pays 25% of attempted steal as fine
+const ROB_FINE_RATE = 0.60;        // on fail, robber pays 60% of attempted steal as fine; at 35% success the robber's expected value is just under zero
 
 module.exports = {
     data: new SlashCommandBuilder()
