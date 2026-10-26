@@ -23,6 +23,22 @@ function makeInteraction({ targetId = 'target1', targetBot = false, username = '
     };
 }
 
+describe('rob constants', () => {
+    test('pin the current odds and fine so a rebalance has to change them on purpose', () => {
+        expect(rob.ROB_SUCCESS_CHANCE).toBe(0.45);
+        expect(rob.ROB_FINE_RATE).toBe(0.25);
+        expect(rob.ROB_MIN_BALANCE).toBe(100);
+        expect(rob.ROB_COOLDOWN_MS).toBe(3_600_000);
+    });
+
+    // Steal is 10-40% of the target's balance (25% on average); a failed rob costs 25% of that steal.
+    test('expected value of a rob is positive for the robber', () => {
+        const avgSteal = 0.25;
+        const ev = rob.ROB_SUCCESS_CHANCE * avgSteal - (1 - rob.ROB_SUCCESS_CHANCE) * avgSteal * rob.ROB_FINE_RATE;
+        expect(ev).toBeGreaterThan(0);
+    });
+});
+
 describe('rob command', () => {
     beforeEach(() => {
         jest.clearAllMocks();
