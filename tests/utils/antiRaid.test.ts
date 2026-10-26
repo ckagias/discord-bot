@@ -1,10 +1,12 @@
 jest.mock('../../models/GuildSchema', () => ({ findOneAndUpdate: jest.fn(), find: jest.fn() }));
+jest.mock('../../models/JoinEventSchema', () => ({ create: jest.fn(() => Promise.resolve({})), find: jest.fn() }));
 jest.mock('../../utils/logger', () => ({ getLogChannel: jest.fn() }));
 jest.mock('../../utils/guildConfig', () => ({ updateGuildConfig: jest.fn(), invalidateGuildConfig: jest.fn() }));
 jest.mock('../../utils/embeds', () => ({ randomColor: () => 0x000000 }));
 
 import { PermissionFlagsBits, Collection } from 'discord.js';
 import GuildSchema from '../../models/GuildSchema';
+import JoinEventSchema from '../../models/JoinEventSchema';
 import { getLogChannel } from '../../utils/logger';
 import { updateGuildConfig, invalidateGuildConfig } from '../../utils/guildConfig';
 import {
@@ -14,10 +16,12 @@ import {
     quarantineMember,
     ensureQuarantineOverwrites,
     restoreLockdowns,
+    restoreJoinTracker,
     joinTracker,
 } from '../../utils/antiRaid';
 
 const mockedGuildSchema = GuildSchema as any;
+const mockedJoinEventSchema = JoinEventSchema as any;
 const mockedGetLogChannel = getLogChannel as jest.Mock;
 const mockedUpdateGuildConfig = updateGuildConfig as jest.Mock;
 const mockedInvalidateGuildConfig = invalidateGuildConfig as jest.Mock;
@@ -231,6 +235,161 @@ describe('handleJoin', () => {
         expect(fresh.joinTracker.has('sweep-guild')).toBe(false);
 
         jest.useRealTimers();
+    });
+});
+
+describe('join persistence', () => {
+    const guildData = { antiRaidEnabled: true, antiRaidQuarantineRoleId: 'role1', antiRaidJoinThreshold: 50, antiRaidJoinWindow: 10 };
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        joinTracker.clear();
+    });
+
+    test('writes every counted join to Mongo with the guild and a timestamp', () => {
+        const member = makeMember();
+        member.guild = makeGuild({ id: 'persist-guild' });
+
+        handleJoin(member as any, guildData);
+
+        expect(mockedJoinEventSchema.create).toHaveBeenCalledTimes(1);
+        expect(mockedJoinEventSchema.create).toHaveBeenCalledWith({ guildId: 'persist-guild', joinedAt: expect.any(Date) });
+    });
+
+    test('does not write joins that anti-raid never counts', () => {
+        const member = makeMember();
+        member.guild = makeGuild();
+
+        handleJoin(member as any, { ...guildData, antiRaidEnabled: false });
+
+        expect(mockedJoinEventSchema.create).not.toHaveBeenCalled();
+    });
+
+    test('still counts the join and starts the lockdown when the write fails', async () => {
+        jest.useFakeTimers();
+        mockedJoinEventSchema.create.mockRejectedValue(new Error('db down'));
+        mockedGuildSchema.findOneAndUpdate.mockResolvedValue(null);
+        const guild = makeGuild({ id: 'write-fails-guild' });
+        guild.members.fetch.mockResolvedValue(null);
+        const data = { ...guildData, antiRaidJoinThreshold: 2 };
+        const member1 = makeMember({ id: 'm1' });
+        member1.guild = guild;
+        const member2 = makeMember({ id: 'm2' });
+        member2.guild = guild;
+
+        handleJoin(member1 as any, data);
+        const result = handleJoin(member2 as any, data);
+
+        expect(result).toBe(true);
+        expect(mockedGuildSchema.findOneAndUpdate).toHaveBeenCalled();
+        await jest.runOnlyPendingTimersAsync();
+        jest.useRealTimers();
+        mockedJoinEventSchema.create.mockImplementation(() => Promise.resolve({}));
+    });
+});
+
+function eventsQuery(result: any[] | Error) {
+    const query: any = result instanceof Error ? Promise.reject(result) : Promise.resolve(result);
+    query.sort = jest.fn(() => query);
+    query.lean = jest.fn(() => query);
+    return query;
+}
+
+describe('restoreJoinTracker', () => {
+    const now = Date.now();
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        joinTracker.clear();
+    });
+
+    test('does nothing when no recent joins were stored', async () => {
+        mockedJoinEventSchema.find.mockReturnValue(eventsQuery([]));
+
+        await restoreJoinTracker();
+
+        expect(joinTracker.size).toBe(0);
+    });
+
+    test('only asks for joins from the last hour that came from before this process started', async () => {
+        const query = eventsQuery([]);
+        mockedJoinEventSchema.find.mockReturnValue(query);
+
+        await restoreJoinTracker();
+
+        const [filter] = mockedJoinEventSchema.find.mock.calls[0];
+        const { $gte, $lt } = filter.joinedAt;
+        expect(Date.now() - $gte.getTime()).toBeGreaterThanOrEqual(60 * 60 * 1_000 - 1_000);
+        expect(Date.now() - $gte.getTime()).toBeLessThan(60 * 60 * 1_000 + 5_000);
+        expect($lt.getTime()).toBeLessThanOrEqual(Date.now());
+        expect(query.sort).toHaveBeenCalledWith({ joinedAt: 1 });
+    });
+
+    test('rebuilds the tracker per guild in time order', async () => {
+        mockedJoinEventSchema.find.mockReturnValue(eventsQuery([
+            { guildId: 'g1', joinedAt: new Date(now - 5_000) },
+            { guildId: 'g2', joinedAt: new Date(now - 4_000) },
+            { guildId: 'g1', joinedAt: new Date(now - 3_000) },
+        ]));
+
+        await restoreJoinTracker();
+
+        expect(joinTracker.get('g1')).toEqual([now - 5_000, now - 3_000]);
+        expect(joinTracker.get('g2')).toEqual([now - 4_000]);
+    });
+
+    test('puts restored joins before any join already counted in memory', async () => {
+        joinTracker.set('g1', [now - 1_000]);
+        mockedJoinEventSchema.find.mockReturnValue(eventsQuery([{ guildId: 'g1', joinedAt: new Date(now - 5_000) }]));
+
+        await restoreJoinTracker();
+
+        expect(joinTracker.get('g1')).toEqual([now - 5_000, now - 1_000]);
+    });
+
+    test('restored joins count toward the lockdown threshold, so a restart no longer resets a raid', async () => {
+        jest.useFakeTimers();
+        mockedGuildSchema.findOneAndUpdate.mockResolvedValue(null);
+        const guild = makeGuild({ id: 'raid-guild' });
+        guild.members.fetch.mockResolvedValue(null);
+        const data = { antiRaidEnabled: true, antiRaidQuarantineRoleId: 'role1', antiRaidJoinThreshold: 3, antiRaidJoinWindow: 30 };
+        mockedJoinEventSchema.find.mockReturnValue(eventsQuery([
+            { guildId: 'raid-guild', joinedAt: new Date(Date.now() - 6_000) },
+            { guildId: 'raid-guild', joinedAt: new Date(Date.now() - 4_000) },
+        ]));
+
+        await restoreJoinTracker();
+        const member = makeMember({ id: 'm3' });
+        member.guild = guild;
+        const result = handleJoin(member as any, data);
+
+        expect(result).toBe(true);
+        expect(mockedGuildSchema.findOneAndUpdate).toHaveBeenCalled();
+        await jest.runOnlyPendingTimersAsync();
+        jest.useRealTimers();
+    });
+
+    test('restored joins older than the window do not count', async () => {
+        const guild = makeGuild({ id: 'old-guild' });
+        const data = { antiRaidEnabled: true, antiRaidQuarantineRoleId: 'role1', antiRaidJoinThreshold: 3, antiRaidJoinWindow: 10 };
+        mockedJoinEventSchema.find.mockReturnValue(eventsQuery([
+            { guildId: 'old-guild', joinedAt: new Date(Date.now() - 600_000) },
+            { guildId: 'old-guild', joinedAt: new Date(Date.now() - 590_000) },
+        ]));
+
+        await restoreJoinTracker();
+        const member = makeMember({ id: 'm3' });
+        member.guild = guild;
+
+        expect(handleJoin(member as any, data)).toBe(false);
+    });
+
+    test('leaves the tracker alone and does not throw when the read fails', async () => {
+        mockedJoinEventSchema.find.mockReturnValue(eventsQuery(new Error('db down')));
+
+        await expect(restoreJoinTracker()).resolves.toBeUndefined();
+
+        expect(joinTracker.size).toBe(0);
     });
 });
 

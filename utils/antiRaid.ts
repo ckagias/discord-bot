@@ -1,5 +1,6 @@
 import { PermissionFlagsBits, EmbedBuilder, ChannelType, Guild, GuildMember, Role, Client } from 'discord.js';
 import GuildSchema from '../models/GuildSchema';
+import JoinEventSchema from '../models/JoinEventSchema';
 import { getLogChannel } from './logger';
 import { updateGuildConfig, invalidateGuildConfig } from './guildConfig';
 import { randomColor } from './embeds';
@@ -13,8 +14,13 @@ const STAFF_PERMISSIONS = [
     PermissionFlagsBits.ManageGuild,
 ];
 
-// In-memory only; lockdown state itself is persisted on the Guild doc.
+// Hot path stays in memory so handleJoin can answer synchronously. Every join is also written to Mongo
+// (JoinEventSchema, one-hour TTL) and restoreJoinTracker() reloads them on startup. Lockdown state is on the Guild doc.
 const joinTracker = new Map<string, number[]>();
+
+// Joins with a timestamp from before this point came from an earlier process; later ones are already in memory.
+const STARTED_AT = Date.now();
+const JOIN_RESTORE_WINDOW_MS = 60 * 60 * 1_000; // matches the TTL on JoinEventSchema
 
 // Evicts entries whose newest timestamp aged out, since recordJoin never shrinks the Map on its own.
 const JOIN_TRACKER_SWEEP_MS = 60 * 60 * 1_000;
@@ -41,7 +47,41 @@ function recordJoin(guildId: string, windowSeconds: number): number {
     const timestamps = (joinTracker.get(key) ?? []).filter(t => now - t < windowMs);
     timestamps.push(now);
     joinTracker.set(key, timestamps);
+
+    // Fire-and-forget: a failed write must never stop a join from being counted or a lockdown from starting.
+    JoinEventSchema.create({ guildId, joinedAt: new Date(now) }).catch(err =>
+        logger.warn(`Failed to persist join for ${guildId}:`, err)
+    );
+
     return timestamps.length;
+}
+
+// Called on bot startup so a raid that was under way when the bot restarted is still counted.
+async function restoreJoinTracker(): Promise<void> {
+    const since = new Date(Date.now() - JOIN_RESTORE_WINDOW_MS);
+    const events = await JoinEventSchema
+        .find({ joinedAt: { $gte: since, $lt: new Date(STARTED_AT) } })
+        .sort({ joinedAt: 1 })
+        .lean()
+        .catch(err => {
+            logger.error('Failed to restore the join tracker:', err);
+            return [];
+        });
+    if (!events.length) return;
+
+    const restored = new Map<string, number[]>();
+    for (const { guildId, joinedAt } of events) {
+        const list = restored.get(guildId) ?? [];
+        list.push(joinedAt.getTime());
+        restored.set(guildId, list);
+    }
+
+    // Anything already in memory is newer than every restored entry, so restored goes first and the list stays sorted.
+    for (const [guildId, timestamps] of restored) {
+        joinTracker.set(guildId, [...timestamps, ...(joinTracker.get(guildId) ?? [])]);
+    }
+
+    logger.info(`Restored ${events.length} recent join(s) across ${restored.size} guild(s) on startup.`);
 }
 
 // Mirrors the mute-role pattern in slashCommands/moderation/mute.js.
@@ -273,5 +313,6 @@ export {
     quarantineMember,
     ensureQuarantineOverwrites,
     restoreLockdowns,
+    restoreJoinTracker,
     joinTracker,
 };
