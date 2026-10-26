@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- `/gamble` no longer shows the first number before the player picks higher or lower. It is rolled up front but revealed together with the second number in the result. Previously, picking the better side every time won 74.5% of rounds, which paid out about 50% of the bet on average. Picking either side now wins and loses equally often, with a tie returning the bet.
+
 ## [1.3.2] - 2026-10-26
 
 ### Changed

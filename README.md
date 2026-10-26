@@ -143,7 +143,7 @@ If you find this useful, consider leaving a star.
 
 | Command          | Description                                                                                                                                                  |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/gamble`        | Bet credits on a high-low roll, win or lose real balance                                                                                                     |
+| `/gamble`        | Bet credits on whether the next roll is higher or lower than a hidden number, win or lose real balance                                                       |
 | `/coinflip`      | Flip a coin, optionally betting credits, or challenge another player with `/coinflip opponent`                                                               |
 | `/rps`           | Play Rock Paper Scissors against the bot or challenge another player, optionally with a bet                                                                  |
 | `/wordle guess`  | Submit a 5-letter guess for today's official NYT Wordle, earn up to 500 coins for a win, 25 for a loss                                                       |
