@@ -12,6 +12,8 @@ npx jest tests/slashCommands/economy   # scoped to one category
 npx jest tests/utils/antiRaid.test.ts  # single file
 ```
 
+`tests/models/dashboardModelSync.test.ts` loads every file in `dashboard/lib/models/` next to its bot schema and compares fields, types, required flags, defaults, enums and indexes. It runs in the bot's CI job, so a model change that skips the dashboard copy (or the reverse) fails the build. Each side is loaded in an isolated module registry, because the dashboard models reuse an already registered model of the same name and would otherwise be compared with themselves.
+
 Run scoped tests while iterating on a specific area, run the full suite once before committing or opening a PR.
 
 ## Dashboard: Vitest
