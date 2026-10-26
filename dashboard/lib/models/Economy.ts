@@ -7,6 +7,7 @@ export interface EconomyDoc {
   lastDailyAt: Date | null;
   lastWorkAt: Date | null;
   lastRobAt: Date | null;
+  lastTaxedAt: Date | null;
   dailyStreak: number;
 }
 
@@ -17,6 +18,7 @@ const economySchema = new Schema<EconomyDoc>({
   lastDailyAt: { type: Date, default: null },
   lastWorkAt:  { type: Date, default: null },
   lastRobAt:   { type: Date, default: null },
+  lastTaxedAt: { type: Date, default: null },
   dailyStreak: { type: Number, default: 0 },
 });
 

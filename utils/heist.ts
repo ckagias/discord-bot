@@ -2,14 +2,21 @@ import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, Message, Gu
 import { updateBalance, formatBalance } from './economy';
 import HeistSchema from '../models/HeistSchema';
 
-// Success chance: 30% base + 5% per member, capped at 75%
+// Success chance: 30% base + 5% per member, capped at 55%.
+// Crew return is chance x average multiplier. At the cap that is 0.55 x 1.85, just over break-even, so only a full crew gains.
+const HEIST_BASE_CHANCE = 0.30;
+const HEIST_CHANCE_PER_MEMBER = 0.05;
+const HEIST_MAX_CHANCE = 0.55;
+const HEIST_MIN_MULTIPLIER = 1.5;
+const HEIST_MAX_MULTIPLIER = 2.2;
+
 function successChance(memberCount: number): number {
-    return Math.min(0.30 + (memberCount - 1) * 0.05, 0.75);
+    return Math.min(HEIST_BASE_CHANCE + (memberCount - 1) * HEIST_CHANCE_PER_MEMBER, HEIST_MAX_CHANCE);
 }
 
 // Remainder coins from floor division go to the first survivor so no coins are destroyed.
 function calcPayout(totalPot: number, survivors: number) {
-    const multiplier = 1.5 + Math.random() * 1.5; // 1.5x–3x
+    const multiplier = HEIST_MIN_MULTIPLIER + Math.random() * (HEIST_MAX_MULTIPLIER - HEIST_MIN_MULTIPLIER);
     const total = Math.floor(totalPot * multiplier);
     const perPerson = Math.floor(total / survivors);
     const remainder = total - perPerson * survivors;
@@ -95,4 +102,13 @@ async function launchHeist(message: Message, guild: Guild) {
     return message.edit({ embeds: [embed], components: [disabledRow] });
 }
 
-export { launchHeist, successChance, calcPayout };
+export {
+    launchHeist,
+    successChance,
+    calcPayout,
+    HEIST_BASE_CHANCE,
+    HEIST_CHANCE_PER_MEMBER,
+    HEIST_MAX_CHANCE,
+    HEIST_MIN_MULTIPLIER,
+    HEIST_MAX_MULTIPLIER,
+};

@@ -260,6 +260,9 @@ describe('messageCreate', () => {
             await messageCreate.execute(message);
 
             expect(updateBalance).toHaveBeenCalledWith('user1', 'g1', expect.any(Number));
+            const credits = updateBalance.mock.calls[0][2];
+            expect(credits).toBeGreaterThanOrEqual(1);
+            expect(credits).toBeLessThanOrEqual(3);
         });
 
         test('levels up and announces when XP crosses the threshold', async () => {

@@ -2,12 +2,13 @@ import { ActivityType, Client, VoiceChannel } from 'discord.js';
 const GiveawaySchema = require('../models/GiveawaySchema');
 const { endGiveaway, scheduleGiveawayEnd } = require('../slashCommands/utility/giveaway');
 const { restorePunishments } = require('../utils/punishments');
-const { restoreLockdowns } = require('../utils/antiRaid');
+const { restoreLockdowns, restoreJoinTracker } = require('../utils/antiRaid');
 const GuildSchema = require('../models/GuildSchema');
 const PollSchema = require('../models/PollSchema');
 const { closePoll } = require('../slashCommands/fun/poll');
 const HeistSchema = require('../models/HeistSchema');
 const { updateBalance } = require('../utils/economy');
+const { startWealthTax } = require('../utils/wealthTax');
 const ReminderSchema = require('../models/ReminderSchema');
 const { sendReminder, scheduleReminder } = require('../slashCommands/utility/remind');
 const { checkBirthdays } = require('../utils/birthday');
@@ -75,9 +76,11 @@ module.exports = {
         await cancelStaleHeists();
         await restorePunishments(client);
         await restoreLockdowns(client);
+        await restoreJoinTracker();
         await restoreAutoroles(client);
         await restoreTempVCs(client);
         scheduleBirthdayCheck(client);
+        startWealthTax();
     }
 };
 

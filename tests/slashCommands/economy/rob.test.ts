@@ -25,17 +25,17 @@ function makeInteraction({ targetId = 'target1', targetBot = false, username = '
 
 describe('rob constants', () => {
     test('pin the current odds and fine so a rebalance has to change them on purpose', () => {
-        expect(rob.ROB_SUCCESS_CHANCE).toBe(0.45);
-        expect(rob.ROB_FINE_RATE).toBe(0.25);
+        expect(rob.ROB_SUCCESS_CHANCE).toBe(0.35);
+        expect(rob.ROB_FINE_RATE).toBe(0.60);
         expect(rob.ROB_MIN_BALANCE).toBe(100);
         expect(rob.ROB_COOLDOWN_MS).toBe(3_600_000);
     });
 
     // Steal is 10-40% of the target's balance (25% on average); a failed rob costs 25% of that steal.
-    test('expected value of a rob is positive for the robber', () => {
+    test('expected value of a rob is not positive for the robber', () => {
         const avgSteal = 0.25;
         const ev = rob.ROB_SUCCESS_CHANCE * avgSteal - (1 - rob.ROB_SUCCESS_CHANCE) * avgSteal * rob.ROB_FINE_RATE;
-        expect(ev).toBeGreaterThan(0);
+        expect(ev).toBeLessThanOrEqual(0);
     });
 });
 
@@ -120,7 +120,7 @@ describe('rob command', () => {
         const interaction = makeInteraction();
         getWallet.mockResolvedValueOnce({ lastRobAt: null }).mockResolvedValueOnce({ balance: 1000 });
         claimCooldown.mockResolvedValueOnce({ lastRobAt: new Date(), balance: 1000 });
-        jest.spyOn(Math, 'random').mockReturnValue(0); // success (< 0.45), min steal (10%)
+        jest.spyOn(Math, 'random').mockReturnValue(0); // success (< 0.35), min steal (10%)
         updateBalance
             .mockResolvedValueOnce({ balance: 900 })  // target debited
             .mockResolvedValueOnce({ balance: 1100 }); // robber credited
@@ -155,12 +155,12 @@ describe('rob command', () => {
         const interaction = makeInteraction();
         getWallet.mockResolvedValueOnce({ lastRobAt: null }).mockResolvedValueOnce({ balance: 1000 });
         claimCooldown.mockResolvedValueOnce({ lastRobAt: new Date(), balance: 1000 });
-        jest.spyOn(Math, 'random').mockReturnValue(0.99); // fail (>= 0.45); stealAmount = floor(1000 * 0.397) = 397, fine = floor(397 * 0.25) = 99
+        jest.spyOn(Math, 'random').mockReturnValue(0.99); // fail (>= 0.35); stealAmount = floor(1000 * 0.397) = 397, fine = floor(397 * 0.6) = 238
         updateBalance.mockResolvedValueOnce({ balance: 175 });
 
         await rob.execute(interaction);
 
-        expect(updateBalance).toHaveBeenCalledWith('robber1', 'g1', -99);
+        expect(updateBalance).toHaveBeenCalledWith('robber1', 'g1', -238);
         expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ embeds: expect.any(Array) })
         );

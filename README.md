@@ -38,7 +38,7 @@ If you find this useful, consider leaving a star.
 
 **Mutes and bans:** Mutes hold via channel-level overwrites regardless of other roles. Temporary bans lift automatically. A keyword trigger system replies automatically (Unicode-safe). A server event logger tracks edits, deletes, joins, leaves, and role changes.
 
-**Economy and minigames:** Passive earnings, daily streaks, `/work`, `/rob`, transfers, and admin tools. Minigames (gamble, coinflip, rps, wordle, trivia, hangman, blackjack, heist) pay out real credits, with PvP challenges and a multiplayer heist. A per-server shop sells role or badge items.
+**Economy and minigames:** Passive earnings, daily streaks, a 2% daily tax on credits above 10,000, `/work`, `/rob`, transfers, and admin tools. Minigames (gamble, coinflip, rps, wordle, trivia, hangman, blackjack, heist) pay out real credits, with PvP challenges and a multiplayer heist. A per-server shop sells role or badge items.
 
 **Leveling:** Persistent XP with atomic writes. Admins map levels to roles, granted automatically on level-up. Top-20 leaderboard in the dashboard.
 
@@ -157,10 +157,10 @@ If you find this useful, consider leaving a star.
 
 | Command               | Description                                                                             |
 | --------------------- | --------------------------------------------------------------------------------------- |
-| `/balance`            | Check your or another user's credit balance                                             |
+| `/balance`            | Check your or another user's credit balance and the daily tax on it                     |
 | `/daily`              | Claim daily credits with a streak bonus, up to 3.5× base on day 7+ (24h cooldown)       |
 | `/work`               | Work a random job and earn 40–450 credits (1-hour cooldown)                             |
-| `/rob`                | Attempt to steal credits from a member, 45% success rate, fine on failure (1h cooldown) |
+| `/rob`                | Attempt to steal credits from a member, 35% success rate, fine on failure (1h cooldown)  |
 | `/transfer`           | Transfer credits to another member                                                      |
 | `/economyleaderboard` | Show the top 10 richest members in this server                                          |
 | `/eco give`           | Give credits to a member (Manage Server)                                                |

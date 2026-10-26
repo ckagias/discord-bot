@@ -6,7 +6,7 @@ Every slash command, grouped by `slashCommands/` subfolder. This lists what exis
 
 `balance`, `daily`, `eco` (admin), `economyleaderboard`, `inventory`, `rob`, `shop`, `shopmanage` (admin), `transfer`, `work`
 
-Backed by `EconomySchema` (balance + cooldowns), `ShopSchema`, `InventorySchema`.
+Backed by `EconomySchema` (balance + cooldowns), `ShopSchema`, `InventorySchema`. Credits above 10,000 lose 2% of the excess once a day through `utils/wealthTax.ts`, see [Why these decisions](../DOCS.md#why-these-decisions).
 
 ## Fun (`slashCommands/fun/`)
 

@@ -42,4 +42,37 @@ describe('balance command', () => {
 
         expect(getWallet).toHaveBeenCalledWith('other1', 'g1');
     });
+
+    test('shows no tax field for a balance at or below the threshold', async () => {
+        const interaction = makeInteraction({ user: null });
+        getWallet.mockResolvedValue({ balance: 10_000 });
+
+        await balance.execute(interaction);
+
+        const embed = interaction.editReply.mock.calls[0][0].embeds[0].toJSON();
+        expect(embed.fields.map(f => f.name)).toEqual(['Balance']);
+    });
+
+    test('shows the next daily tax for a balance above the threshold', async () => {
+        const interaction = makeInteraction({ user: null });
+        getWallet.mockResolvedValue({ balance: 110_000 });
+
+        await balance.execute(interaction);
+
+        const embed = interaction.editReply.mock.calls[0][0].embeds[0].toJSON();
+        const tax = embed.fields.find(f => f.name === 'Daily tax');
+        expect(tax.value).toContain('2,000');
+        expect(tax.value).toContain('2%');
+        expect(tax.value).toContain('10,000');
+    });
+
+    test('shows no tax field when the excess is too small to be taxed', async () => {
+        const interaction = makeInteraction({ user: null });
+        getWallet.mockResolvedValue({ balance: 10_049 });
+
+        await balance.execute(interaction);
+
+        const embed = interaction.editReply.mock.calls[0][0].embeds[0].toJSON();
+        expect(embed.fields.map(f => f.name)).toEqual(['Balance']);
+    });
 });
