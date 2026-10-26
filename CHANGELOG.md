@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-26
+
 ### Added
 
 - A test (`tests/models/dashboardModelSync.test.ts`) that fails CI when a dashboard model copy drifts from the bot's schema. It compares every file in `dashboard/lib/models/` with its bot counterpart on fields, types, required flags, defaults, enums and indexes. Two indexes differ on purpose (`Level` and `Shop`) and are pinned in the test.
@@ -23,6 +25,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - The dashboard's anti-raid form now limits the join threshold to 2–100 and the window to 3–300 seconds, the same limits as `/antiraid config`. Before, it accepted any positive number, including a window longer than the hour of join history the bot keeps for restarts, or a threshold of 1 that would lock the server on every join.
 - The dashboard's `Guild` and `Suggestion` models were missing the `enum` on warn threshold `action` and suggestion `status` that the bot's schemas enforce. Found by the new drift test.
+
+### Notes
+
+- Existing balances are not reset, but the first startup on 1.4.0 runs the wealth tax sweep, so every wallet above 10,000 is taxed once right away and then every 24 hours.
+- This release adds the `JoinEventSchema` collection (anti-raid) and a `lastTaxedAt` field on wallets. Both are created on demand, so no migration is needed.
 
 ## [1.3.2] - 2026-10-26
 
@@ -160,7 +167,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Also includes full test coverage for `events/` and `slashCommands/`, and a Vitest and ESLint setup for the dashboard covering its server actions.
 
-[Unreleased]: https://github.com/ckagias/discord-bot/compare/v1.3.2...HEAD
+[Unreleased]: https://github.com/ckagias/discord-bot/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/ckagias/discord-bot/compare/v1.3.2...v1.4.0
 [1.3.2]: https://github.com/ckagias/discord-bot/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/ckagias/discord-bot/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/ckagias/discord-bot/compare/v1.2.0...v1.3.0
