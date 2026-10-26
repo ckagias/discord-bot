@@ -6,6 +6,33 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-10-26
+
+### Changed
+
+- `/gamble` now decides win, lose or tie through `resolveGamble` in `utils/gamble.ts`. Behavior is unchanged.
+- `successChance` and `calcPayout` in `utils/heist.ts` and the `ROB_*` constants in `/rob` are exported so tests can reach them.
+
+### Added
+
+- Tests that pin the current economy numbers: the `/gamble` win rate for a player who picks the better side every time, the heist success curve and payout range, and the `/rob` odds and fine. Any rebalance now has to change a test on purpose.
+
+### Fixed
+
+- Docs: model count corrected to 27 in `DOCS.md`, `docs/architecture.md` and `docs/data-models.md`. `/work` range corrected to 40–450 in the README. Removed the hard-coded test file count from `docs/testing.md`.
+- Version files brought in line with the `v1.3.1` tag. `package.json` and `package-lock.json` were still on 1.3.0.
+
+## [1.3.1] - 2026-10-25
+
+### Fixed
+
+- Cleared `undici` and `next` audit advisories that were failing CI on `main`, plus the `handlebars`, `sharp`, `source-map-js`, Next.js RCE and `brace-expansion` advisories.
+- Addressed CodeQL findings: workflow permissions, `guildId` coercion and entity decode order.
+
+### Changed
+
+- Refreshed response pools, tidied docs wording and `.dockerignore`, and merged routine Dependabot bumps.
+
 ## [1.3.0] - 2026-09-21
 
 ### Added
@@ -115,7 +142,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Also includes full test coverage for `events/` and `slashCommands/`, and a Vitest and ESLint setup for the dashboard covering its server actions.
 
-[Unreleased]: https://github.com/ckagias/discord-bot/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/ckagias/discord-bot/compare/v1.3.2...HEAD
+[1.3.2]: https://github.com/ckagias/discord-bot/compare/v1.3.1...v1.3.2
+[1.3.1]: https://github.com/ckagias/discord-bot/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/ckagias/discord-bot/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/ckagias/discord-bot/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/ckagias/discord-bot/compare/v1.0.5...v1.1.0
