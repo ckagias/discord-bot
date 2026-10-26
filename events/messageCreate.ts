@@ -6,6 +6,7 @@ const { runAutoMod } = require('../utils/automod');
 const { ensureGuildConfig } = require('../utils/guildConfig');
 const { getTriggers } = require('../utils/triggerCache');
 const { updateBalance } = require('../utils/economy');
+const { rollPassiveCredits } = require('../utils/passiveCredits');
 const { upsertWithRetry } = require('../utils/upsertRetry');
 const log = require('../utils/log');
 const logger = log.scope('messageCreate');
@@ -131,7 +132,7 @@ module.exports = {
             if (!userData || Date.now() - userData.lastXpAt.getTime() > 1000) return;
 
             // Passive credit earnings — fires on the same cooldown as XP so it's never spammed.
-            const creditsGained = Math.floor(Math.random() * 11) + 5; // 5–15 credits per message
+            const creditsGained = rollPassiveCredits();
             updateBalance(author.id, guild.id, creditsGained).catch(error => logger.error('Failed to credit passive earnings:', error));
 
             // Level formula: 100 * (level + 1)^2 XP needed to advance
