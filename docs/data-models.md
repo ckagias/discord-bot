@@ -37,5 +37,5 @@
 
 - **`GuildSchema` is the exception to "one schema, one concern."** It's a single large document holding most per-guild settings because nearly every feature needs guild config on every interaction, and the [guild config cache](architecture.md#guild-config-caching) is built around caching one document per guild rather than joining several.
 - Game-state schemas (`BlackjackSchema`, `HangmanSchema`, `HeistSchema`, `WordleSchema`) hold *transient* state. They exist so an in-progress game survives a bot restart, not as permanent history.
-- `dashboard/lib/models/` holds a parallel set of model definitions used by the dashboard's own Mongo client, see [Dashboard](dashboard.md). Keep field shapes in sync manually. There's no shared package between bot and dashboard for this.
+- `dashboard/lib/models/` holds a parallel set of model definitions used by the dashboard's own Mongo client, see [Dashboard](dashboard.md). There's no shared package between bot and dashboard, so `tests/models/dashboardModelSync.test.ts` fails CI when a copy's fields, types, required flags, defaults, enums or indexes drift from the bot's schema. Change both files together. Indexes may differ only where `INTENTIONAL_INDEX_DIFFERENCES` in that test says so (`Level`, `Shop`).
 - New models should follow the pattern in `CONTRIBUTING.md`'s "Adding a Mongoose Model" section.

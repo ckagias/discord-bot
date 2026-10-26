@@ -21,7 +21,7 @@ const suggestionSchema = new Schema<SuggestionDoc>(
     messageId: { type: String, required: true, unique: true },
     authorId:  { type: String, required: true },
     content:   { type: String, required: true },
-    status:    { type: String, default: "pending" },
+    status:    { type: String, enum: ["pending", "approved", "denied", "implemented"], default: "pending" },
     upvotes:   { type: [String], default: [] },
     downvotes: { type: [String], default: [] },
     staffId:     { type: String, default: null },

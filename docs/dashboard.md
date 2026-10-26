@@ -13,7 +13,7 @@ A separate Next.js (App Router) app in `dashboard/`, sharing the bot's MongoDB v
 - `dashboard/lib/db.ts`: Mongo connection
 - `dashboard/lib/discord.ts`: Discord API calls
 - `dashboard/lib/session.ts`: cookie/session handling
-- `dashboard/lib/models/`: parallel Mongoose model set for the dashboard's own Mongo client, kept manually in sync with `models/` in the bot, see [Data Models](data-models.md#notes)
+- `dashboard/lib/models/`: parallel Mongoose model set for the dashboard's own Mongo client, kept in sync with `models/` in the bot by hand, with `tests/models/dashboardModelSync.test.ts` failing CI on drift, see [Data Models](data-models.md#notes)
 
 ## Auth flow
 

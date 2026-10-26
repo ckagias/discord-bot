@@ -91,7 +91,7 @@ const guildSchema = new Schema<GuildDoc>({
       {
         _id: false,
         count:    { type: Number, required: true },
-        action:   { type: String, required: true },
+        action:   { type: String, enum: ["timeout", "kick", "ban"], required: true },
         duration: { type: Number, default: null },
       },
     ],
