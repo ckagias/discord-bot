@@ -8,6 +8,7 @@ const PollSchema = require('../models/PollSchema');
 const { closePoll } = require('../slashCommands/fun/poll');
 const HeistSchema = require('../models/HeistSchema');
 const { updateBalance } = require('../utils/economy');
+const { startWealthTax } = require('../utils/wealthTax');
 const ReminderSchema = require('../models/ReminderSchema');
 const { sendReminder, scheduleReminder } = require('../slashCommands/utility/remind');
 const { checkBirthdays } = require('../utils/birthday');
@@ -78,6 +79,7 @@ module.exports = {
         await restoreAutoroles(client);
         await restoreTempVCs(client);
         scheduleBirthdayCheck(client);
+        startWealthTax();
     }
 };
 
