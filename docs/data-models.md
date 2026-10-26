@@ -1,6 +1,6 @@
 # Data Models
 
-25 Mongoose schemas in `models/`. Field lists here are a summary. Read the schema file for exact types/defaults when writing code against one.
+27 Mongoose schemas in `models/`. Field lists here are a summary. Read the schema file for exact types/defaults when writing code against one.
 
 | Schema | Purpose |
 |---|---|

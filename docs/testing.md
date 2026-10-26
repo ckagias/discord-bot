@@ -2,7 +2,7 @@
 
 ## Bot: Jest
 
-`tests/` mirrors `slashCommands/`, `events/`, `handlers/` (including `handlers/components/`), `src/`, and `utils/` file-for-file, so coverage gaps are visible directly from the directory structure. 129 test files as of this writing, covering every command category and most utility modules (`envCheck`, `musicPersistence`, `antiRaid`, `punishments`, `triggerCache`, `upsertRetry`, and more).
+`tests/` mirrors `slashCommands/`, `events/`, `handlers/` (including `handlers/components/`), `src/`, and `utils/` file-for-file, so coverage gaps are visible directly from the directory structure. Covers every command category and most utility modules (`envCheck`, `musicPersistence`, `antiRaid`, `punishments`, `triggerCache`, `upsertRetry`, and more).
 
 Config: `jest.config.js`, `ts-jest` preset, node environment, ignores `dashboard/` and `dist/`.
 

@@ -159,7 +159,7 @@ If you find this useful, consider leaving a star.
 | --------------------- | --------------------------------------------------------------------------------------- |
 | `/balance`            | Check your or another user's credit balance                                             |
 | `/daily`              | Claim daily credits with a streak bonus, up to 3.5× base on day 7+ (24h cooldown)       |
-| `/work`               | Work a random job and earn 50–450 credits (1-hour cooldown)                             |
+| `/work`               | Work a random job and earn 40–450 credits (1-hour cooldown)                             |
 | `/rob`                | Attempt to steal credits from a member, 45% success rate, fine on failure (1h cooldown) |
 | `/transfer`           | Transfer credits to another member                                                      |
 | `/economyleaderboard` | Show the top 10 richest members in this server                                          |
@@ -439,7 +439,13 @@ Want to see what it looks like without setting it up? Check out [discord-bot-das
 
 ## Testing
 
-Run `npm test` to run the test suite (Jest).
+Run `npm test` to run the bot suite (Jest). The dashboard has its own suite, run `npm test` inside `dashboard/`. Other checks:
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```
 
 [![CI](https://github.com/ckagias/discord-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/ckagias/discord-bot/actions/workflows/ci.yml) / [![CD](https://github.com/ckagias/discord-bot/actions/workflows/cd.yml/badge.svg)](https://github.com/ckagias/discord-bot/actions/workflows/cd.yml)
 
@@ -447,7 +453,13 @@ Run `npm test` to run the test suite (Jest).
 
 ## Documentation
 
-See [DOCS.md](DOCS.md) for architecture, commands, data models, environment variables, the internal API, and deployment details.
+| File | Content |
+|---|---|
+| [DOCS.md](DOCS.md) | Technical reference. Architecture, commands, data models, environment variables, the internal API and deployment |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to add code |
+| [CHANGELOG.md](CHANGELOG.md) | Release history |
+| [SECURITY.md](SECURITY.md) | How to report a vulnerability |
+| [README.md](README.md) | Features, commands, setup and the dashboard |
 
 ---
 
