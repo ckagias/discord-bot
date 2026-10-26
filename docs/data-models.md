@@ -8,7 +8,7 @@
 | `BirthdaySchema` | User birthdays (month/day/year, lastAnnounced year to dedupe announcement posts) |
 | `BlackjackSchema` | Active blackjack game state per message (deck, playerHand, bet) |
 | `CaseSchema` | Moderation case log entries (caseId, type, userId, moderatorId, reason), what `/case` reads |
-| `EconomySchema` | Per-user balance + cooldown timestamps (lastDailyAt/lastWorkAt/lastRobAt) |
+| `EconomySchema` | Per-user balance + cooldown timestamps (lastDailyAt/lastWorkAt/lastRobAt), lastTaxedAt for the daily wealth tax |
 | `GiveawaySchema` | Giveaway posts (host, prize, winnerCount, entrants, winners) |
 | `GuildSchema` | **Central per-guild config document.** Logging channels, welcome/farewell, mute role, tickets, automod settings, warn thresholds, level roles, autorole, starboard, anti-raid, etc. Read/written from both the bot and the dashboard. |
 | `HangmanSchema` | Active hangman game state (word, guessed letters, wrong count) |

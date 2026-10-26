@@ -24,6 +24,8 @@ Technical reference for how this project works and why it's built the way it is.
 
 **Lavalink session resume + Mongo-backed queue store.** Music state (queue, now-playing, player config) is not held only in the Lavalink node's memory. Restarting the bot container (`restart.sh --bot`) does not kill playback, because Lavalink is configured to hold the player open for `LAVALINK_RESUME_TIMEOUT_MS` and the bot restores queue + player state from Mongo on reconnect. See [Music & Lavalink](docs/music-lavalink.md).
 
+**A daily wealth tax as the economy's main sink.** Every payout in the bot adds credits and only fines and lost bets remove them, so balances would grow without limit. `utils/wealthTax.ts` takes 2% of everything above 10,000 once a day, so a balance settles where daily income equals the tax (about 85,000 for a player earning 1,500 a day). It is one `updateMany` with a pipeline update, so each wallet is read and written atomically and a concurrent `/work` or `/gamble` can't be lost. `lastTaxedAt` lives on the wallet, not in memory, so a restart or a second sweep can't tax anyone twice. The sweep runs on startup and then hourly, which also covers days missed while offline. The rate and threshold are constants, not per-server settings.
+
 **Tests mirror the source tree under `tests/`**, not co-located with source files. Makes it easy to see what's covered and what isn't at a glance from the directory structure alone.
 
 ## Maintenance

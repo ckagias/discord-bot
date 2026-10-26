@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- A daily wealth tax. Credits above 10,000 lose 2% of the excess once every 24 hours, so balances settle where daily income equals the tax instead of growing forever. The sweep (`utils/wealthTax.ts`) runs on startup and then hourly. It updates every eligible wallet atomically and stamps a new `lastTaxedAt` field on `EconomySchema` (and the dashboard's copy), so restarts never tax twice. `/balance` shows the next tax for wallets above the threshold.
+
 ### Changed
 
 - `/heist` success chance now caps at 55% (reached with a crew of six) instead of 75%, and the loot multiplier is 1.5x to 2.2x instead of 1.5x to 3x. Crews of two to five lose credits on average and only a full crew gains, by about 2%. Before, a full crew returned about 69% more than it staked, so every successful heist created credits.
