@@ -9,7 +9,7 @@
 | `handlers/` | Dispatch/registration logic: `eventHandler.ts`, `slashCommandHandler.ts`, `componentHandler.ts`, `lavalinkHandler.ts` |
 | `handlers/components/` | Button/modal/select-menu interaction logic (tickets, polls, hangman, blackjack, heist, giveaways, suggestions, reaction roles, temp-VC panel, embed builder) |
 | `slashCommands/` | All `/` command implementations, grouped into 11 category subfolders, see [Commands Reference](commands.md) |
-| `models/` | 27 Mongoose schemas, see [Data Models](data-models.md) |
+| `models/` | 28 Mongoose schemas, see [Data Models](data-models.md) |
 | `utils/` | Shared business logic: economy, moderation (automod, anti-raid, punishments, warn thresholds, cases), music/Lavalink persistence, birthdays, welcome messages, starboard, minigame logic, daily wealth tax, logging, guild config cache, env validation, retry-safe upserts |
 | `types/` | Ambient/module type augmentations (`discord.d.ts`) |
 | `dashboard/` | Separate Next.js app, shares the bot's MongoDB, see [Dashboard](dashboard.md) |

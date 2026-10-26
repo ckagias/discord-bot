@@ -8,6 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- The anti-raid join tracker now survives a restart. Each counted join is written to a new `JoinEventSchema` (one-hour TTL index) and reloaded on startup, so a raid that spans a restart no longer starts counting from zero. Counting itself stays in memory, a failed write is logged and never blocks a join, and the auto-mod spam tracker is unchanged because its window is five seconds.
 - A daily wealth tax. Credits above 10,000 lose 2% of the excess once every 24 hours, so balances settle where daily income equals the tax instead of growing forever. The sweep (`utils/wealthTax.ts`) runs on startup and then hourly. It updates every eligible wallet atomically and stamps a new `lastTaxedAt` field on `EconomySchema` (and the dashboard's copy), so restarts never tax twice. `/balance` shows the next tax for wallets above the threshold.
 
 ### Changed

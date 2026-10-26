@@ -1,6 +1,6 @@
 # Data Models
 
-27 Mongoose schemas in `models/`. Field lists here are a summary. Read the schema file for exact types/defaults when writing code against one.
+28 Mongoose schemas in `models/`. Field lists here are a summary. Read the schema file for exact types/defaults when writing code against one.
 
 | Schema | Purpose |
 |---|---|
@@ -14,6 +14,7 @@
 | `HangmanSchema` | Active hangman game state (word, guessed letters, wrong count) |
 | `HeistSchema` | Active heist minigame (leader, entry fee, members) |
 | `InventorySchema` | User-owned economy shop items (itemId, type, emoji, acquiredAt) |
+| `JoinEventSchema` | One row per join counted by anti-raid (guildId, joinedAt), with a one-hour TTL index. Lets the in-memory join tracker be rebuilt after a restart |
 | `LavalinkSessionSchema` | Lavalink node session id, keyed by `nodeId` (unique), backs session-resume, see [Music & Lavalink](music-lavalink.md) |
 | `LevelSchema` | Per-user XP/level (xp, level, lastXpAt) |
 | `MessageActivitySchema` | Daily per-guild message counts (guildId, date, count) |
