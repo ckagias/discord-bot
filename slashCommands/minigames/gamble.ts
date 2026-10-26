@@ -24,11 +24,12 @@ module.exports = {
             });
         }
 
+        // Rolled up front but kept hidden until the player has committed, so the choice can't be informed by it.
         const firstNumber = Math.floor(Math.random() * 100) + 1;
 
         const embed = new EmbedBuilder()
             .setTitle('🎲 High-Low Gamble')
-            .setDescription(`The first number is **${firstNumber}**.\nWill the next number (1-100) be **Higher** or **Lower**?`)
+            .setDescription(`I rolled a hidden number between 1 and 100.\nWill the next roll be **Higher** or **Lower** than it?`)
             .addFields(
                 { name: 'Your Bet',     value: `💰 ${formatBalance(bet)} credits`,     inline: true },
                 { name: 'Your Balance', value: `💳 ${formatBalance(wallet.balance)} credits`, inline: true },
@@ -59,7 +60,7 @@ module.exports = {
 
             if (outcome === 'tie') {
                 return i.update({
-                    content: `😲 It was a tie (**${secondNumber}**)! Your bet was returned.`,
+                    content: `😲 It was a tie! Both rolls were **${secondNumber}**. Your bet was returned.`,
                     embeds: [],
                     components: [],
                 });
@@ -76,7 +77,7 @@ module.exports = {
 
             const resultEmbed = new EmbedBuilder()
                 .setTitle(userWon ? '🎉 You Won!' : '💀 You Lost!')
-                .setDescription(`The second number was **${secondNumber}**!`)
+                .setDescription(`The hidden number was **${firstNumber}** and the next roll was **${secondNumber}**!`)
                 .addFields(
                     { name: 'Your Choice',  value: i.customId.replace(`${prefix}_`, '').toUpperCase(),            inline: true },
                     { name: 'Result',       value: userWon ? `💰 +${formatBalance(bet)}` : `💸 -${formatBalance(bet)}`, inline: true },
