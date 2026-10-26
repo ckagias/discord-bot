@@ -93,4 +93,8 @@ module.exports = {
             return interaction.editReply({ embeds: [embed] });
         }
     },
+    ROB_COOLDOWN_MS,
+    ROB_SUCCESS_CHANCE,
+    ROB_MIN_BALANCE,
+    ROB_FINE_RATE,
 };

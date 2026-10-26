@@ -95,4 +95,4 @@ async function launchHeist(message: Message, guild: Guild) {
     return message.edit({ embeds: [embed], components: [disabledRow] });
 }
 
-export { launchHeist };
+export { launchHeist, successChance, calcPayout };
