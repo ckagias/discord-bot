@@ -194,13 +194,13 @@ export default async function AntiRaidPage({
         >
           <TextField
             label="Join threshold"
-            description="Number of new members joining within the window that triggers a lockdown."
+            description="Number of new members joining within the window that triggers a lockdown. Between 2 and 100. Default: 10."
             name="antiRaidJoinThreshold"
             defaultValue={String(guild.antiRaidJoinThreshold)}
           />
           <TextField
             label="Window (seconds)"
-            description="The time window in seconds for counting joins. Default: 10."
+            description="The time window in seconds for counting joins. Between 3 and 300. Default: 10."
             name="antiRaidJoinWindow"
             defaultValue={String(guild.antiRaidJoinWindow)}
           />

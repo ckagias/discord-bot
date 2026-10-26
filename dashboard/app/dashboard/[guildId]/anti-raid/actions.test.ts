@@ -71,6 +71,35 @@ describe("updateAntiRaidSettings", () => {
     expect(revalidatePath).toHaveBeenCalledWith("/dashboard/guild1/anti-raid");
   });
 
+  it.each([
+    ["a window above 300", "antiRaidJoinWindow", "3600", 300],
+    ["a window of 301", "antiRaidJoinWindow", "301", 300],
+    ["a window below 3", "antiRaidJoinWindow", "1", 3],
+    ["a threshold of 1", "antiRaidJoinThreshold", "1", 2],
+    ["a threshold above 100", "antiRaidJoinThreshold", "500", 100],
+  ])("clamps %s to the range /antiraid config allows", async (_label, field, value, expected) => {
+    const formData = new FormData();
+    formData.set(field, value);
+
+    await updateAntiRaidSettings("guild1", formData);
+
+    expect(findOneAndUpdate.mock.calls[0][1].$set[field]).toBe(expected);
+  });
+
+  it.each([
+    ["antiRaidJoinWindow", "3", 3],
+    ["antiRaidJoinWindow", "300", 300],
+    ["antiRaidJoinThreshold", "2", 2],
+    ["antiRaidJoinThreshold", "100", 100],
+  ])("keeps %s = %s, which is inside the range", async (field, value, expected) => {
+    const formData = new FormData();
+    formData.set(field, value);
+
+    await updateAntiRaidSettings("guild1", formData);
+
+    expect(findOneAndUpdate.mock.calls[0][1].$set[field]).toBe(expected);
+  });
+
   it("ignores a negative or non-numeric threshold and falls back to default", async () => {
     const formData = new FormData();
     formData.set("antiRaidJoinThreshold", "-5");
