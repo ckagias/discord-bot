@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, ChatInputCommandInteraction } from 'discord.js';
 const { getWallet, updateBalance, formatBalance } = require('../../utils/economy');
+const { resolveGamble } = require('../../utils/gamble');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -52,10 +53,11 @@ module.exports = {
 
         collector.on('collect', async (i) => {
             const secondNumber = Math.floor(Math.random() * 100) + 1;
-            const result = secondNumber > firstNumber ? `${prefix}_higher` : `${prefix}_lower`;
-            const userWon = i.customId === result;
+            const choice = i.customId === `${prefix}_higher` ? 'higher' : 'lower';
+            const outcome = resolveGamble(firstNumber, secondNumber, choice);
+            const userWon = outcome === 'win';
 
-            if (secondNumber === firstNumber) {
+            if (outcome === 'tie') {
                 return i.update({
                     content: `😲 It was a tie (**${secondNumber}**)! Your bet was returned.`,
                     embeds: [],

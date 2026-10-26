@@ -16,7 +16,7 @@ Technical reference for how this project works and why it's built the way it is.
 
 ## Why these decisions
 
-**TypeScript over JavaScript.** Full migration completed across a 9-PR sequence, see `CHANGELOG.md` for the version history. Catches command-argument and schema-shape mistakes at compile time across a codebase with 85+ commands and 25 data models.
+**TypeScript over JavaScript.** Full migration completed across a 9-PR sequence, see `CHANGELOG.md` for the version history. Catches command-argument and schema-shape mistakes at compile time across a codebase with 85+ commands and 27 data models.
 
 **MongoDB shared between bot and dashboard.** The dashboard reads and writes the same collections the bot does directly, rather than going through the bot for every operation. This keeps the dashboard fast for read-heavy settings pages. Writes that need to affect a *live* bot process in memory (ending a giveaway, locking down a raid) go through the [Internal API](docs/internal-api.md) instead, since those aren't just database state.
 
