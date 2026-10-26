@@ -8,6 +8,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- `/heist` success chance now caps at 55% (reached with a crew of six) instead of 75%, and the loot multiplier is 1.5x to 2.2x instead of 1.5x to 3x. Crews of two to five lose credits on average and only a full crew gains, by about 2%. Before, a full crew returned about 69% more than it staked, so every successful heist created credits.
+- `/rob` succeeds 35% of the time instead of 45%, and a failed attempt costs 60% of the attempted steal instead of 25%. The robber's expected value is now slightly negative instead of positive, and fines remove credits from circulation.
+- Passive credits from chatting are 1 to 3 per message instead of 5 to 15. Chatting every minute for an hour now pays at most about 120 credits, below the roughly 189 an average `/work` pays, where before it paid about 600.
 - `/gamble` no longer shows the first number before the player picks higher or lower. It is rolled up front but revealed together with the second number in the result. Previously, picking the better side every time won 74.5% of rounds, which paid out about 50% of the bet on average. Picking either side now wins and loses equally often, with a tie returning the bet.
 
 ## [1.3.2] - 2026-10-26

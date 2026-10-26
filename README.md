@@ -160,7 +160,7 @@ If you find this useful, consider leaving a star.
 | `/balance`            | Check your or another user's credit balance                                             |
 | `/daily`              | Claim daily credits with a streak bonus, up to 3.5× base on day 7+ (24h cooldown)       |
 | `/work`               | Work a random job and earn 40–450 credits (1-hour cooldown)                             |
-| `/rob`                | Attempt to steal credits from a member, 45% success rate, fine on failure (1h cooldown) |
+| `/rob`                | Attempt to steal credits from a member, 35% success rate, fine on failure (1h cooldown)  |
 | `/transfer`           | Transfer credits to another member                                                      |
 | `/economyleaderboard` | Show the top 10 richest members in this server                                          |
 | `/eco give`           | Give credits to a member (Manage Server)                                                |
