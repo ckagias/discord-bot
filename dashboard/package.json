@@ -29,7 +29,7 @@
     "eslint-config-next": "^16.4.3",
     "tailwindcss": "^4",
     "typescript": "^6",
-    "typescript-eslint": "^8.72.0",
+    "typescript-eslint": "^8.72.1",
     "vitest": "^5.0.5"
   }
 }
