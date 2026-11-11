@@ -28,6 +28,7 @@
     "mongoose": "^9.7.4"
   },
   "overrides": {
+    "minimatch": "^11.0.1",
     "undici": "^6.23.0"
   },
   "devDependencies": {
