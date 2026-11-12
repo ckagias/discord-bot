@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-11-12
+
 ### Fixed
 
 - Giveaways now pick winners from the entrants stored in the database. A giveaway that ended on its own announced "No valid entrants", because the timer used the copy created when the giveaway started, before anyone had entered. A giveaway ended early with `/giveaway end` or from the dashboard also kept its original timer, which later replaced the real winners and posted a second announcement. Ending a giveaway is now claimed atomically, so only the first caller does anything, and `/giveaway end` says so when another caller got there first.
@@ -21,6 +23,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - A leftover timed ban or mute no longer lifts a newer one. A timed ban or mute is lifted by a timer, and `/unban`, `/unmute` and a new `/ban` or `/mute` never touched the stored record, so `/ban user 7d`, then `/unban user`, then a permanent `/ban user` ended with the user unbanned seven days later. The same happened with mutes, and also after a restart, which reloads every stored record. `/unban` and `/unmute` now remove the pending record, a new `/ban` or `/mute` replaces earlier ones, and a ban lifted in Discord itself removes it once the user is confirmed not banned. The timers also check that their record still exists before acting.
 - Music controls now require being in the bot's voice channel. `/stop`, `/skip`, `/skipto`, `/pause`, `/resume`, `/shuffle`, `/remove`, `/loop` and setting the level with `/volume` only checked that something was playing, so anyone in the server, even someone not in voice, could stop or change another channel's music. They now reply with an error unless the member is in the same voice channel as the bot. Viewing the volume, `/queue`, `/nowplaying` and `/lyrics` are unchanged. Moderators who are not in the channel can no longer stop the music either.
 - Auto-moderation spam detection no longer punishes every message after the threshold. Five messages within five seconds counted as spam, but the count was never reset, so each further message in that window was spam as well. A burst of 20 messages produced 16 warnings or timeouts, which could push a member past the warn thresholds from a single flood. The count now restarts after each detection, so a burst of 20 messages is 4 detections.
+
+### Notes
+
+- Timed bans and mutes already stored before this release that were cancelled by `/unban` or `/unmute` are not cleaned up, so a stale record can still lift a newer punishment once. Only records created from 1.4.1 on are cancelled.
+- Role settings that already point at a role above the person who set them keep working. The new check applies only when a role is added or changed.
+- No migration is needed.
 
 ## [1.4.0] - 2026-10-26
 
@@ -183,7 +191,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Also includes full test coverage for `events/` and `slashCommands/`, and a Vitest and ESLint setup for the dashboard covering its server actions.
 
-[Unreleased]: https://github.com/ckagias/discord-bot/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/ckagias/discord-bot/compare/v1.4.1...HEAD
+[1.4.1]: https://github.com/ckagias/discord-bot/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/ckagias/discord-bot/compare/v1.3.2...v1.4.0
 [1.3.2]: https://github.com/ckagias/discord-bot/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/ckagias/discord-bot/compare/v1.3.0...v1.3.1
