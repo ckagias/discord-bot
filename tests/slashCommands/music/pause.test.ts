@@ -1,7 +1,7 @@
 const pause = require('../../../slashCommands/music/pause');
 
-function makeInteraction() {
-    return { guild: { id: 'g1' }, reply: jest.fn().mockResolvedValue({}) };
+function makeInteraction({ memberChannelId = 'vc1' as string | null } = {}) {
+    return { guild: { id: 'g1' }, member: { voice: { channelId: memberChannelId } }, reply: jest.fn().mockResolvedValue({}) };
 }
 
 function makeClient(player: unknown) {
@@ -68,5 +68,29 @@ describe('pause command', () => {
         expect(interaction.reply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Failed to pause') })
         );
+    });
+
+    test('rejects someone who is not in a voice channel, without touching the player', async () => {
+        const interaction = makeInteraction({ memberChannelId: null });
+        const player = { voiceChannelId: 'vc1', playing: true, paused: false, pause: jest.fn() };
+
+        await pause.execute(interaction, makeClient(player));
+
+        expect(interaction.reply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: 'You need to be in a voice channel to control the music.' })
+        );
+        expect(player.pause).not.toHaveBeenCalled();
+    });
+
+    test('rejects someone in a different voice channel than the bot, without touching the player', async () => {
+        const interaction = makeInteraction({ memberChannelId: 'vc2' });
+        const player = { voiceChannelId: 'vc1', playing: true, paused: false, pause: jest.fn() };
+
+        await pause.execute(interaction, makeClient(player));
+
+        expect(interaction.reply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('<#vc1>') })
+        );
+        expect(player.pause).not.toHaveBeenCalled();
     });
 });

@@ -1,3 +1,5 @@
+import type { ChatInputCommandInteraction, GuildMember } from 'discord.js';
+
 function formatDuration(ms: number): string {
     const totalSec = Math.floor(ms / 1000);
     const h = Math.floor(totalSec / 3600);
@@ -29,4 +31,18 @@ async function resolveSpotifyTrackQuery(url: string): Promise<string | null> {
     return artists ? `${entity.name} ${artists}` : entity.name;
 }
 
-export { formatDuration, SPOTIFY_TRACK_URL, SPOTIFY_OTHER_URL, resolveSpotifyTrackQuery };
+// Changing playback (stop, skip, volume, ...) needs the person to be in the voice channel the bot is playing in.
+// Otherwise anyone in the server, even outside voice, could stop or change someone else's music.
+// Returns the reply to send when they may not control it, or null when they may.
+function voiceChannelError(interaction: ChatInputCommandInteraction, player: { voiceChannelId?: string | null }): string | null {
+    const userChannelId = (interaction.member as GuildMember | null)?.voice?.channelId;
+    if (!userChannelId) {
+        return 'You need to be in a voice channel to control the music.';
+    }
+    if (player.voiceChannelId && userChannelId !== player.voiceChannelId) {
+        return `You need to be in the same voice channel as me (<#${player.voiceChannelId}>) to control the music.`;
+    }
+    return null;
+}
+
+export { formatDuration, voiceChannelError, SPOTIFY_TRACK_URL, SPOTIFY_OTHER_URL, resolveSpotifyTrackQuery };

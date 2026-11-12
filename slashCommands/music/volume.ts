@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags, ChatInputCommandInteraction, Client } from 'discord.js';
+import { voiceChannelError } from '../../utils/music';
 const log = require('../../utils/log');
 const logger = log.scope('volume');
 
@@ -24,6 +25,11 @@ module.exports = {
 
         if (level === null) {
             return interaction.reply({ content: `🔊 Current volume: **${player.volume}%**` });
+        }
+
+        const voiceError = voiceChannelError(interaction, player);
+        if (voiceError) {
+            return interaction.reply({ content: voiceError, flags: MessageFlags.Ephemeral });
         }
 
         try {

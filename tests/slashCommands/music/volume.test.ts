@@ -1,9 +1,10 @@
 const volume = require('../../../slashCommands/music/volume');
 
-function makeInteraction({ level = null } = {}) {
+function makeInteraction({ level = null, memberChannelId = 'vc1' as string | null } = {}) {
     return {
         options: { getInteger: jest.fn().mockReturnValue(level) },
         guild: { id: 'g1' },
+        member: { voice: { channelId: memberChannelId } },
         reply: jest.fn().mockResolvedValue({}),
     };
 }
@@ -60,6 +61,41 @@ describe('volume command', () => {
         await expect(volume.execute(interaction, client)).resolves.not.toThrow();
         expect(interaction.reply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Failed to set volume') })
+        );
+    });
+
+    test('rejects someone who is not in a voice channel, without touching the player', async () => {
+        const interaction = makeInteraction({ memberChannelId: null, level: 80 });
+        const player = { voiceChannelId: 'vc1', volume: 50, setVolume: jest.fn() };
+
+        await volume.execute(interaction, makeClient(player));
+
+        expect(interaction.reply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: 'You need to be in a voice channel to control the music.' })
+        );
+        expect(player.setVolume).not.toHaveBeenCalled();
+    });
+
+    test('rejects someone in a different voice channel than the bot, without touching the player', async () => {
+        const interaction = makeInteraction({ memberChannelId: 'vc2', level: 80 });
+        const player = { voiceChannelId: 'vc1', volume: 50, setVolume: jest.fn() };
+
+        await volume.execute(interaction, makeClient(player));
+
+        expect(interaction.reply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('<#vc1>') })
+        );
+        expect(player.setVolume).not.toHaveBeenCalled();
+    });
+
+    test('still lets anyone read the current volume without being in the voice channel', async () => {
+        const interaction = makeInteraction({ memberChannelId: null });
+        const player = { voiceChannelId: 'vc1', volume: 50, setVolume: jest.fn() };
+
+        await volume.execute(interaction, makeClient(player));
+
+        expect(interaction.reply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('50%') })
         );
     });
 });
