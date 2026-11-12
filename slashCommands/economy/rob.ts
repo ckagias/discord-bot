@@ -5,6 +5,8 @@ const { getWallet, updateBalance, claimCooldown, formatBalance } = require('../.
 const ROB_COOLDOWN_MS = 3_600_000; // 1 hour
 const ROB_SUCCESS_CHANCE = 0.35;   // 35% success rate
 const ROB_MIN_BALANCE = 100;       // target needs at least this many credits
+const ROB_MIN_STEAL_RATE = 0.1;    // a steal takes between 10% and 40% of the target's balance
+const ROB_STEAL_SPREAD = 0.3;
 const ROB_FINE_RATE = 0.60;        // on fail, robber pays 60% of attempted steal as fine; at 35% success the robber's expected value is just under zero
 
 module.exports = {
@@ -43,6 +45,12 @@ module.exports = {
             return interaction.editReply({ content: `**${target.username}** doesn't have enough credits to rob (minimum ${formatBalance(ROB_MIN_BALANCE)}).` });
         }
 
+        // The robber must be able to cover the worst-case fine, otherwise a failed attempt would cost nothing.
+        const maxFine = Math.floor(Math.floor(targetWallet.balance * (ROB_MIN_STEAL_RATE + ROB_STEAL_SPREAD)) * ROB_FINE_RATE);
+        if (robberWallet.balance < maxFine) {
+            return interaction.editReply({ content: `You need at least **${formatBalance(maxFine)}** credits to cover the fine if you get caught. Your balance is **${formatBalance(robberWallet.balance)}**.` });
+        }
+
         // Atomically re-check and stamp the cooldown so two concurrent /rob calls can't both pass.
         const claimed = await claimCooldown(interaction.user.id, interaction.guild.id, 'lastRobAt', ROB_COOLDOWN_MS);
         if (!claimed) {
@@ -53,16 +61,23 @@ module.exports = {
 
         const success = Math.random() < ROB_SUCCESS_CHANCE;
 
-        // Steal between 10%–40% of target's balance
-        const stealAmount = Math.floor(targetWallet.balance * (0.1 + Math.random() * 0.3));
+        const stealAmount = Math.floor(targetWallet.balance * (ROB_MIN_STEAL_RATE + Math.random() * ROB_STEAL_SPREAD));
+        const fine = Math.floor(stealAmount * ROB_FINE_RATE);
+
+        // Hold the fine up front so spending the balance mid-command can't dodge it. It is handed back on success.
+        const held = await updateBalance(interaction.user.id, interaction.guild.id, -fine);
+        if (!held) {
+            return interaction.editReply({ content: 'You no longer have enough credits to cover the fine.' });
+        }
 
         if (success) {
             // Atomically deduct from target — may return null if they were drained concurrently
             const targetUpdated = await updateBalance(target.id, interaction.guild.id, -stealAmount);
             if (!targetUpdated) {
+                await updateBalance(interaction.user.id, interaction.guild.id, fine);
                 return interaction.editReply({ content: `**${target.username}** no longer has enough credits to rob.` });
             }
-            const updated = await updateBalance(interaction.user.id, interaction.guild.id, stealAmount);
+            const updated = await updateBalance(interaction.user.id, interaction.guild.id, stealAmount + fine);
 
             const embed = new EmbedBuilder()
                 .setColor(0xF1C40F)
@@ -76,17 +91,13 @@ module.exports = {
 
             return interaction.editReply({ embeds: [embed] });
         } else {
-            const fine = Math.floor(stealAmount * ROB_FINE_RATE);
-            const fineResult = await updateBalance(interaction.user.id, interaction.guild.id, -fine);
-            const newBalance = fineResult ? fineResult.balance : claimed.balance;
-
             const embed = new EmbedBuilder()
                 .setColor(0xED4245)
                 .setTitle('🚔 Caught Red-Handed!')
                 .setDescription(`You tried to rob **${target.username}** but got caught!`)
                 .addFields(
                     { name: 'Fine',        value: `💸 **-${formatBalance(fine)}** credits`,        inline: true },
-                    { name: 'Your Balance', value: `💳 **${formatBalance(newBalance)}** credits`,   inline: true },
+                    { name: 'Your Balance', value: `💳 **${formatBalance(held.balance)}** credits`,   inline: true },
                 )
                 .setFooter({ text: 'You can try again in 1 hour.' });
 

@@ -9,6 +9,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 
 - Giveaways now pick winners from the entrants stored in the database. A giveaway that ended on its own announced "No valid entrants", because the timer used the copy created when the giveaway started, before anyone had entered. A giveaway ended early with `/giveaway end` or from the dashboard also kept its original timer, which later replaced the real winners and posted a second announcement. Ending a giveaway is now claimed atomically, so only the first caller does anything, and `/giveaway end` says so when another caller got there first.
+- `/rob` no longer lets a robber skip the fine. A failed attempt only took the fine when the robber could pay it, so a member with an empty wallet (or less than the fine) could rob with no downside, which undid the 1.4.0 rebalance. The robber now needs enough credits to cover the largest possible fine (60% of a steal of up to 40% of the target's balance) before the attempt starts, and the cooldown is not used if they don't. The fine is held when the attempt begins and handed back on a successful robbery, so spending the balance mid-command can't avoid it.
 
 ## [1.4.0] - 2026-10-26
 
