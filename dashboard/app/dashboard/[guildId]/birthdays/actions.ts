@@ -5,6 +5,7 @@ import { requireGuildAccess } from "@/lib/authorize";
 import { connectDB } from "@/lib/db";
 import { emptyToNull } from "@/lib/forms";
 import Guild from "@/lib/models/Guild";
+import { changedRoleIds, requireAssignableRoles } from "@/lib/roleCheck";
 
 export async function updateBirthdaySettings(guildId: string, formData: FormData) {
   await requireGuildAccess(guildId);
@@ -20,6 +21,9 @@ export async function updateBirthdaySettings(guildId: string, formData: FormData
     birthdayMessage: message,
     birthdayRoleId: emptyToNull(formData.get("birthdayRoleId")),
   };
+
+  const current = await Guild.findOne({ guildId }).lean<{ birthdayRoleId?: string | null }>();
+  await requireAssignableRoles(guildId, changedRoleIds([[update.birthdayRoleId, current?.birthdayRoleId]]));
 
   await Guild.findOneAndUpdate({ guildId }, update, { upsert: true });
 

@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const { requireGuildAccess } = vi.hoisted(() => ({ requireGuildAccess: vi.fn() }));
 const { connectDB } = vi.hoisted(() => ({ connectDB: vi.fn() }));
 const { revalidatePath } = vi.hoisted(() => ({ revalidatePath: vi.fn() }));
+const { requireAssignableRoles } = vi.hoisted(() => ({ requireAssignableRoles: vi.fn() }));
 const { find, updateOne, insertMany, deleteMany, lean } = vi.hoisted(() => ({
   find: vi.fn(),
   updateOne: vi.fn(),
@@ -14,6 +15,10 @@ const { find, updateOne, insertMany, deleteMany, lean } = vi.hoisted(() => ({
 vi.mock("@/lib/authorize", () => ({ requireGuildAccess }));
 vi.mock("@/lib/db", () => ({ connectDB }));
 vi.mock("next/cache", () => ({ revalidatePath }));
+vi.mock("@/lib/roleCheck", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/roleCheck")>()),
+  requireAssignableRoles,
+}));
 vi.mock("node:crypto", () => ({ randomUUID: vi.fn(() => "generated-uuid") }));
 vi.mock("@/lib/models/Shop", () => ({
   default: { find, updateOne, insertMany, deleteMany },
@@ -31,6 +36,7 @@ describe("updateShop", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     requireGuildAccess.mockResolvedValue(undefined);
+    requireAssignableRoles.mockResolvedValue(undefined);
     updateOne.mockResolvedValue(undefined);
     insertMany.mockResolvedValue(undefined);
     deleteMany.mockResolvedValue(undefined);
@@ -141,5 +147,39 @@ describe("updateShop", () => {
       itemId: { $nin: ["keep-me"] },
     });
     expect(revalidatePath).toHaveBeenCalledWith("/dashboard/guild1/shop");
+  });
+
+  describe("role hierarchy", () => {
+    it("asks the bot about new role items and existing ones given a different role, not badges or unchanged roles", async () => {
+      lean
+        .mockResolvedValueOnce([]) // duplicate-name check
+        .mockResolvedValueOnce([
+          { itemId: "i1", roleId: "kept" },
+          { itemId: "i2", roleId: "old" },
+        ]); // roles stored for the kept items
+
+      await updateShop(
+        "guild1",
+        itemsFormData([
+          { itemId: "i1", name: "A", price: 10, type: "role", roleId: "kept", enabled: true },
+          { itemId: "i2", name: "B", price: 10, type: "role", roleId: "replacement", enabled: true },
+          { name: "C", price: 10, type: "role", roleId: "brandNew", enabled: true },
+          { name: "D", price: 10, type: "badge", emoji: "⭐", enabled: true },
+        ])
+      );
+
+      expect(requireAssignableRoles).toHaveBeenCalledWith("guild1", ["replacement", "brandNew"]);
+    });
+
+    it("changes nothing when the bot refuses a role", async () => {
+      requireAssignableRoles.mockRejectedValue(new Error("refused"));
+
+      await expect(
+        updateShop("guild1", itemsFormData([{ name: "A", price: 10, type: "role", roleId: "adminRole", enabled: true }]))
+      ).rejects.toThrow("refused");
+      expect(updateOne).not.toHaveBeenCalled();
+      expect(insertMany).not.toHaveBeenCalled();
+      expect(deleteMany).not.toHaveBeenCalled();
+    });
   });
 });

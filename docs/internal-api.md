@@ -46,10 +46,14 @@ Body: `{ guildId, username }`. Starts a lockdown. Fails with `400` if no quarant
 
 Body: `{ guildId, username }`. Ends a lockdown, returns the count of released members. `409` if no lockdown is active.
 
+### `POST /internal/role/validate`
+
+Body: `{ guildId, userId, roleIds }`. Called by the dashboard before it saves a role the bot will hand out (autorole, mute role, quarantine role, birthday role, level roles, reaction roles, shop role items). Checks that `userId` could assign each role themselves: every role must be below their highest role, and the server owner is exempt. This is the same rule the slash commands use (`utils/roleHierarchy.ts`). Returns `200 { ok: true }` when every role is allowed. `403` with a readable `error` if a role is too high or the user is not a member, `400` for a malformed body or an unknown role, `404` if the bot is not in the guild.
+
 Anything else returns `404`.
 
 ## Config
 
 See [Environment & Configuration](environment.md) for `INTERNAL_API_PORT`, `INTERNAL_API_SECRET`, `BOT_INTERNAL_URL`.
 
-Covered by `tests/src/internalApi.test.ts`.
+Covered by `tests/src/internalApi.test.ts` and `tests/src/internalApiRoleValidate.test.ts`.

@@ -5,6 +5,7 @@ import { requireGuildAccess } from "@/lib/authorize";
 import { connectDB } from "@/lib/db";
 import Guild from "@/lib/models/Guild";
 import { emptyToNull } from "@/lib/forms";
+import { changedRoleIds, requireAssignableRoles } from "@/lib/roleCheck";
 import { getSession } from "@/lib/session";
 
 const BOT_URL = process.env.BOT_INTERNAL_URL ?? "http://bot:4000";
@@ -59,6 +60,12 @@ export async function updateAntiRaidSettings(guildId: string, formData: FormData
     antiRaidJoinWindow: clamp(parsePositiveInt(formData.get("antiRaidJoinWindow"), 10), JOIN_WINDOW_MIN, JOIN_WINDOW_MAX),
     antiRaidAlertChannelId: emptyToNull(formData.get("antiRaidAlertChannelId")),
   };
+
+  const current = await Guild.findOne({ guildId }).lean<{ antiRaidQuarantineRoleId?: string | null }>();
+  await requireAssignableRoles(
+    guildId,
+    changedRoleIds([[update.antiRaidQuarantineRoleId, current?.antiRaidQuarantineRoleId]])
+  );
 
   await Guild.findOneAndUpdate(
     { guildId },
