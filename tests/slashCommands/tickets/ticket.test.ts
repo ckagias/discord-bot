@@ -9,6 +9,9 @@ jest.mock('../../../utils/guildConfig', () => ({
     updateGuildConfig: jest.fn(),
 }));
 
+const mockLogger = { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() };
+jest.mock('../../../utils/log', () => ({ scope: () => mockLogger }));
+
 const TicketSchema = require('../../../models/TicketSchema');
 const { getGuildConfig, updateGuildConfig } = require('../../../utils/guildConfig');
 const ticket = require('../../../slashCommands/tickets/ticket');
@@ -127,11 +130,12 @@ describe('ticket command', () => {
             jest.useFakeTimers();
             const interaction = makeInteraction({ sub: 'close', hasPermission: false });
             TicketSchema.findOne.mockResolvedValue({ userId: 'user1', channelId: 'chan1', status: 'open' });
+            TicketSchema.findOneAndUpdate.mockResolvedValue({ status: 'closed' });
 
             await ticket.execute(interaction);
             jest.advanceTimersByTime(5000);
 
-            expect(TicketSchema.findOneAndUpdate).toHaveBeenCalledWith({ channelId: 'chan1' }, { status: 'closed' });
+            expect(TicketSchema.findOneAndUpdate).toHaveBeenCalledWith({ channelId: 'chan1', status: 'open' }, { status: 'closed' });
             expect(interaction.channel.delete).toHaveBeenCalled();
         });
 
@@ -139,11 +143,57 @@ describe('ticket command', () => {
             jest.useFakeTimers();
             const interaction = makeInteraction({ sub: 'close', hasPermission: true });
             TicketSchema.findOne.mockResolvedValue({ userId: 'someoneElse', channelId: 'chan1', status: 'open' });
+            TicketSchema.findOneAndUpdate.mockResolvedValue({ status: 'closed' });
 
             await ticket.execute(interaction);
             jest.advanceTimersByTime(5000);
 
             expect(interaction.channel.delete).toHaveBeenCalled();
+        });
+
+        test('replies already closed and schedules no delete when another close won the claim', async () => {
+            jest.useFakeTimers();
+            const interaction = makeInteraction({ sub: 'close' });
+            TicketSchema.findOne.mockResolvedValue({ userId: 'user1', channelId: 'chan1', status: 'open' });
+            TicketSchema.findOneAndUpdate.mockResolvedValue(null);
+
+            await ticket.execute(interaction);
+            jest.advanceTimersByTime(5000);
+
+            expect(interaction.reply).toHaveBeenCalledTimes(1);
+            expect(interaction.reply).toHaveBeenCalledWith(
+                expect.objectContaining({ content: expect.stringContaining('already closed') })
+            );
+            expect(interaction.channel.delete).not.toHaveBeenCalled();
+        });
+
+        test('two simultaneous closes produce one close reply and one delete', async () => {
+            jest.useFakeTimers();
+            const a = makeInteraction({ sub: 'close' });
+            const b = makeInteraction({ sub: 'close' });
+            TicketSchema.findOne.mockResolvedValue({ userId: 'user1', channelId: 'chan1', status: 'open' });
+            TicketSchema.findOneAndUpdate.mockResolvedValueOnce({ status: 'closed' }).mockResolvedValueOnce(null);
+
+            await Promise.all([ticket.execute(a), ticket.execute(b)]);
+            jest.advanceTimersByTime(5000);
+
+            const closedReplies = [a, b].flatMap(i => i.reply.mock.calls).filter(([r]) => String(r.content).includes('will be deleted'));
+            expect(closedReplies).toHaveLength(1);
+            expect(a.channel.delete.mock.calls.length + b.channel.delete.mock.calls.length).toBe(1);
+        });
+
+        test('logs instead of throwing when deleting the channel fails', async () => {
+            jest.useFakeTimers();
+            const interaction = makeInteraction({ sub: 'close', channelOverrides: { delete: jest.fn().mockRejectedValue(new Error('gone')) } });
+            TicketSchema.findOne.mockResolvedValue({ userId: 'user1', channelId: 'chan1', status: 'open' });
+            TicketSchema.findOneAndUpdate.mockResolvedValue({ status: 'closed' });
+
+            await ticket.execute(interaction);
+            jest.advanceTimersByTime(5000);
+            await Promise.resolve();
+
+            expect(interaction.channel.delete).toHaveBeenCalled();
+            expect(mockLogger.error).toHaveBeenCalledWith('Failed to delete closed ticket channel:', expect.any(Error));
         });
     });
 
