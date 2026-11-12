@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags, ChatInputCommandInteraction, Client } from 'discord.js';
+import { voiceChannelError } from '../../utils/music';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -10,6 +11,11 @@ module.exports = {
 
         if (!player || !player.playing) {
             return interaction.reply({ content: 'Nothing is playing right now.', flags: MessageFlags.Ephemeral });
+        }
+
+        const voiceError = voiceChannelError(interaction, player);
+        if (voiceError) {
+            return interaction.reply({ content: voiceError, flags: MessageFlags.Ephemeral });
         }
 
         const skipped = player.queue.current;

@@ -1,9 +1,10 @@
 const remove = require('../../../slashCommands/music/remove');
 
-function makeInteraction({ position = 1 } = {}) {
+function makeInteraction({ position = 1, memberChannelId = 'vc1' as string | null } = {}) {
     return {
         options: { getInteger: jest.fn().mockReturnValue(position) },
         guild: { id: 'g1' },
+        member: { voice: { channelId: memberChannelId } },
         reply: jest.fn().mockResolvedValue({}),
     };
 }
@@ -64,5 +65,29 @@ describe('remove command', () => {
         expect(interaction.reply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Failed to remove') })
         );
+    });
+
+    test('rejects someone who is not in a voice channel, without touching the player', async () => {
+        const interaction = makeInteraction({ memberChannelId: null });
+        const player = { voiceChannelId: 'vc1', queue: { current: {}, tracks: [{ info: { title: 't' } }], remove: jest.fn() } };
+
+        await remove.execute(interaction, makeClient(player));
+
+        expect(interaction.reply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: 'You need to be in a voice channel to control the music.' })
+        );
+        expect(player.queue.remove).not.toHaveBeenCalled();
+    });
+
+    test('rejects someone in a different voice channel than the bot, without touching the player', async () => {
+        const interaction = makeInteraction({ memberChannelId: 'vc2' });
+        const player = { voiceChannelId: 'vc1', queue: { current: {}, tracks: [{ info: { title: 't' } }], remove: jest.fn() } };
+
+        await remove.execute(interaction, makeClient(player));
+
+        expect(interaction.reply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('<#vc1>') })
+        );
+        expect(player.queue.remove).not.toHaveBeenCalled();
     });
 });

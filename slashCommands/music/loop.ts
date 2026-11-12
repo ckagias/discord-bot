@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags, ChatInputCommandInteraction, Client } from 'discord.js';
+import { voiceChannelError } from '../../utils/music';
 import type { RepeatMode } from 'lavalink-client' with { 'resolution-mode': 'import' };
 const log = require('../../utils/log');
 const logger = log.scope('loop');
@@ -23,6 +24,11 @@ module.exports = {
 
         if (!player) {
             return interaction.reply({ content: 'Nothing is playing right now.', flags: MessageFlags.Ephemeral });
+        }
+
+        const voiceError = voiceChannelError(interaction, player);
+        if (voiceError) {
+            return interaction.reply({ content: voiceError, flags: MessageFlags.Ephemeral });
         }
 
         const mode = interaction.options.getString('mode');
