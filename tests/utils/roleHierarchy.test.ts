@@ -1,4 +1,4 @@
-const { roleHierarchyError } = require('../../utils/roleHierarchy');
+const { roleHierarchyError, canAssignRole } = require('../../utils/roleHierarchy');
 
 function makeInteraction({ userId = 'invoker', ownerId = 'owner', highest = { position: 5 }, member = true } = {}) {
     return {
@@ -32,5 +32,23 @@ describe('roleHierarchyError', () => {
         expect(roleHierarchyError(makeInteraction({ member: false }), { id: 'r1', position: 1 })).not.toBeNull();
         const noRoles = { user: { id: 'invoker' }, member: { roles: {} }, guild: { ownerId: 'owner' } };
         expect(roleHierarchyError(noRoles, { id: 'r1', position: 1 })).not.toBeNull();
+    });
+});
+
+describe('canAssignRole', () => {
+    const member = (position: number) => ({ roles: { highest: { position } } });
+
+    test('allows a role below the member\'s highest role, and refuses one at or above it', () => {
+        expect(canAssignRole('owner', 'u1', member(5), { position: 4 })).toBe(true);
+        expect(canAssignRole('owner', 'u1', member(5), { position: 5 })).toBe(false);
+        expect(canAssignRole('owner', 'u1', member(5), { position: 6 })).toBe(false);
+    });
+
+    test('exempts the owner even when they are not a fetched member', () => {
+        expect(canAssignRole('owner', 'owner', null, { position: 50 })).toBe(true);
+    });
+
+    test('refuses when there is no member and the user is not the owner', () => {
+        expect(canAssignRole('owner', 'u1', null, { position: 0 })).toBe(false);
     });
 });

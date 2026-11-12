@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireGuildAccess } from "@/lib/authorize";
 import { connectDB } from "@/lib/db";
 import ReactionRole from "@/lib/models/ReactionRole";
+import { changedRoleIds, requireAssignableRoles } from "@/lib/roleCheck";
 
 interface ReactionRoleRow {
   messageId: string;
@@ -55,6 +56,14 @@ export async function updateReactionRoles(guildId: string, formData: FormData) {
     seen.set(`${row.messageId}:${row.emoji}`, row);
   }
   const deduped = Array.from(seen.values());
+
+  // A row is only checked when it is new or points its message and emoji at a different role than the one stored.
+  const current = await ReactionRole.find({ guildId }).lean<ReactionRoleRow[]>();
+  const currentByKey = new Map(current.map((r) => [`${r.messageId}:${r.emoji}`, r.roleId]));
+  await requireAssignableRoles(
+    guildId,
+    changedRoleIds(deduped.map((r): [string, string | undefined] => [r.roleId, currentByKey.get(`${r.messageId}:${r.emoji}`)]))
+  );
 
   await ReactionRole.deleteMany({ guildId });
   if (deduped.length > 0) {

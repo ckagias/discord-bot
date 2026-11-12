@@ -3,18 +3,26 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const { requireGuildAccess } = vi.hoisted(() => ({ requireGuildAccess: vi.fn() }));
 const { connectDB } = vi.hoisted(() => ({ connectDB: vi.fn() }));
 const { revalidatePath } = vi.hoisted(() => ({ revalidatePath: vi.fn() }));
-const { findOneAndUpdate } = vi.hoisted(() => ({ findOneAndUpdate: vi.fn() }));
+const { findOneAndUpdate, findOne, lean } = vi.hoisted(() => ({ findOneAndUpdate: vi.fn(), findOne: vi.fn(), lean: vi.fn() }));
+const { requireAssignableRoles } = vi.hoisted(() => ({ requireAssignableRoles: vi.fn() }));
 
 vi.mock("@/lib/authorize", () => ({ requireGuildAccess }));
 vi.mock("@/lib/db", () => ({ connectDB }));
 vi.mock("next/cache", () => ({ revalidatePath }));
-vi.mock("@/lib/models/Guild", () => ({ default: { findOneAndUpdate } }));
+vi.mock("@/lib/models/Guild", () => ({ default: { findOneAndUpdate, findOne } }));
+vi.mock("@/lib/roleCheck", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/roleCheck")>()),
+  requireAssignableRoles,
+}));
 
 import { updateAntiRaidSettings } from "./actions";
 
 describe("updateAntiRaidSettings", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    findOne.mockReturnValue({ lean });
+    lean.mockResolvedValue(null);
+    requireAssignableRoles.mockResolvedValue(undefined);
     requireGuildAccess.mockResolvedValue(undefined);
   });
 
@@ -108,5 +116,37 @@ describe("updateAntiRaidSettings", () => {
 
     const update = findOneAndUpdate.mock.calls[0][1].$set;
     expect(update.antiRaidJoinThreshold).toBe(10);
+  });
+
+  describe("role hierarchy", () => {
+    it("asks the bot about a new quarantine role, before saving", async () => {
+      lean.mockResolvedValue({ antiRaidQuarantineRoleId: "old" });
+      const formData = new FormData();
+      formData.set("antiRaidQuarantineRoleId", "newRole");
+
+      await updateAntiRaidSettings("guild1", formData);
+
+      expect(requireAssignableRoles).toHaveBeenCalledWith("guild1", ["newRole"]);
+      expect(requireAssignableRoles.mock.invocationCallOrder[0]).toBeLessThan(findOneAndUpdate.mock.invocationCallOrder[0]);
+    });
+
+    it("does not ask about the quarantine role when it is unchanged", async () => {
+      lean.mockResolvedValue({ antiRaidQuarantineRoleId: "same" });
+      const formData = new FormData();
+      formData.set("antiRaidQuarantineRoleId", "same");
+
+      await updateAntiRaidSettings("guild1", formData);
+
+      expect(requireAssignableRoles).toHaveBeenCalledWith("guild1", []);
+    });
+
+    it("saves nothing when the bot refuses the role", async () => {
+      requireAssignableRoles.mockRejectedValue(new Error("refused"));
+      const formData = new FormData();
+      formData.set("antiRaidQuarantineRoleId", "adminRole");
+
+      await expect(updateAntiRaidSettings("guild1", formData)).rejects.toThrow("refused");
+      expect(findOneAndUpdate).not.toHaveBeenCalled();
+    });
   });
 });

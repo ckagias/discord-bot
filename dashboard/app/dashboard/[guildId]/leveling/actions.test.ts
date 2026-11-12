@@ -3,18 +3,26 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const { requireGuildAccess } = vi.hoisted(() => ({ requireGuildAccess: vi.fn() }));
 const { connectDB } = vi.hoisted(() => ({ connectDB: vi.fn() }));
 const { revalidatePath } = vi.hoisted(() => ({ revalidatePath: vi.fn() }));
-const { findOneAndUpdate } = vi.hoisted(() => ({ findOneAndUpdate: vi.fn() }));
+const { findOneAndUpdate, findOne, lean } = vi.hoisted(() => ({ findOneAndUpdate: vi.fn(), findOne: vi.fn(), lean: vi.fn() }));
+const { requireAssignableRoles } = vi.hoisted(() => ({ requireAssignableRoles: vi.fn() }));
 
 vi.mock("@/lib/authorize", () => ({ requireGuildAccess }));
 vi.mock("@/lib/db", () => ({ connectDB }));
 vi.mock("next/cache", () => ({ revalidatePath }));
-vi.mock("@/lib/models/Guild", () => ({ default: { findOneAndUpdate } }));
+vi.mock("@/lib/models/Guild", () => ({ default: { findOneAndUpdate, findOne } }));
+vi.mock("@/lib/roleCheck", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/roleCheck")>()),
+  requireAssignableRoles,
+}));
 
 import { updateLevelingSettings } from "./actions";
 
 describe("updateLevelingSettings", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    findOne.mockReturnValue({ lean });
+    lean.mockResolvedValue(null);
+    requireAssignableRoles.mockResolvedValue(undefined);
     requireGuildAccess.mockResolvedValue(undefined);
   });
 
@@ -105,5 +113,36 @@ describe("updateLevelingSettings", () => {
     await updateLevelingSettings("guild1", formData);
 
     expect(findOneAndUpdate.mock.calls[0][1].$set.levelRoles).toEqual([]);
+  });
+
+  describe("role hierarchy", () => {
+    function rolesFormData(rows: unknown[]) {
+      const formData = new FormData();
+      formData.set("levelRoles", JSON.stringify(rows));
+      return formData;
+    }
+
+    it("asks the bot about new roles and roles that replace the one stored for a level", async () => {
+      lean.mockResolvedValue({ levelRoles: [{ level: 5, roleId: "kept" }, { level: 10, roleId: "old" }] });
+
+      await updateLevelingSettings(
+        "guild1",
+        rolesFormData([
+          { level: 5, roleId: "kept" },
+          { level: 10, roleId: "replacement" },
+          { level: 20, roleId: "brandNew" },
+        ])
+      );
+
+      expect(requireAssignableRoles).toHaveBeenCalledWith("guild1", ["replacement", "brandNew"]);
+      expect(requireAssignableRoles.mock.invocationCallOrder[0]).toBeLessThan(findOneAndUpdate.mock.invocationCallOrder[0]);
+    });
+
+    it("saves nothing when the bot refuses a role", async () => {
+      requireAssignableRoles.mockRejectedValue(new Error("refused"));
+
+      await expect(updateLevelingSettings("guild1", rolesFormData([{ level: 5, roleId: "adminRole" }]))).rejects.toThrow("refused");
+      expect(findOneAndUpdate).not.toHaveBeenCalled();
+    });
   });
 });

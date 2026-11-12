@@ -6,6 +6,7 @@ import { requireGuildAccess } from "@/lib/authorize";
 import { connectDB } from "@/lib/db";
 import { escapeRegex } from "@/lib/forms";
 import Shop from "@/lib/models/Shop";
+import { changedRoleIds, requireAssignableRoles } from "@/lib/roleCheck";
 
 interface ShopRow {
   itemId?: string;
@@ -85,6 +86,20 @@ export async function updateShop(guildId: string, formData: FormData) {
       `Duplicate item name(s): ${dupes.map((d) => d.name).join(", ")}`
     );
   }
+
+  // A role item is only checked when it is new or gets a different role than the one stored for it.
+  const storedRoles = keptItemIds.length
+    ? await Shop.find({ guildId, itemId: { $in: keptItemIds } }).lean<{ itemId: string; roleId?: string | null }[]>()
+    : [];
+  const storedRoleByItemId = new Map(storedRoles.map((s) => [s.itemId, s.roleId]));
+  await requireAssignableRoles(
+    guildId,
+    changedRoleIds(
+      rows
+        .filter((r) => r.type === "role")
+        .map((r): [string | null, string | null | undefined] => [r.roleId, r.itemId ? storedRoleByItemId.get(r.itemId) : undefined])
+    )
+  );
 
   // Preserves itemId so inventory ownership is intact.
   await Promise.all(

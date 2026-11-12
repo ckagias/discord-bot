@@ -6,6 +6,7 @@ const { endGiveaway } = require('../slashCommands/utility/giveaway');
 const { applyStatus } = require('../slashCommands/utility/suggest');
 import { startLockdown, endLockdown } from '../utils/antiRaid';
 import { getGuildConfig } from '../utils/guildConfig';
+import { canAssignRole } from '../utils/roleHierarchy';
 import GiveawaySchema from '../models/GiveawaySchema';
 import SuggestionSchema from '../models/SuggestionSchema';
 import log from '../utils/log';
@@ -218,6 +219,40 @@ export = function startInternalApi(client: Client) {
                 send(res, 200, { ok: true, released: released?.length ?? 0 });
             } catch (err) {
                 logger.error('/internal/antiraid/unlock error:', err);
+                send(res, 500, { error: 'Internal error' });
+            }
+            return;
+        }
+
+        // The dashboard only knows a user has Manage Server, not their Discord roles. Before it saves a role the bot will
+        // hand out, it asks here whether that user could assign the role themselves.
+        if (req.method === 'POST' && url.pathname === '/internal/role/validate') {
+            try {
+                const raw = await readBody(req);
+                const { guildId, userId, roleIds }: { guildId?: string; userId?: string; roleIds?: unknown } = JSON.parse(raw);
+                if (!guildId || !userId || !Array.isArray(roleIds) || roleIds.some(id => typeof id !== 'string' || !id)) {
+                    return send(res, 400, { error: 'Missing guildId, userId, or roleIds' });
+                }
+
+                const guild = await client.guilds.fetch(String(guildId)).catch(() => null);
+                if (!guild) return send(res, 404, { error: 'Guild not found' });
+
+                const member = await guild.members.fetch(String(userId)).catch(() => null);
+                if (!member && String(userId) !== guild.ownerId) {
+                    return send(res, 403, { error: 'You are not a member of this server.' });
+                }
+
+                for (const roleId of roleIds as string[]) {
+                    const role = guild.roles.cache.get(roleId) ?? await guild.roles.fetch(roleId).catch(() => null);
+                    if (!role) return send(res, 400, { error: `Role ${roleId} was not found in this server.` });
+                    if (!canAssignRole(guild.ownerId, String(userId), member, role)) {
+                        return send(res, 403, { error: `You can't use the "${role.name}" role here, because it is higher than or equal to your highest role.` });
+                    }
+                }
+
+                send(res, 200, { ok: true });
+            } catch (err) {
+                logger.error('/internal/role/validate error:', err);
                 send(res, 500, { error: 'Internal error' });
             }
             return;

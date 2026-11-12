@@ -3,18 +3,26 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const { requireGuildAccess } = vi.hoisted(() => ({ requireGuildAccess: vi.fn() }));
 const { connectDB } = vi.hoisted(() => ({ connectDB: vi.fn() }));
 const { revalidatePath } = vi.hoisted(() => ({ revalidatePath: vi.fn() }));
-const { findOneAndUpdate } = vi.hoisted(() => ({ findOneAndUpdate: vi.fn() }));
+const { findOneAndUpdate, findOne, lean } = vi.hoisted(() => ({ findOneAndUpdate: vi.fn(), findOne: vi.fn(), lean: vi.fn() }));
+const { requireAssignableRoles } = vi.hoisted(() => ({ requireAssignableRoles: vi.fn() }));
 
 vi.mock("@/lib/authorize", () => ({ requireGuildAccess }));
 vi.mock("@/lib/db", () => ({ connectDB }));
 vi.mock("next/cache", () => ({ revalidatePath }));
-vi.mock("@/lib/models/Guild", () => ({ default: { findOneAndUpdate } }));
+vi.mock("@/lib/models/Guild", () => ({ default: { findOneAndUpdate, findOne } }));
+vi.mock("@/lib/roleCheck", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/roleCheck")>()),
+  requireAssignableRoles,
+}));
 
 import { updateModerationSettings } from "./actions";
 
 describe("updateModerationSettings", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    findOne.mockReturnValue({ lean });
+    lean.mockResolvedValue(null);
+    requireAssignableRoles.mockResolvedValue(undefined);
   });
 
   it("checks guild access before writing", async () => {
@@ -77,5 +85,45 @@ describe("updateModerationSettings", () => {
       },
       { upsert: true }
     );
+  });
+
+  describe("role hierarchy", () => {
+    beforeEach(() => {
+      requireGuildAccess.mockResolvedValue(undefined);
+    });
+
+    it("asks the bot about the roles being added or changed, before saving", async () => {
+      lean.mockResolvedValue({ muteRoleId: "oldMute", autoroleId: null });
+      const formData = new FormData();
+      formData.set("muteRoleId", "newMute");
+      formData.set("autoroleId", "newAuto");
+
+      await updateModerationSettings("guild1", formData);
+
+      expect(requireAssignableRoles).toHaveBeenCalledWith("guild1", ["newMute", "newAuto"]);
+      expect(requireAssignableRoles.mock.invocationCallOrder[0]).toBeLessThan(findOneAndUpdate.mock.invocationCallOrder[0]);
+    });
+
+    it("does not ask about roles that are already saved, so unrelated edits are never blocked", async () => {
+      lean.mockResolvedValue({ muteRoleId: "mute", autoroleId: "auto" });
+      const formData = new FormData();
+      formData.set("muteRoleId", "mute");
+      formData.set("autoroleId", "auto");
+      formData.set("logChannelId", "channel1");
+
+      await updateModerationSettings("guild1", formData);
+
+      expect(requireAssignableRoles).toHaveBeenCalledWith("guild1", []);
+      expect(findOneAndUpdate).toHaveBeenCalled();
+    });
+
+    it("saves nothing when the bot refuses a role", async () => {
+      requireAssignableRoles.mockRejectedValue(new Error('You can\'t use the "Admin" role here'));
+      const formData = new FormData();
+      formData.set("autoroleId", "adminRole");
+
+      await expect(updateModerationSettings("guild1", formData)).rejects.toThrow('"Admin" role');
+      expect(findOneAndUpdate).not.toHaveBeenCalled();
+    });
   });
 });
