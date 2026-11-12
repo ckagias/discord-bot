@@ -15,6 +15,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **Cancel:** the Cancel button read the heist, saved it, then refunded, so a double click refunded every member twice, and a cancel that raced the launch refunded a heist that had already paid its survivors. Cancel now claims the heist atomically and refunds only if it won.
   - **Failed launch:** the same refund ran if the launch threw after it had already paid out, for example when editing the message failed. It now refunds only if the launch had not claimed the heist yet.
   - **Fee ordering:** joining a heist added the member before taking the fee, and starting one ignored a failed fee debit, so a crew member could be in the pot without having paid. The fee is now taken first and given back if the member can't be added or the lobby can't be created.
+- `/shop sell` can no longer pay the refund twice. It read the inventory, credited the refund, then removed the item without checking the removal, so two sells of the same item at the same moment both credited 50% of the price. The item is now removed atomically first, and the refund is paid only if that call removed it.
 
 ## [1.4.0] - 2026-10-26
 

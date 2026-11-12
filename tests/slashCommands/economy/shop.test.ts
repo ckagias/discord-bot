@@ -142,35 +142,68 @@ describe('shop command', () => {
     });
 
     describe('sell', () => {
+        const owned = (type = 'badge', name = 'VIP') => ({ items: [{ itemId: 'item1', name, type }] });
+
         test("rejects when the user doesn't own the item", async () => {
             const interaction = makeInteraction({ sub: 'sell' });
-            InventorySchema.findOne.mockResolvedValue({ items: [] });
+            ShopSchema.findOne.mockResolvedValue({ itemId: 'item1', price: 200 });
+            InventorySchema.findOneAndUpdate.mockResolvedValue(null);
 
             await shop.execute(interaction);
 
             expect(interaction.editReply).toHaveBeenCalledWith(
                 expect.objectContaining({ content: "You don't own that item." })
             );
+            expect(updateBalance).not.toHaveBeenCalled();
         });
 
         test('sells for 50% refund when the item still exists in the shop', async () => {
             const interaction = makeInteraction({ sub: 'sell' });
-            InventorySchema.findOne.mockResolvedValue({ items: [{ itemId: 'item1', name: 'VIP', type: 'badge' }] });
+            InventorySchema.findOneAndUpdate.mockResolvedValue(owned());
             ShopSchema.findOne.mockResolvedValue({ itemId: 'item1', price: 200 });
             updateBalance.mockResolvedValue({ balance: 300 });
 
             await shop.execute(interaction);
 
+            expect(InventorySchema.findOneAndUpdate).toHaveBeenCalledWith(
+                { userId: 'user1', guildId: 'g1', 'items.itemId': 'item1' },
+                { $pull: { items: { itemId: 'item1' } } },
+                { returnDocument: 'before' }
+            );
             expect(updateBalance).toHaveBeenCalledWith('user1', 'g1', 100);
-            expect(InventorySchema.updateOne).toHaveBeenCalledWith(
-                { userId: 'user1', guildId: 'g1' },
-                { $pull: { items: { itemId: 'item1' } } }
+        });
+
+        test('removes the item before crediting the refund', async () => {
+            const interaction = makeInteraction({ sub: 'sell' });
+            InventorySchema.findOneAndUpdate.mockResolvedValue(owned());
+            ShopSchema.findOne.mockResolvedValue({ itemId: 'item1', price: 200 });
+            updateBalance.mockResolvedValue({ balance: 300 });
+
+            await shop.execute(interaction);
+
+            expect(InventorySchema.findOneAndUpdate.mock.invocationCallOrder[0])
+                .toBeLessThan(updateBalance.mock.invocationCallOrder[0]);
+        });
+
+        test('two sells at the same moment pay out once', async () => {
+            const first = makeInteraction({ sub: 'sell' });
+            const second = makeInteraction({ sub: 'sell' });
+            ShopSchema.findOne.mockResolvedValue({ itemId: 'item1', price: 200 });
+            // The database removes the item for whichever call gets there first.
+            InventorySchema.findOneAndUpdate.mockResolvedValueOnce(owned()).mockResolvedValueOnce(null);
+            updateBalance.mockResolvedValue({ balance: 300 });
+
+            await Promise.all([shop.execute(first), shop.execute(second)]);
+
+            expect(updateBalance).toHaveBeenCalledTimes(1);
+            expect(second.editReply).toHaveBeenCalledWith(
+                expect.objectContaining({ content: "You don't own that item." })
             );
         });
 
         test('sells for no refund when the item is no longer in the shop', async () => {
             const interaction = makeInteraction({ sub: 'sell' });
-            InventorySchema.findOne.mockResolvedValue({ items: [{ itemId: 'item1', name: 'Old Item', type: 'badge' }] });
+            InventorySchema.findOneAndUpdate.mockResolvedValue(owned('badge', 'Old Item'));
             ShopSchema.findOne.mockResolvedValue(null);
             getWallet.mockResolvedValue({ balance: 300 });
 
@@ -184,7 +217,7 @@ describe('shop command', () => {
 
         test('revokes the role when selling a role-type item', async () => {
             const interaction = makeInteraction({ sub: 'sell' });
-            InventorySchema.findOne.mockResolvedValue({ items: [{ itemId: 'item1', name: 'VIP', type: 'role' }] });
+            InventorySchema.findOneAndUpdate.mockResolvedValue(owned('role'));
             ShopSchema.findOne.mockResolvedValue({ itemId: 'item1', price: 200, roleId: 'role1' });
             updateBalance.mockResolvedValue({ balance: 300 });
             const remove = jest.fn().mockResolvedValue({});
@@ -193,6 +226,16 @@ describe('shop command', () => {
             await shop.execute(interaction);
 
             expect(remove).toHaveBeenCalledWith('role1');
+        });
+
+        test('does not touch the role when the item was already sold', async () => {
+            const interaction = makeInteraction({ sub: 'sell' });
+            InventorySchema.findOneAndUpdate.mockResolvedValue(null);
+            ShopSchema.findOne.mockResolvedValue({ itemId: 'item1', price: 200, roleId: 'role1' });
+
+            await shop.execute(interaction);
+
+            expect(interaction.guild.members.fetch).not.toHaveBeenCalled();
         });
     });
 
