@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Giveaways now pick winners from the entrants stored in the database. A giveaway that ended on its own announced "No valid entrants", because the timer used the copy created when the giveaway started, before anyone had entered. A giveaway ended early with `/giveaway end` or from the dashboard also kept its original timer, which later replaced the real winners and posted a second announcement. Ending a giveaway is now claimed atomically, so only the first caller does anything, and `/giveaway end` says so when another caller got there first.
+
 ## [1.4.0] - 2026-10-26
 
 ### Added

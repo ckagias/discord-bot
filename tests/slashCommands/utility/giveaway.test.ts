@@ -2,12 +2,23 @@ jest.mock('../../../models/GiveawaySchema', () => ({
     create: jest.fn(),
     findOne: jest.fn(),
     find: jest.fn(),
+    findOneAndUpdate: jest.fn(),
+    updateOne: jest.fn(),
 }));
 
 const GiveawaySchema = require('../../../models/GiveawaySchema');
 const giveaway = require('../../../slashCommands/utility/giveaway');
 
 const MAX_TIMEOUT_MS = 2 ** 31 - 1;
+
+function makeGiveawayDoc(overrides: Record<string, unknown> = {}) {
+    return {
+        _id: 'g1', guildId: 'g1', channelId: 'chan1', messageId: 'msg1', hostId: 'host1',
+        prize: 'Nitro', winnerCount: 1, endsAt: new Date(), requireRoleId: null,
+        ended: false, entrants: ['a', 'b'], winners: [],
+        ...overrides,
+    };
+}
 
 function makeInteraction({ sub, prize = 'Nitro', duration = '10m', winners = null, requireRole = null, messageId = 'msg1' }: { sub: string; prize?: string; duration?: string; winners?: number | null; requireRole?: any; messageId?: string }) {
     return {
@@ -118,16 +129,26 @@ describe('giveaway command', () => {
         test('ends the giveaway and picks winners', async () => {
             const interaction = makeInteraction({ sub: 'end' });
             const client = makeClient();
-            GiveawaySchema.findOne.mockResolvedValue({
-                ended: false, entrants: ['a', 'b'], hostId: 'host1', winnerCount: 1,
-                save: jest.fn().mockResolvedValue({}), channelId: 'chan1', messageId: 'msg1', prize: 'Nitro', endsAt: new Date(),
-                requireRoleId: null,
-            });
+            GiveawaySchema.findOne.mockResolvedValue(makeGiveawayDoc());
+            GiveawaySchema.findOneAndUpdate.mockResolvedValue(makeGiveawayDoc({ ended: true }));
 
             await giveaway.execute(interaction, client);
 
             expect(interaction.editReply).toHaveBeenCalledWith(
                 expect.objectContaining({ content: expect.stringContaining('winner(s) selected') })
+            );
+        });
+
+        test('says so when another caller ended the giveaway first', async () => {
+            const interaction = makeInteraction({ sub: 'end' });
+            const client = makeClient();
+            GiveawaySchema.findOne.mockResolvedValue(makeGiveawayDoc());
+            GiveawaySchema.findOneAndUpdate.mockResolvedValue(null);
+
+            await giveaway.execute(interaction, client);
+
+            expect(interaction.editReply).toHaveBeenCalledWith(
+                expect.objectContaining({ content: 'That giveaway has already ended.' })
             );
         });
     });
@@ -209,49 +230,77 @@ describe('giveaway.endGiveaway', () => {
 
     test('picks winners, excludes the host, and posts results', async () => {
         const client = makeClient();
-        const giveawayDoc: any = {
-            entrants: ['host1', 'a', 'b'], hostId: 'host1', winnerCount: 1,
-            save: jest.fn().mockResolvedValue({}), channelId: 'chan1', messageId: 'msg1', prize: 'Nitro', endsAt: new Date(),
-            requireRoleId: null,
-        };
+        GiveawaySchema.findOneAndUpdate.mockResolvedValue(makeGiveawayDoc({ entrants: ['host1', 'a', 'b'], ended: true }));
 
-        await giveaway.endGiveaway(client, giveawayDoc);
+        const result = await giveaway.endGiveaway(client, makeGiveawayDoc());
 
-        expect(giveawayDoc.ended).toBe(true);
-        expect(giveawayDoc.winners.length).toBe(1);
-        expect(giveawayDoc.winners).not.toContain('host1');
-        expect(giveawayDoc.save).toHaveBeenCalled();
+        expect(result).toBe(true);
+        const { $set } = GiveawaySchema.updateOne.mock.calls[0][1];
+        expect($set.winners.length).toBe(1);
+        expect($set.winners).not.toContain('host1');
+    });
+
+    test('claims the giveaway only if it has not ended yet', async () => {
+        const client = makeClient();
+        GiveawaySchema.findOneAndUpdate.mockResolvedValue(makeGiveawayDoc({ ended: true }));
+
+        await giveaway.endGiveaway(client, makeGiveawayDoc());
+
+        expect(GiveawaySchema.findOneAndUpdate).toHaveBeenCalledWith(
+            { _id: 'g1', ended: false },
+            { $set: { ended: true } },
+            { returnDocument: 'after' }
+        );
+    });
+
+    test('picks winners from the stored entrants, not the stale in-memory document', async () => {
+        const client = makeClient();
+        // Created when the giveaway started, before anyone entered.
+        const staleDoc = makeGiveawayDoc({ entrants: [] });
+        GiveawaySchema.findOneAndUpdate.mockResolvedValue(makeGiveawayDoc({ entrants: ['a'], ended: true }));
+
+        await giveaway.endGiveaway(client, staleDoc);
+
+        expect(GiveawaySchema.updateOne).toHaveBeenCalledWith({ _id: 'g1' }, { $set: { winners: ['a'] } });
+        const channel = await client.channels.fetch.mock.results[0].value;
+        expect(channel.send).toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('Congratulations <@a>') })
+        );
+    });
+
+    test('does nothing when the giveaway was already ended', async () => {
+        const client = makeClient();
+        GiveawaySchema.findOneAndUpdate.mockResolvedValue(null);
+
+        const result = await giveaway.endGiveaway(client, makeGiveawayDoc());
+
+        expect(result).toBe(false);
+        expect(GiveawaySchema.updateOne).not.toHaveBeenCalled();
+        expect(client.channels.fetch).not.toHaveBeenCalled();
     });
 
     test('announces no valid entrants when the pool is empty after excluding the host', async () => {
         const client = makeClient();
-        const giveawayDoc: any = {
-            entrants: ['host1'], hostId: 'host1', winnerCount: 1,
-            save: jest.fn().mockResolvedValue({}), channelId: 'chan1', messageId: 'msg1', prize: 'Nitro', endsAt: new Date(),
-            requireRoleId: null,
-        };
+        GiveawaySchema.findOneAndUpdate.mockResolvedValue(makeGiveawayDoc({ entrants: ['host1'], ended: true }));
 
-        await giveaway.endGiveaway(client, giveawayDoc);
+        await giveaway.endGiveaway(client, makeGiveawayDoc());
 
-        expect(giveawayDoc.winners).toEqual([]);
+        expect(GiveawaySchema.updateOne).toHaveBeenCalledWith({ _id: 'g1' }, { $set: { winners: [] } });
     });
 
     test('filters entrants by required role when configured', async () => {
-        const roleId = 'role1';
         const member = { roles: { cache: { has: jest.fn().mockReturnValue(true) } } };
         const client = {
             channels: { fetch: jest.fn().mockResolvedValue({ send: jest.fn().mockResolvedValue({}), messages: { fetch: jest.fn().mockResolvedValue(null) } }) },
             guilds: { fetch: jest.fn().mockResolvedValue({ members: { fetch: jest.fn().mockResolvedValue(new Map([['a', member]])) } }) },
         };
-        const giveawayDoc: any = {
-            entrants: ['a', 'b'], hostId: 'host1', winnerCount: 5,
-            save: jest.fn().mockResolvedValue({}), channelId: 'chan1', messageId: 'msg1', prize: 'Nitro', endsAt: new Date(),
-            requireRoleId: roleId, guildId: 'g1',
-        };
+        GiveawaySchema.findOneAndUpdate.mockResolvedValue(
+            makeGiveawayDoc({ entrants: ['a', 'b'], winnerCount: 5, requireRoleId: 'role1', ended: true })
+        );
 
-        await giveaway.endGiveaway(client, giveawayDoc);
+        await giveaway.endGiveaway(client, makeGiveawayDoc({ requireRoleId: 'role1', winnerCount: 5 }));
 
-        expect(giveawayDoc.winners).toEqual(['a']);
+        expect(GiveawaySchema.updateOne).toHaveBeenCalledWith({ _id: 'g1' }, { $set: { winners: ['a'] } });
     });
 });
 
