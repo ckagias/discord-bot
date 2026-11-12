@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `/ticket close` can no longer close a ticket twice. It checked that the ticket was open, replied, and only then marked it closed, so two closes at the same moment (or `/ticket close` racing the Close button) both passed the check and both replied and scheduled a delete. The ticket is now claimed atomically before the reply, and the loser gets "This ticket is already closed." A failed channel delete is now logged instead of ignored.
+
 ## [1.4.1] - 2026-11-12
 
 ### Fixed
