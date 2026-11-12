@@ -28,6 +28,7 @@ describe('heist command', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         jest.useFakeTimers();
+        updateBalance.mockResolvedValue({ balance: 450 }); // the fee is taken before the lobby is created
     });
 
     afterEach(() => {
@@ -76,5 +77,31 @@ describe('heist command', () => {
         );
         expect(heistDoc.messageId).toBe('msg1');
         expect(heistDoc.save).toHaveBeenCalled();
+    });
+
+    test('does not open a lobby when the fee cannot be taken', async () => {
+        const interaction = makeInteraction({ entryFee: 50 });
+        HeistSchema.findOne.mockResolvedValue(null);
+        getWallet.mockResolvedValue({ balance: 500 }); // looked affordable, but the balance was spent before the debit
+        updateBalance.mockResolvedValue(null);
+
+        await heist.execute(interaction);
+
+        expect(HeistSchema.create).not.toHaveBeenCalled();
+        expect(interaction.editReply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: 'You no longer have enough coins to start this heist.' })
+        );
+    });
+
+    test('gives the fee back when the lobby cannot be created', async () => {
+        const interaction = makeInteraction({ entryFee: 50 });
+        HeistSchema.findOne.mockResolvedValue(null);
+        getWallet.mockResolvedValue({ balance: 500 });
+        HeistSchema.create.mockRejectedValue(new Error('duplicate key'));
+
+        await expect(heist.execute(interaction)).rejects.toThrow('duplicate key');
+
+        expect(updateBalance).toHaveBeenNthCalledWith(1, 'user1', 'g1', -50);
+        expect(updateBalance).toHaveBeenNthCalledWith(2, 'user1', 'g1', 50);
     });
 });
