@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, ChatInputCommandInteraction } from 'discord.js';
+import { roleHierarchyError } from '../../utils/roleHierarchy';
 const { updateGuildConfig } = require('../../utils/guildConfig');
 
 module.exports = {
@@ -17,6 +18,11 @@ module.exports = {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const role = interaction.options.getRole('role');
+
+        const hierarchyError = roleHierarchyError(interaction, role);
+        if (hierarchyError) {
+            return interaction.editReply({ content: hierarchyError });
+        }
 
         await updateGuildConfig(interaction.guild.id, { muteRoleId: role.id });
 

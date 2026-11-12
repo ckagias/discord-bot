@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, MessageFlags, ChatInputCommandInteraction } from 'discord.js';
+import { roleHierarchyError } from '../../utils/roleHierarchy';
 import { getGuildConfig, updateGuildConfig } from '../../utils/guildConfig';
 
 module.exports = {
@@ -58,6 +59,11 @@ module.exports = {
             }
             if (interaction.guild.members.me.roles.highest.position <= (role as any).position) {
                 return interaction.editReply({ content: 'I cannot assign that role — it is at or above my highest role.' });
+            }
+
+            const hierarchyError = roleHierarchyError(interaction, role);
+            if (hierarchyError) {
+                return interaction.editReply({ content: hierarchyError });
             }
 
             const updated = levelRoles.filter(lr => lr.level !== level);

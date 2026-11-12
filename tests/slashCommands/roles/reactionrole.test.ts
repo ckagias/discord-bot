@@ -8,15 +8,18 @@ jest.mock('../../../models/ReactionRoleSchema', () => ({
 const ReactionRoleSchema = require('../../../models/ReactionRoleSchema');
 const reactionrole = require('../../../slashCommands/roles/reactionrole');
 
-function makeInteraction({ sub, messageId = 'msg1', emoji = '⭐', role = null }: { sub?: string; messageId?: string; emoji?: string; role?: any } = {}) {
+function makeInteraction({ sub, messageId = 'msg1', emoji = '⭐', role = null, invokerPosition = 20 }: { sub?: string; messageId?: string; emoji?: string; role?: any; invokerPosition?: number } = {}) {
     return {
         options: {
             getSubcommand: jest.fn().mockReturnValue(sub),
             getString: jest.fn((opt) => (opt === 'message_id' ? messageId : emoji)),
             getRole: jest.fn().mockReturnValue(role),
         },
+        user: { id: 'invoker' },
+        member: { roles: { highest: { position: invokerPosition } } },
         guild: {
             id: 'g1',
+            ownerId: 'owner',
             members: { me: { roles: { highest: { comparePositionTo: jest.fn().mockReturnValue(1) } } } },
         },
         channel: { messages: { fetch: jest.fn().mockResolvedValue({ react: jest.fn().mockResolvedValue({}) }) } },
@@ -44,7 +47,7 @@ describe('reactionrole command', () => {
         });
 
         test("rejects when the bot's highest role is below the target role", async () => {
-            const interaction = makeInteraction({ sub: 'add', role: { id: 'role1', managed: false, name: 'VIP' } });
+            const interaction = makeInteraction({ sub: 'add', role: { id: 'role1', managed: false, name: 'VIP', position: 1 } });
             interaction.guild.members.me.roles.highest.comparePositionTo.mockReturnValue(-1);
 
             await reactionrole.execute(interaction);
@@ -55,7 +58,7 @@ describe('reactionrole command', () => {
         });
 
         test('rejects when the emoji is already bound on that message', async () => {
-            const interaction = makeInteraction({ sub: 'add', role: { id: 'role1', managed: false, name: 'VIP' } });
+            const interaction = makeInteraction({ sub: 'add', role: { id: 'role1', managed: false, name: 'VIP', position: 1 } });
             ReactionRoleSchema.findOne.mockResolvedValue({ emoji: '⭐' });
 
             await reactionrole.execute(interaction);
@@ -67,7 +70,7 @@ describe('reactionrole command', () => {
         });
 
         test('creates the binding and reacts to the message with a unicode emoji', async () => {
-            const interaction = makeInteraction({ sub: 'add', emoji: '⭐', role: { id: 'role1', managed: false, name: 'VIP' } });
+            const interaction = makeInteraction({ sub: 'add', emoji: '⭐', role: { id: 'role1', managed: false, name: 'VIP', position: 1 } });
             ReactionRoleSchema.findOne.mockResolvedValue(null);
 
             await reactionrole.execute(interaction);
@@ -81,7 +84,7 @@ describe('reactionrole command', () => {
         });
 
         test('parses a custom emoji into its numeric ID for storage', async () => {
-            const interaction = makeInteraction({ sub: 'add', emoji: '<:star:123456789>', role: { id: 'role1', managed: false, name: 'VIP' } });
+            const interaction = makeInteraction({ sub: 'add', emoji: '<:star:123456789>', role: { id: 'role1', managed: false, name: 'VIP', position: 1 } });
             ReactionRoleSchema.findOne.mockResolvedValue(null);
 
             await reactionrole.execute(interaction);
@@ -95,7 +98,7 @@ describe('reactionrole command', () => {
         });
 
         test('still confirms the binding even if reacting to the message fails', async () => {
-            const interaction = makeInteraction({ sub: 'add', role: { id: 'role1', managed: false, name: 'VIP' } });
+            const interaction = makeInteraction({ sub: 'add', role: { id: 'role1', managed: false, name: 'VIP', position: 1 } });
             ReactionRoleSchema.findOne.mockResolvedValue(null);
             interaction.channel.messages.fetch.mockResolvedValue(null);
 
@@ -164,5 +167,16 @@ describe('reactionrole command', () => {
                 expect.objectContaining({ embeds: expect.any(Array) })
             );
         });
+    });
+
+    test("add: rejects a role at or above the invoker's highest role", async () => {
+        const interaction = makeInteraction({ sub: 'add', invokerPosition: 5, role: { id: 'role1', managed: false, name: 'Admin', position: 5 } });
+
+        await reactionrole.execute(interaction);
+
+        expect(interaction.reply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('higher than or equal to your highest role') })
+        );
+        expect(ReactionRoleSchema.create).not.toHaveBeenCalled();
     });
 });

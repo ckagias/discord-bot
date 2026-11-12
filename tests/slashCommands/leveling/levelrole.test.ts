@@ -6,14 +6,16 @@ jest.mock('../../../utils/guildConfig', () => ({
 const { getGuildConfig, updateGuildConfig } = require('../../../utils/guildConfig');
 const levelrole = require('../../../slashCommands/leveling/levelrole');
 
-function makeInteraction({ sub, levelValue = 5, role = null }: { sub: string; levelValue?: number; role?: any }) {
+function makeInteraction({ sub, levelValue = 5, role = null, invokerPosition = 20 }: { sub: string; levelValue?: number; role?: any; invokerPosition?: number }) {
     return {
         options: {
             getSubcommand: jest.fn().mockReturnValue(sub),
             getInteger: jest.fn().mockReturnValue(levelValue),
             getRole: jest.fn().mockReturnValue(role),
         },
-        guild: { id: 'g1', members: { me: { roles: { highest: { position: 10 } } } } },
+        user: { id: 'invoker' },
+        member: { roles: { highest: { position: invokerPosition } } },
+        guild: { id: 'g1', ownerId: 'owner', members: { me: { roles: { highest: { position: 10 } } } } },
         deferReply: jest.fn().mockResolvedValue({}),
         editReply: jest.fn().mockResolvedValue({}),
     };
@@ -114,5 +116,17 @@ describe('levelrole command', () => {
 
             expect(updateGuildConfig).toHaveBeenCalledWith('g1', { levelRoles: [{ level: 10, roleId: 'role2' }] });
         });
+    });
+
+    test("set: rejects a role at or above the invoker's highest role", async () => {
+        const interaction = makeInteraction({ sub: 'set', invokerPosition: 5, role: { id: 'role1', managed: false, position: 5 } });
+        getGuildConfig.mockResolvedValue({});
+
+        await levelrole.execute(interaction);
+
+        expect(interaction.editReply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('higher than or equal to your highest role') })
+        );
+        expect(updateGuildConfig).not.toHaveBeenCalled();
     });
 });

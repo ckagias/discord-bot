@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags, ChatInputCommandInteraction } from 'discord.js';
+import { roleHierarchyError } from '../../utils/roleHierarchy';
 const { updateGuildConfig } = require('../../utils/guildConfig');
 const { DEFAULT_BIRTHDAY_MESSAGE } = require('../../utils/birthday');
 
@@ -39,6 +40,11 @@ module.exports = {
             const channel = interaction.options.getChannel('channel');
             const message = interaction.options.getString('message');
             const role = interaction.options.getRole('role');
+
+            if (role) {
+                const hierarchyError = roleHierarchyError(interaction, role);
+                if (hierarchyError) return interaction.editReply({ content: hierarchyError });
+            }
 
             const fields: Record<string, unknown> = { birthdayChannelId: channel.id };
             if (message) fields.birthdayMessage = message;
