@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, ChatInputCommandInteraction, GuildMember } from 'discord.js';
 const { getGuildConfig } = require('../../utils/guildConfig');
 const PunishmentSchema = require('../../models/PunishmentSchema');
-const { parseDuration, schedulePunishment } = require('../../utils/punishments');
+const { parseDuration, schedulePunishment, cancelPunishments } = require('../../utils/punishments');
 const { formatDuration } = require('../../utils/duration');
 const { createCase, logModAction } = require('../../utils/cases');
 
@@ -83,6 +83,9 @@ module.exports = {
         }
 
         await target.roles.add(muteRole, reason);
+
+        // An earlier timed mute must not lift this one when its timer runs out.
+        await cancelPunishments(interaction.guild.id, target.id, 'mute');
 
         if (durationMs) {
             const expiresAt = new Date(Date.now() + durationMs);

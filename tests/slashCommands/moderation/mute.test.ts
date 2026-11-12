@@ -4,12 +4,13 @@ jest.mock('../../../utils/punishments', () => ({
     parseDuration: jest.fn(),
     formatDuration: jest.fn(),
     schedulePunishment: jest.fn(),
+    cancelPunishments: jest.fn(),
 }));
 jest.mock('../../../utils/cases', () => ({ createCase: jest.fn(), logModAction: jest.fn() }));
 
 const { getGuildConfig } = require('../../../utils/guildConfig');
 const PunishmentSchema = require('../../../models/PunishmentSchema');
-const { parseDuration, formatDuration, schedulePunishment } = require('../../../utils/punishments');
+const { parseDuration, formatDuration, schedulePunishment, cancelPunishments } = require('../../../utils/punishments');
 const { createCase, logModAction } = require('../../../utils/cases');
 const mute = require('../../../slashCommands/moderation/mute');
 
@@ -178,5 +179,41 @@ describe('mute command', () => {
         expect(logModAction).toHaveBeenCalledWith(
             expect.objectContaining({ guild: interaction.guild, action: 'Mute', reason: 'spam', caseId: 5, duration: '30m' })
         );
+    });
+
+    test('cancels pending timed mutes for the user, so an earlier timer cannot lift a permanent mute', async () => {
+        const target = makeTarget();
+        const interaction = makeInteraction({ target, reason: 'spam' });
+        getGuildConfig.mockResolvedValue({ muteRoleId: 'role1' });
+        createCase.mockResolvedValue({ caseId: 6 });
+
+        await mute.execute(interaction);
+
+        expect(cancelPunishments).toHaveBeenCalledWith('g1', 'target1', 'mute');
+        expect(PunishmentSchema.create).not.toHaveBeenCalled();
+    });
+
+    test('cancels earlier timed mutes before saving the new one', async () => {
+        const target = makeTarget();
+        const interaction = makeInteraction({ target, duration: '30m', reason: 'spam' });
+        getGuildConfig.mockResolvedValue({ muteRoleId: 'role1' });
+        parseDuration.mockReturnValue(1800000);
+        formatDuration.mockReturnValue('30m');
+        PunishmentSchema.create.mockResolvedValue({ _id: 'p2', type: 'mute' });
+        createCase.mockResolvedValue({ caseId: 7 });
+
+        await mute.execute(interaction);
+
+        expect(cancelPunishments.mock.invocationCallOrder[0]).toBeLessThan(PunishmentSchema.create.mock.invocationCallOrder[0]);
+    });
+
+    test('leaves pending timed mutes alone when the user is already muted', async () => {
+        const target = makeTarget({ roles: { highest: { position: 1 }, cache: { has: jest.fn().mockReturnValue(true) }, add: jest.fn() } });
+        const interaction = makeInteraction({ target });
+        getGuildConfig.mockResolvedValue({ muteRoleId: 'role1' });
+
+        await mute.execute(interaction);
+
+        expect(cancelPunishments).not.toHaveBeenCalled();
     });
 });

@@ -1,9 +1,20 @@
 import { EmbedBuilder, AuditLogEvent, GuildBan } from 'discord.js';
+import { cancelPunishments } from '../utils/punishments';
 const { getLogChannel } = require('../utils/logger');
+
+const UNKNOWN_BAN = 10026;
 
 module.exports = {
     name: 'guildBanRemove',
     async execute(ban: GuildBan) {
+        // Bans lifted in Discord itself, not through /unban, leave a timed ban's record behind, and its timer would
+        // later unban the user from a newer ban. Only cancel it once the user is confirmed not banned: this event
+        // also fires for the bot's own unbans and can arrive after the user was banned again.
+        const stillBanned = await ban.guild.bans.fetch({ user: ban.user.id, force: true })
+            .then(() => true)
+            .catch((err: { code?: number }) => err?.code !== UNKNOWN_BAN);
+        if (!stillBanned) await cancelPunishments(ban.guild.id, ban.user.id, 'ban');
+
         const logChannel = await getLogChannel(ban.guild, 'moderation').catch(() => null);
         if (!logChannel) return;
 

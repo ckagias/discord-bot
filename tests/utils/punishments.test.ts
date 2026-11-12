@@ -1,9 +1,11 @@
 jest.mock('../../models/PunishmentSchema', () => ({
     deleteOne: jest.fn().mockResolvedValue({}),
+    deleteMany: jest.fn().mockResolvedValue({}),
+    exists: jest.fn().mockResolvedValue({ _id: 'p1' }),
     find: jest.fn().mockResolvedValue([]),
 }));
 
-import { schedulePunishment, liftMute, liftBan } from '../../utils/punishments';
+import { schedulePunishment, liftMute, liftBan, cancelPunishments } from '../../utils/punishments';
 import PunishmentSchema from '../../models/PunishmentSchema';
 
 const MAX_TIMEOUT_MS = 2 ** 31 - 1;
@@ -47,7 +49,7 @@ describe('schedulePunishment', () => {
         expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 5000);
     });
 
-    test('re-arms in MAX_TIMEOUT_MS-sized chunks instead of overflowing setTimeout', () => {
+    test('re-arms in MAX_TIMEOUT_MS-sized chunks instead of overflowing setTimeout', async () => {
         const client = makeClient();
         const punishment = makePunishment();
         const remaining = MAX_TIMEOUT_MS + 5000;
@@ -63,7 +65,7 @@ describe('schedulePunishment', () => {
         expect(client.guilds.fetch).not.toHaveBeenCalled();
         expect(jest.getTimerCount()).toBe(1);
 
-        jest.advanceTimersByTime(5000);
+        await jest.advanceTimersByTimeAsync(5000);
 
         expect(client.guilds.fetch).toHaveBeenCalledTimes(1);
     });
@@ -74,8 +76,7 @@ describe('schedulePunishment', () => {
 
         schedulePunishment(client, punishment, -1000);
 
-        jest.advanceTimersByTime(0);
-        await Promise.resolve();
+        await jest.advanceTimersByTimeAsync(0);
 
         expect(client.guilds.fetch).toHaveBeenCalledTimes(1);
     });
@@ -148,6 +149,21 @@ describe('liftMute', () => {
 
         expect(PunishmentSchema.deleteOne).toHaveBeenCalledWith({ _id: 'p1' });
     });
+
+    test('does nothing when the record was removed, such as by an /unmute or a newer mute', async () => {
+        (PunishmentSchema.exists as jest.Mock).mockResolvedValueOnce(null);
+        const remove = jest.fn();
+        const client = {
+            guilds: { fetch: jest.fn().mockResolvedValue({ members: { fetch: jest.fn().mockResolvedValue({ roles: { remove } }) } }) },
+        } as any;
+
+        await liftMute(client, makePunishment());
+
+        expect(PunishmentSchema.exists).toHaveBeenCalledWith({ _id: 'p1' });
+        expect(client.guilds.fetch).not.toHaveBeenCalled();
+        expect(remove).not.toHaveBeenCalled();
+        expect(PunishmentSchema.deleteOne).not.toHaveBeenCalled();
+    });
 });
 
 describe('liftBan', () => {
@@ -179,5 +195,44 @@ describe('liftBan', () => {
         await liftBan(client, makePunishment({ type: 'ban' }));
 
         expect(PunishmentSchema.deleteOne).toHaveBeenCalledWith({ _id: 'p1' });
+    });
+
+    test('does nothing when the record was removed, such as by an /unban or a newer ban', async () => {
+        (PunishmentSchema.exists as jest.Mock).mockResolvedValueOnce(null);
+        const unban = jest.fn();
+        const client = { guilds: { fetch: jest.fn().mockResolvedValue({ members: { unban } }) } } as any;
+
+        await liftBan(client, makePunishment({ type: 'ban' }));
+
+        expect(client.guilds.fetch).not.toHaveBeenCalled();
+        expect(unban).not.toHaveBeenCalled();
+        expect(PunishmentSchema.deleteOne).not.toHaveBeenCalled();
+    });
+
+    test('keeps the record for retry when the lookup itself fails', async () => {
+        (PunishmentSchema.exists as jest.Mock).mockRejectedValueOnce(new Error('db down'));
+        const unban = jest.fn();
+        const client = { guilds: { fetch: jest.fn().mockResolvedValue({ members: { unban } }) } } as any;
+
+        await liftBan(client, makePunishment({ type: 'ban' }));
+
+        expect(unban).not.toHaveBeenCalled();
+        expect(PunishmentSchema.deleteOne).not.toHaveBeenCalled();
+    });
+});
+
+describe('cancelPunishments', () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    test('removes the member\'s pending records of that type only', async () => {
+        await cancelPunishments('g1', 'u1', 'ban');
+
+        expect(PunishmentSchema.deleteMany).toHaveBeenCalledWith({ guildId: 'g1', userId: 'u1', type: 'ban' });
+    });
+
+    test('does not throw when the delete fails, since the command it follows already succeeded', async () => {
+        (PunishmentSchema.deleteMany as jest.Mock).mockRejectedValueOnce(new Error('db down'));
+
+        await expect(cancelPunishments('g1', 'u1', 'mute')).resolves.toBeUndefined();
     });
 });
