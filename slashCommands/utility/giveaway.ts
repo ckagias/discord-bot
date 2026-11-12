@@ -80,40 +80,49 @@ function pickWinners(entrants: string[], hostId: string, count: number) {
     return winners;
 }
 
-async function endGiveaway(client: Client, giveaway: any) {
-    let eligibleEntrants = giveaway.entrants;
+// Returns false when the giveaway was already ended, so a late timer or a second caller does nothing.
+async function endGiveaway(client: Client, giveaway: any): Promise<boolean> {
+    // The document passed in can be stale: entries are written straight to the database, so it may be missing
+    // entrants, and a timer can fire after the giveaway was ended early. Claim it atomically and use the stored
+    // entrants. Entering requires `ended: false`, so they cannot change once it is claimed.
+    const claimed = await GiveawaySchema.findOneAndUpdate(
+        { _id: giveaway._id, ended: false },
+        { $set: { ended: true } },
+        { returnDocument: 'after' }
+    );
+    if (!claimed) return false;
 
-    if (giveaway.requireRoleId) {
-        const guild = await client.guilds.fetch(giveaway.guildId).catch(() => null);
+    let eligibleEntrants = claimed.entrants;
+
+    if (claimed.requireRoleId) {
+        const guild = await client.guilds.fetch(claimed.guildId).catch(() => null);
         if (guild) {
-            const members = await guild.members.fetch({ user: giveaway.entrants } as any).catch(() => new Map());
-            eligibleEntrants = giveaway.entrants.filter((id: string) => {
+            const members = await guild.members.fetch({ user: claimed.entrants } as any).catch(() => new Map());
+            eligibleEntrants = claimed.entrants.filter((id: string) => {
                 const member = (members as any).get(id);
-                return member && member.roles.cache.has(giveaway.requireRoleId);
+                return member && member.roles.cache.has(claimed.requireRoleId);
             });
         }
     }
 
-    const winners = pickWinners(eligibleEntrants, giveaway.hostId, giveaway.winnerCount);
+    const winners = pickWinners(eligibleEntrants, claimed.hostId, claimed.winnerCount);
+    await GiveawaySchema.updateOne({ _id: claimed._id }, { $set: { winners } });
 
-    giveaway.ended = true;
-    giveaway.winners = winners;
-    await giveaway.save();
+    const channel = await client.channels.fetch(claimed.channelId).catch(() => null);
+    if (!channel) return true;
 
-    const channel = await client.channels.fetch(giveaway.channelId).catch(() => null);
-    if (!channel) return;
-
-    const message = await (channel as any).messages.fetch(giveaway.messageId).catch(() => null);
+    const message = await (channel as any).messages.fetch(claimed.messageId).catch(() => null);
     if (message) {
-        const embed = giveawayEmbed(giveaway.prize, giveaway.hostId, giveaway.endsAt, giveaway.winnerCount, giveaway.entrants.length, true, winners, giveaway.requireRoleId);
+        const embed = giveawayEmbed(claimed.prize, claimed.hostId, claimed.endsAt, claimed.winnerCount, claimed.entrants.length, true, winners, claimed.requireRoleId);
         await message.edit({ embeds: [embed], components: [entryRow(true)] }).catch(() => {});
     }
 
     const mention = winners.length
-        ? `Congratulations ${winners.map(id => `<@${id}>`).join(', ')}! You won **${giveaway.prize}**!`
-        : `No valid entrants for **${giveaway.prize}**. (The host cannot win their own giveaway.)`;
+        ? `Congratulations ${winners.map(id => `<@${id}>`).join(', ')}! You won **${claimed.prize}**!`
+        : `No valid entrants for **${claimed.prize}**. (The host cannot win their own giveaway.)`;
 
-    await (channel as any).send({ content: mention, reply: message ? { messageReference: giveaway.messageId } : undefined }).catch(() => {});
+    await (channel as any).send({ content: mention, reply: message ? { messageReference: claimed.messageId } : undefined }).catch(() => {});
+    return true;
 }
 
 module.exports = {
@@ -189,8 +198,8 @@ module.exports = {
             if (giveaway.ended) return interaction.reply({ content: 'That giveaway has already ended.', flags: MessageFlags.Ephemeral });
 
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-            await endGiveaway(client, giveaway);
-            return interaction.editReply({ content: 'Giveaway ended and winner(s) selected.' });
+            const ended = await endGiveaway(client, giveaway);
+            return interaction.editReply({ content: ended ? 'Giveaway ended and winner(s) selected.' : 'That giveaway has already ended.' });
         }
 
         if (sub === 'reroll') {
