@@ -194,6 +194,12 @@ async function handleVsBotRps(interaction: ChatInputCommandInteraction, bet: num
         if (wallet.balance < bet) {
             return interaction.editReply({ content: `You don't have enough credits. Your balance is **${formatBalance(wallet.balance)}**.` });
         }
+
+        // Take the bet before the player moves. Only checking the balance would let them spend it during the 30 seconds and lose for free.
+        const held = await updateBalance(interaction.user.id, interaction.guild.id, -bet);
+        if (!held) {
+            return interaction.editReply({ content: 'You no longer have enough credits to cover that bet.' });
+        }
     }
 
     const botPrefix = `rps_${interaction.id}`;
@@ -235,17 +241,17 @@ async function handleVsBotRps(interaction: ChatInputCommandInteraction, bet: num
 
         if (bet) {
             let newBalance;
+            // The bet is already held: a win returns it plus the winnings, a loss keeps it, a tie gives it back.
             if (outcome === 'win') {
-                const updated = await updateBalance(interaction.user.id, interaction.guild.id, bet);
+                const updated = await updateBalance(interaction.user.id, interaction.guild.id, bet * 2);
                 newBalance = updated.balance;
                 fields.push({ name: 'Result', value: `💰 +${formatBalance(bet)} → 💳 ${formatBalance(newBalance)}`, inline: false });
             } else if (outcome === 'lose') {
-                const updated = await updateBalance(interaction.user.id, interaction.guild.id, -bet);
-                newBalance = updated ? updated.balance : 0;
+                newBalance = (await getWallet(interaction.user.id, interaction.guild.id)).balance;
                 fields.push({ name: 'Result', value: `💸 -${formatBalance(bet)} → 💳 ${formatBalance(newBalance)}`, inline: false });
             } else {
-                const wallet = await getWallet(interaction.user.id, interaction.guild.id);
-                fields.push({ name: 'Result', value: `🤝 Tie — bet returned → 💳 ${formatBalance(wallet.balance)}`, inline: false });
+                const updated = await updateBalance(interaction.user.id, interaction.guild.id, bet);
+                fields.push({ name: 'Result', value: `🤝 Tie — bet returned → 💳 ${formatBalance(updated.balance)}`, inline: false });
             }
         } else {
             const wallet = await getWallet(interaction.user.id, interaction.guild.id);
@@ -255,8 +261,11 @@ async function handleVsBotRps(interaction: ChatInputCommandInteraction, bet: num
         await i.update({ embeds: [new EmbedBuilder().setTitle(titles[outcome]).addFields(fields).setColor(colors[outcome])], components: [] });
     });
 
-    collector.on('end', (collected, reason) => {
-        if (reason === 'time' && collected.size === 0) {
+    collector.on('end', async (collected, reason) => {
+        // No move was made (timeout, deleted message, ...), so give the held bet back.
+        if (collected.size > 0) return;
+        if (bet) await updateBalance(interaction.user.id, interaction.guild.id, bet);
+        if (reason === 'time') {
             interaction.editReply({ content: '⏰ Time is up! Game cancelled.', embeds: [], components: [] });
         }
     });

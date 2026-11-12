@@ -29,6 +29,7 @@ function makeInteraction({ amount = 100 } = {}) {
 describe('gamble command', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        updateBalance.mockResolvedValue({ balance: 400 }); // the bet is taken up front
     });
 
     test('rejects a bet exceeding the balance', async () => {
@@ -40,6 +41,34 @@ describe('gamble command', () => {
         expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining("don't have enough credits") })
         );
+        expect(updateBalance).not.toHaveBeenCalled();
+    });
+
+    test('takes the bet before showing the buttons', async () => {
+        const interaction = makeInteraction({ amount: 100 });
+        getWallet.mockResolvedValue({ balance: 500 });
+
+        await gamble.execute(interaction);
+
+        expect(updateBalance).toHaveBeenCalledWith('user1', 'g1', -100);
+        expect(updateBalance.mock.invocationCallOrder[0]).toBeLessThan(interaction.editReply.mock.invocationCallOrder[0]);
+        const { embeds } = interaction.editReply.mock.calls[0][0];
+        const balanceField = embeds[0].toJSON().fields.find((f: { name: string }) => f.name === 'Your Balance');
+        expect(balanceField.value).toContain('400');
+    });
+
+    test('does not start the game when the bet cannot be taken', async () => {
+        const interaction = makeInteraction({ amount: 100 });
+        getWallet.mockResolvedValue({ balance: 500 }); // looked affordable, but the balance was spent before the debit
+        updateBalance.mockResolvedValue(null);
+
+        await gamble.execute(interaction);
+
+        expect(interaction.editReply).toHaveBeenCalledTimes(1);
+        expect(interaction.editReply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: 'You no longer have enough credits to cover that bet.' })
+        );
+        expect(interaction._collector.on).not.toHaveBeenCalled();
     });
 
     test('shows the first roll with higher/lower buttons', async () => {
@@ -99,10 +128,11 @@ describe('gamble command', () => {
         expect(i.update).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('tie') })
         );
+        expect(updateBalance).toHaveBeenLastCalledWith('user1', 'g1', 100);
         (Math.random as jest.Mock).mockRestore();
     });
 
-    test('collect handler pays out on a win', async () => {
+    test('collect handler returns the bet plus the winnings on a win', async () => {
         const interaction = makeInteraction({ amount: 100 });
         getWallet.mockResolvedValue({ balance: 500 });
         // First random() picks firstNumber; must differ from the second call inside collect.
@@ -114,22 +144,61 @@ describe('gamble command', () => {
         const i = { customId: `gamble_interaction1_higher`, update: jest.fn().mockResolvedValue({}) };
         await interaction._collector.handlers.collect(i);
 
-        expect(updateBalance).toHaveBeenCalledWith('user1', 'g1', 100);
+        expect(updateBalance).toHaveBeenLastCalledWith('user1', 'g1', 200);
         (Math.random as jest.Mock).mockRestore();
     });
 
-    test('collect handler deducts on a loss', async () => {
+    test('collect handler keeps the held bet on a loss without charging again', async () => {
         const interaction = makeInteraction({ amount: 100 });
         getWallet.mockResolvedValue({ balance: 500 });
         const spy = jest.spyOn(Math, 'random').mockReturnValueOnce(0.9);
         await gamble.execute(interaction);
         spy.mockReturnValue(0.1);
 
-        updateBalance.mockResolvedValue({ balance: 400 });
+        getWallet.mockResolvedValue({ balance: 400 });
         const i = { customId: `gamble_interaction1_higher`, update: jest.fn().mockResolvedValue({}) };
         await interaction._collector.handlers.collect(i);
 
-        expect(updateBalance).toHaveBeenCalledWith('user1', 'g1', -100);
+        expect(updateBalance).toHaveBeenCalledTimes(1); // only the hold
+        const embed = i.update.mock.calls[0][0].embeds[0].toJSON();
+        expect(embed.title).toContain('You Lost');
+        expect(embed.fields.find((f: { name: string }) => f.name === 'New Balance').value).toContain('400');
         (Math.random as jest.Mock).mockRestore();
+    });
+
+    test('refunds the bet and says so when the time runs out', async () => {
+        const interaction = makeInteraction({ amount: 100 });
+        getWallet.mockResolvedValue({ balance: 500 });
+        await gamble.execute(interaction);
+
+        await interaction._collector.handlers.end({ size: 0 }, 'time');
+
+        expect(updateBalance).toHaveBeenLastCalledWith('user1', 'g1', 100);
+        expect(interaction.editReply).toHaveBeenLastCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('Time is up') })
+        );
+    });
+
+    test('refunds the bet when the game ends without a choice for another reason', async () => {
+        const interaction = makeInteraction({ amount: 100 });
+        getWallet.mockResolvedValue({ balance: 500 });
+        await gamble.execute(interaction);
+        const repliesBefore = interaction.editReply.mock.calls.length;
+
+        await interaction._collector.handlers.end({ size: 0 }, 'messageDelete');
+
+        expect(updateBalance).toHaveBeenLastCalledWith('user1', 'g1', 100);
+        expect(interaction.editReply).toHaveBeenCalledTimes(repliesBefore);
+    });
+
+    test('does not refund once a choice was made', async () => {
+        const interaction = makeInteraction({ amount: 100 });
+        getWallet.mockResolvedValue({ balance: 500 });
+        await gamble.execute(interaction);
+        updateBalance.mockClear();
+
+        await interaction._collector.handlers.end({ size: 1 }, 'limit');
+
+        expect(updateBalance).not.toHaveBeenCalled();
     });
 });

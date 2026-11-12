@@ -72,29 +72,49 @@ describe('coinflip command', () => {
             expect(interaction.editReply).toHaveBeenCalledWith(
                 expect.objectContaining({ content: expect.stringContaining("don't have enough credits") })
             );
+            expect(updateBalance).not.toHaveBeenCalled();
         });
 
-        test('pays out on a winning bet', async () => {
+        test('returns the bet plus the winnings on a winning bet', async () => {
             const interaction = makeInteraction({ guess: 'heads', amount: 100 });
             getWallet.mockResolvedValue({ balance: 500 });
-            updateBalance.mockResolvedValue({ balance: 600 });
+            updateBalance
+                .mockResolvedValueOnce({ balance: 400 })  // bet taken
+                .mockResolvedValueOnce({ balance: 600 }); // bet returned plus winnings
 
             await coinflip.execute(interaction);
 
-            expect(updateBalance).toHaveBeenCalledWith('user1', 'g1', 100);
+            expect(updateBalance).toHaveBeenNthCalledWith(1, 'user1', 'g1', -100);
+            expect(updateBalance).toHaveBeenNthCalledWith(2, 'user1', 'g1', 200);
             expect(interaction.editReply).toHaveBeenCalledWith(
                 expect.objectContaining({ embeds: expect.any(Array) })
             );
         });
 
-        test('deducts on a losing bet', async () => {
+        test('keeps the bet on a losing bet without charging again', async () => {
             const interaction = makeInteraction({ guess: 'tails', amount: 100 });
             getWallet.mockResolvedValue({ balance: 500 });
             updateBalance.mockResolvedValue({ balance: 400 });
 
             await coinflip.execute(interaction);
 
+            expect(updateBalance).toHaveBeenCalledTimes(1);
             expect(updateBalance).toHaveBeenCalledWith('user1', 'g1', -100);
+            const fields = interaction.editReply.mock.calls[0][0].embeds[0].toJSON().fields;
+            expect(fields.find((f: { name: string }) => f.name === 'New Balance').value).toContain('400');
+        });
+
+        test('does not flip when the bet cannot be taken', async () => {
+            const interaction = makeInteraction({ guess: 'heads', amount: 100 });
+            getWallet.mockResolvedValue({ balance: 500 }); // looked affordable, but the balance was spent before the debit
+            updateBalance.mockResolvedValue(null);
+
+            await coinflip.execute(interaction);
+
+            expect(updateBalance).toHaveBeenCalledTimes(1);
+            expect(interaction.editReply).toHaveBeenCalledWith(
+                expect.objectContaining({ content: 'You no longer have enough credits to cover that bet.' })
+            );
         });
     });
 
