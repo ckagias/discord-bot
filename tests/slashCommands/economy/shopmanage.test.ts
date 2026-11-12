@@ -8,7 +8,7 @@ jest.mock('../../../models/ShopSchema', () => ({
 const ShopSchema = require('../../../models/ShopSchema');
 const shopmanage = require('../../../slashCommands/economy/shopmanage');
 
-function makeInteraction({ sub, name = 'VIP', price = 500, type = 'role', description = null, role = { id: 'role1' }, emoji = null, item = 'item1', enabled = null }: { sub?: string; name?: string | null; price?: number | null; type?: string | null; description?: string | null; role?: { id: string } | null; emoji?: string | null; item?: string | null; enabled?: boolean | null } = {}) {
+function makeInteraction({ sub, name = 'VIP', price = 500, type = 'role', description = null, role = { id: 'role1', position: 1 }, emoji = null, item = 'item1', enabled = null, invokerPosition = 20 }: { sub?: string; name?: string | null; price?: number | null; type?: string | null; description?: string | null; role?: { id: string; position: number } | null; emoji?: string | null; item?: string | null; enabled?: boolean | null; invokerPosition?: number } = {}) {
     return {
         options: {
             getSubcommand: jest.fn().mockReturnValue(sub),
@@ -24,7 +24,9 @@ function makeInteraction({ sub, name = 'VIP', price = 500, type = 'role', descri
             getRole: jest.fn().mockReturnValue(role),
             getBoolean: jest.fn().mockReturnValue(enabled),
         },
-        guild: { id: 'g1' },
+        user: { id: 'invoker' },
+        member: { roles: { highest: { position: invokerPosition } } },
+        guild: { id: 'g1', ownerId: 'owner' },
         deferReply: jest.fn().mockResolvedValue({}),
         editReply: jest.fn().mockResolvedValue({}),
     };
@@ -171,6 +173,28 @@ describe('shopmanage command', () => {
             expect(interaction.respond).toHaveBeenCalledWith([
                 { name: 'VIP [hidden] — 500 coins', value: 'item1' },
             ]);
+        });
+    });
+
+    describe('add: invoker hierarchy', () => {
+        test("rejects a role item whose role is at or above the invoker's highest role", async () => {
+            const interaction = makeInteraction({ sub: 'add', type: 'role', invokerPosition: 5, role: { id: 'role1', position: 5 } });
+
+            await shopmanage.execute(interaction);
+
+            expect(interaction.editReply).toHaveBeenCalledWith(
+                expect.objectContaining({ content: expect.stringContaining('higher than or equal to your highest role') })
+            );
+            expect(ShopSchema.create).not.toHaveBeenCalled();
+        });
+
+        test('does not apply the check to badge items', async () => {
+            const interaction = makeInteraction({ sub: 'add', type: 'badge', emoji: '⭐', invokerPosition: 5, role: null });
+            ShopSchema.findOne.mockResolvedValue(null);
+
+            await shopmanage.execute(interaction);
+
+            expect(ShopSchema.create).toHaveBeenCalled();
         });
     });
 });

@@ -13,7 +13,7 @@ const { getGuildConfig, updateGuildConfig } = require('../../../utils/guildConfi
 const { startLockdown, endLockdown, ensureQuarantineOverwrites } = require('../../../utils/antiRaid');
 const antiraid = require('../../../slashCommands/moderation/antiraid');
 
-function makeInteraction({ sub, role = null, threshold = null, window = null, enabled = null, member = null }: { sub?: string; role?: any; threshold?: number | null; window?: number | null; enabled?: boolean | null; member?: any } = {}) {
+function makeInteraction({ sub, role = null, threshold = null, window = null, enabled = null, member = null, invokerPosition = 20 }: { sub?: string; role?: any; threshold?: number | null; window?: number | null; enabled?: boolean | null; member?: any; invokerPosition?: number } = {}) {
     return {
         options: {
             getSubcommand: jest.fn().mockReturnValue(sub),
@@ -22,13 +22,15 @@ function makeInteraction({ sub, role = null, threshold = null, window = null, en
             getBoolean: jest.fn().mockReturnValue(enabled),
             getUser: jest.fn().mockReturnValue(member),
         },
+        member: { roles: { highest: { position: invokerPosition } } },
         guild: {
             id: 'g1',
+            ownerId: 'owner',
             members: { me: { roles: { highest: { position: 10 } } }, fetch: jest.fn() },
             roles: { cache: { get: jest.fn() } },
             channels: { cache: { get: jest.fn() } },
         },
-        user: { tag: 'Mod#0001' },
+        user: { id: 'invoker', tag: 'Mod#0001' },
         deferReply: jest.fn().mockResolvedValue({}),
         editReply: jest.fn().mockResolvedValue({}),
     };
@@ -242,5 +244,17 @@ describe('antiraid command', () => {
                 expect.objectContaining({ embeds: expect.any(Array) })
             );
         });
+    });
+
+    test("setrole: rejects a role at or above the invoker's highest role, without touching the channels", async () => {
+        const interaction = makeInteraction({ sub: 'setrole', invokerPosition: 5, role: { id: 'role1', managed: false, position: 5 } });
+
+        await antiraid.execute(interaction);
+
+        expect(interaction.editReply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('higher than or equal to your highest role') })
+        );
+        expect(updateGuildConfig).not.toHaveBeenCalled();
+        expect(ensureQuarantineOverwrites).not.toHaveBeenCalled();
     });
 });

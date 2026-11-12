@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, EmbedBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { roleHierarchyError } from '../../utils/roleHierarchy';
 const { getGuildConfig, updateGuildConfig } = require('../../utils/guildConfig');
 const { startLockdown, endLockdown, ensureQuarantineOverwrites } = require('../../utils/antiRaid');
 const { randomColor } = require('../../utils/embeds');
@@ -73,6 +74,11 @@ module.exports = {
                 return interaction.editReply({
                     content: `I can't assign ${role} — it's higher than or equal to my highest role.`,
                 });
+            }
+
+            const hierarchyError = roleHierarchyError(interaction, role);
+            if (hierarchyError) {
+                return interaction.editReply({ content: hierarchyError });
             }
 
             await updateGuildConfig(guild.id, { antiRaidQuarantineRoleId: role.id });

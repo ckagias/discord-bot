@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags, ChatInputCommandInteraction } from 'discord.js';
+import { roleHierarchyError } from '../../utils/roleHierarchy';
 const ReactionRoleSchema = require('../../models/ReactionRoleSchema');
 
 module.exports = {
@@ -47,6 +48,10 @@ module.exports = {
 
             if (interaction.guild.members.me.roles.highest.comparePositionTo(role as any) <= 0)
                 return interaction.reply({ content: `My highest role is below **${role.name}** — I can't assign it.`, flags: MessageFlags.Ephemeral });
+
+            const hierarchyError = roleHierarchyError(interaction, role);
+            if (hierarchyError)
+                return interaction.reply({ content: hierarchyError, flags: MessageFlags.Ephemeral });
 
             const existing = await ReactionRoleSchema.findOne({
                 guildId: interaction.guild.id,

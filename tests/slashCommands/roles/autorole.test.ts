@@ -6,14 +6,17 @@ jest.mock('../../../utils/guildConfig', () => ({
 const { updateGuildConfig, getGuildConfig } = require('../../../utils/guildConfig');
 const autorole = require('../../../slashCommands/roles/autorole');
 
-function makeInteraction({ sub, role = null }: { sub?: string; role?: any } = {}) {
+function makeInteraction({ sub, role = null, invokerPosition = 20, invokerId = 'invoker' }: { sub?: string; role?: any; invokerPosition?: number; invokerId?: string } = {}) {
     return {
         options: {
             getSubcommand: jest.fn().mockReturnValue(sub),
             getRole: jest.fn().mockReturnValue(role),
         },
+        user: { id: invokerId },
+        member: { roles: { highest: { position: invokerPosition } } },
         guild: {
             id: 'g1',
+            ownerId: 'owner',
             members: { me: { roles: { highest: { position: 10 } } } },
             roles: { cache: { get: jest.fn() } },
         },
@@ -119,6 +122,35 @@ describe('autorole command', () => {
             expect(interaction.editReply).toHaveBeenCalledWith(
                 expect.objectContaining({ content: expect.stringContaining('Current autorole:') })
             );
+        });
+    });
+
+    describe('set: invoker hierarchy', () => {
+        test("rejects a role at or above the invoker's highest role", async () => {
+            const interaction = makeInteraction({ sub: 'set', invokerPosition: 5, role: { id: 'role1', managed: false, position: 5 } });
+
+            await autorole.execute(interaction);
+
+            expect(interaction.editReply).toHaveBeenCalledWith(
+                expect.objectContaining({ content: expect.stringContaining('higher than or equal to your highest role') })
+            );
+            expect(updateGuildConfig).not.toHaveBeenCalled();
+        });
+
+        test('accepts a role below the invoker', async () => {
+            const interaction = makeInteraction({ sub: 'set', invokerPosition: 5, role: { id: 'role1', managed: false, position: 4 } });
+
+            await autorole.execute(interaction);
+
+            expect(updateGuildConfig).toHaveBeenCalledWith('g1', { autoroleId: 'role1' });
+        });
+
+        test('lets the server owner pick any role the bot can assign', async () => {
+            const interaction = makeInteraction({ sub: 'set', invokerId: 'owner', invokerPosition: 0, role: { id: 'role1', managed: false, position: 9 } });
+
+            await autorole.execute(interaction);
+
+            expect(updateGuildConfig).toHaveBeenCalledWith('g1', { autoroleId: 'role1' });
         });
     });
 });

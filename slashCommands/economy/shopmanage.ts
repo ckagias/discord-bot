@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, MessageFlags, ChatInputCommandInteraction, AutocompleteInteraction } from 'discord.js';
+import { roleHierarchyError } from '../../utils/roleHierarchy';
 const { randomUUID } = require('node:crypto');
 const { formatBalance } = require('../../utils/economy');
 
@@ -79,6 +80,11 @@ module.exports = {
             }
             if (type === 'badge' && !emoji) {
                 return interaction.editReply({ content: 'You must provide an **emoji** for type `badge`.' });
+            }
+
+            if (type === 'role' && role) {
+                const hierarchyError = roleHierarchyError(interaction, role);
+                if (hierarchyError) return interaction.editReply({ content: hierarchyError });
             }
 
             const existing = await ShopSchema.findOne({ guildId: interaction.guild.id, name: { $regex: `^${escapeRegex(name)}$`, $options: 'i' } });

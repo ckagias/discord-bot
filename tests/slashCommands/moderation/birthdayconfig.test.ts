@@ -3,7 +3,7 @@ jest.mock('../../../utils/guildConfig', () => ({ updateGuildConfig: jest.fn() })
 const { updateGuildConfig } = require('../../../utils/guildConfig');
 const birthdayconfig = require('../../../slashCommands/moderation/birthdayconfig');
 
-function makeInteraction({ sub, channel = { id: 'c1', toString: () => '#birthdays' }, message = null, role = null }: { sub: string; channel?: any; message?: string | null; role?: any }) {
+function makeInteraction({ sub, channel = { id: 'c1', toString: () => '#birthdays' }, message = null, role = null, invokerPosition = 20 }: { sub: string; channel?: any; message?: string | null; role?: any; invokerPosition?: number }) {
     return {
         options: {
             getSubcommand: jest.fn().mockReturnValue(sub),
@@ -11,7 +11,9 @@ function makeInteraction({ sub, channel = { id: 'c1', toString: () => '#birthday
             getString: jest.fn().mockReturnValue(message),
             getRole: jest.fn().mockReturnValue(role),
         },
-        guild: { id: 'g1' },
+        user: { id: 'invoker' },
+        member: { roles: { highest: { position: invokerPosition } } },
+        guild: { id: 'g1', ownerId: 'owner' },
         deferReply: jest.fn().mockResolvedValue({}),
         editReply: jest.fn().mockResolvedValue({}),
     };
@@ -31,7 +33,7 @@ describe('birthdayconfig command', () => {
     });
 
     test('set: saves channel, message, and role together', async () => {
-        const role = { id: 'r1', toString: () => '@Birthday' };
+        const role = { id: 'r1', position: 1, toString: () => '@Birthday' };
         const interaction = makeInteraction({ sub: 'set', message: 'Happy birthday {user}!', role });
 
         await birthdayconfig.execute(interaction);
@@ -56,5 +58,17 @@ describe('birthdayconfig command', () => {
         expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: 'Birthday announcements have been disabled.' })
         );
+    });
+
+    test("set: rejects a role at or above the invoker's highest role and saves nothing", async () => {
+        const role = { id: 'r1', position: 5, toString: () => '@Admin' };
+        const interaction = makeInteraction({ sub: 'set', invokerPosition: 5, role });
+
+        await birthdayconfig.execute(interaction);
+
+        expect(interaction.editReply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('higher than or equal to your highest role') })
+        );
+        expect(updateGuildConfig).not.toHaveBeenCalled();
     });
 });
