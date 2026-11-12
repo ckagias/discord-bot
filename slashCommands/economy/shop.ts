@@ -78,21 +78,22 @@ module.exports = {
 
         if (sub === 'sell') {
             const itemId = interaction.options.getString('item');
-            const inv = await InventorySchema.findOne({ userId: interaction.user.id, guildId: interaction.guild.id });
-            const ownedItem = inv?.items.find(i => i.itemId === itemId);
-            if (!ownedItem) return interaction.editReply({ content: "You don't own that item." });
 
             // Look up current shop price (item may have been removed; refund based on last known price or 0)
             const shopItem = await ShopSchema.findOne({ itemId, guildId: interaction.guild.id });
             const refund = shopItem ? Math.floor(shopItem.price * 0.5) : 0;
 
-            // Credit coins before removing from inventory — prevents partial failure leaving user with neither
-            const updated = refund > 0 ? await updateBalance(interaction.user.id, interaction.guild.id, refund) : await getWallet(interaction.user.id, interaction.guild.id);
-
-            await InventorySchema.updateOne(
-                { userId: interaction.user.id, guildId: interaction.guild.id },
-                { $pull: { items: { itemId } } }
+            // Remove the item atomically and only pay out if this call was the one that removed it. Two sells at the
+            // same moment would otherwise both see the item as owned and both credit the refund.
+            const inv = await InventorySchema.findOneAndUpdate(
+                { userId: interaction.user.id, guildId: interaction.guild.id, 'items.itemId': itemId },
+                { $pull: { items: { itemId } } },
+                { returnDocument: 'before' }
             );
+            const ownedItem = inv?.items.find(i => i.itemId === itemId);
+            if (!ownedItem) return interaction.editReply({ content: "You don't own that item." });
+
+            const updated = refund > 0 ? await updateBalance(interaction.user.id, interaction.guild.id, refund) : await getWallet(interaction.user.id, interaction.guild.id);
 
             if (ownedItem.type === 'role' && shopItem?.roleId) {
                 const member = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
