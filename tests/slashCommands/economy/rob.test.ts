@@ -89,9 +89,37 @@ describe('rob command', () => {
         expect(claimCooldown).not.toHaveBeenCalled();
     });
 
+    test('rejects a robber who cannot cover the worst-case fine, without using the cooldown', async () => {
+        const interaction = makeInteraction();
+        // Target holds 1000, so a steal is at most 399 and the fine at most 239.
+        getWallet.mockResolvedValueOnce({ lastRobAt: null, balance: 0 }).mockResolvedValueOnce({ balance: 1000 });
+
+        await rob.execute(interaction);
+
+        expect(interaction.editReply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('You need at least **240** credits to cover the fine') })
+        );
+        expect(claimCooldown).not.toHaveBeenCalled();
+        expect(updateBalance).not.toHaveBeenCalled();
+    });
+
+    test('lets a robber who can just cover the worst-case fine attempt the rob', async () => {
+        const interaction = makeInteraction();
+        getWallet.mockResolvedValueOnce({ lastRobAt: null, balance: 240 }).mockResolvedValueOnce({ balance: 1000 });
+        claimCooldown.mockResolvedValueOnce({ lastRobAt: new Date(), balance: 240 });
+        jest.spyOn(Math, 'random').mockReturnValue(0.99);
+        updateBalance.mockResolvedValueOnce({ balance: 2 });
+
+        await rob.execute(interaction);
+
+        expect(claimCooldown).toHaveBeenCalled();
+        expect(updateBalance).toHaveBeenCalledWith('robber1', 'g1', -238);
+        (Math.random as jest.Mock).mockRestore();
+    });
+
     test('reports laying-low when a concurrent /rob call wins the cooldown claim race', async () => {
         const interaction = makeInteraction();
-        getWallet.mockResolvedValueOnce({ lastRobAt: null }).mockResolvedValueOnce({ balance: 1000 });
+        getWallet.mockResolvedValueOnce({ lastRobAt: null, balance: 1000 }).mockResolvedValueOnce({ balance: 1000 });
         claimCooldown.mockResolvedValueOnce(null);
         EconomySchema.findOne.mockResolvedValueOnce({ lastRobAt: new Date() });
 
@@ -105,7 +133,7 @@ describe('rob command', () => {
 
     test('atomically claims the cooldown before resolving the outcome', async () => {
         const interaction = makeInteraction();
-        getWallet.mockResolvedValueOnce({ lastRobAt: null }).mockResolvedValueOnce({ balance: 1000 });
+        getWallet.mockResolvedValueOnce({ lastRobAt: null, balance: 1000 }).mockResolvedValueOnce({ balance: 1000 });
         claimCooldown.mockResolvedValueOnce({ lastRobAt: new Date(), balance: 1000 });
         jest.spyOn(Math, 'random').mockReturnValue(0.99); // force failure branch, deterministic steal amount
         updateBalance.mockResolvedValueOnce({ balance: 900 });
@@ -116,69 +144,79 @@ describe('rob command', () => {
         (Math.random as jest.Mock).mockRestore();
     });
 
-    test('on success: steals from the target and credits the robber', async () => {
+    test('on success: steals from the target, credits the robber and hands the held fine back', async () => {
         const interaction = makeInteraction();
-        getWallet.mockResolvedValueOnce({ lastRobAt: null }).mockResolvedValueOnce({ balance: 1000 });
+        getWallet.mockResolvedValueOnce({ lastRobAt: null, balance: 1000 }).mockResolvedValueOnce({ balance: 1000 });
         claimCooldown.mockResolvedValueOnce({ lastRobAt: new Date(), balance: 1000 });
-        jest.spyOn(Math, 'random').mockReturnValue(0); // success (< 0.35), min steal (10%)
+        jest.spyOn(Math, 'random').mockReturnValue(0); // success (< 0.35), min steal (10%): steal 100, fine 60
         updateBalance
-            .mockResolvedValueOnce({ balance: 900 })  // target debited
+            .mockResolvedValueOnce({ balance: 940 })   // fine held
+            .mockResolvedValueOnce({ balance: 900 })   // target debited
             .mockResolvedValueOnce({ balance: 1100 }); // robber credited
 
         await rob.execute(interaction);
 
-        expect(updateBalance).toHaveBeenNthCalledWith(1, 'target1', 'g1', -100);
-        expect(updateBalance).toHaveBeenNthCalledWith(2, 'robber1', 'g1', 100);
+        expect(updateBalance).toHaveBeenNthCalledWith(1, 'robber1', 'g1', -60);
+        expect(updateBalance).toHaveBeenNthCalledWith(2, 'target1', 'g1', -100);
+        expect(updateBalance).toHaveBeenNthCalledWith(3, 'robber1', 'g1', 160);
         expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ embeds: expect.any(Array) })
         );
         (Math.random as jest.Mock).mockRestore();
     });
 
-    test('on success: reports failure gracefully if the target was drained concurrently', async () => {
+    test('on success: gives the held fine back if the target was drained concurrently', async () => {
         const interaction = makeInteraction();
-        getWallet.mockResolvedValueOnce({ lastRobAt: null }).mockResolvedValueOnce({ balance: 1000 });
+        getWallet.mockResolvedValueOnce({ lastRobAt: null, balance: 1000 }).mockResolvedValueOnce({ balance: 1000 });
         claimCooldown.mockResolvedValueOnce({ lastRobAt: new Date(), balance: 1000 });
         jest.spyOn(Math, 'random').mockReturnValue(0);
-        updateBalance.mockResolvedValueOnce(null); // target debit failed (insufficient funds)
+        updateBalance
+            .mockResolvedValueOnce({ balance: 940 }) // fine held
+            .mockResolvedValueOnce(null);            // target debit failed (insufficient funds)
 
         await rob.execute(interaction);
 
         expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('no longer has enough credits to rob') })
         );
-        expect(updateBalance).toHaveBeenCalledTimes(1);
+        expect(updateBalance).toHaveBeenCalledTimes(3);
+        expect(updateBalance).toHaveBeenNthCalledWith(3, 'robber1', 'g1', 60);
         (Math.random as jest.Mock).mockRestore();
     });
 
     test('on failure: fines the robber and shows the reduced balance', async () => {
         const interaction = makeInteraction();
-        getWallet.mockResolvedValueOnce({ lastRobAt: null }).mockResolvedValueOnce({ balance: 1000 });
+        getWallet.mockResolvedValueOnce({ lastRobAt: null, balance: 1000 }).mockResolvedValueOnce({ balance: 1000 });
         claimCooldown.mockResolvedValueOnce({ lastRobAt: new Date(), balance: 1000 });
         jest.spyOn(Math, 'random').mockReturnValue(0.99); // fail (>= 0.35); stealAmount = floor(1000 * 0.397) = 397, fine = floor(397 * 0.6) = 238
-        updateBalance.mockResolvedValueOnce({ balance: 175 });
+        updateBalance.mockResolvedValueOnce({ balance: 762 });
 
         await rob.execute(interaction);
 
+        expect(updateBalance).toHaveBeenCalledTimes(1);
         expect(updateBalance).toHaveBeenCalledWith('robber1', 'g1', -238);
-        expect(interaction.editReply).toHaveBeenCalledWith(
-            expect.objectContaining({ embeds: expect.any(Array) })
-        );
+        const { embeds } = interaction.editReply.mock.calls[0][0];
+        const fields = embeds[0].toJSON().fields;
+        expect(fields).toEqual([
+            expect.objectContaining({ name: 'Fine', value: '💸 **-238** credits' }),
+            expect.objectContaining({ name: 'Your Balance', value: '💳 **762** credits' }),
+        ]);
         (Math.random as jest.Mock).mockRestore();
     });
 
-    test('on failure: falls back to the claimed balance if the fine deduction itself fails', async () => {
+    test('does not resolve the rob or report a fine when the robber can no longer pay it', async () => {
         const interaction = makeInteraction();
-        getWallet.mockResolvedValueOnce({ lastRobAt: null }).mockResolvedValueOnce({ balance: 1000 });
+        getWallet.mockResolvedValueOnce({ lastRobAt: null, balance: 1000 }).mockResolvedValueOnce({ balance: 1000 });
         claimCooldown.mockResolvedValueOnce({ lastRobAt: new Date(), balance: 1000 });
-        jest.spyOn(Math, 'random').mockReturnValue(0.99);
-        updateBalance.mockResolvedValueOnce(null);
+        jest.spyOn(Math, 'random').mockReturnValue(0); // would be a success
+        updateBalance.mockResolvedValueOnce(null); // balance was spent after the pre-check
 
         await rob.execute(interaction);
 
         expect(interaction.editReply).toHaveBeenCalledWith(
-            expect.objectContaining({ embeds: expect.any(Array) })
+            expect.objectContaining({ content: 'You no longer have enough credits to cover the fine.' })
         );
+        expect(updateBalance).toHaveBeenCalledTimes(1);
         (Math.random as jest.Mock).mockRestore();
     });
 });
