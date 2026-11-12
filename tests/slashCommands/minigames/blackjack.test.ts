@@ -41,6 +41,21 @@ describe('blackjack command (vs dealer)', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         buildDeck.mockReturnValue(makeDeck());
+        updateBalance.mockResolvedValue({ balance: 400 }); // the bet is taken up front
+    });
+
+    test('does not deal when the bet cannot be taken', async () => {
+        const interaction = makeInteraction({ bet: 100 });
+        getWallet.mockResolvedValue({ balance: 500 }); // looked affordable, but the balance was spent before the debit
+        updateBalance.mockResolvedValue(null);
+
+        await blackjack.execute(interaction);
+
+        expect(updateBalance).toHaveBeenCalledTimes(1);
+        expect(interaction.editReply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: 'You no longer have enough coins to cover that bet.' })
+        );
+        expect(BlackjackGame.create).not.toHaveBeenCalled();
     });
 
     test('rejects a bet exceeding the balance', async () => {

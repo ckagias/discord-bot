@@ -151,14 +151,19 @@ async function handleVsBotCoinflip(interaction: ChatInputCommandInteraction, gue
         return interaction.editReply({ content: `You don't have enough credits. Your balance is **${formatBalance(wallet.balance)}**.` });
     }
 
+    // Take the bet first, so a debit that fails can't be skipped. Several simultaneous flips with the same balance could otherwise all win and never pay for a loss.
+    const held = await updateBalance(interaction.user.id, interaction.guild.id, -bet);
+    if (!held) {
+        return interaction.editReply({ content: 'You no longer have enough credits to cover that bet.' });
+    }
+
     const won = guess === result;
     let newBalance;
     if (won) {
-        const updated = await updateBalance(interaction.user.id, interaction.guild.id, bet);
+        const updated = await updateBalance(interaction.user.id, interaction.guild.id, bet * 2);
         newBalance = updated.balance;
     } else {
-        const updated = await updateBalance(interaction.user.id, interaction.guild.id, -bet);
-        newBalance = updated ? updated.balance : wallet.balance - bet;
+        newBalance = held.balance;
     }
 
     return interaction.editReply({

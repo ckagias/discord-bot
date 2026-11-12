@@ -127,7 +127,10 @@ async function handleVsDealer(interaction: ChatInputCommandInteraction, bet: num
         return interaction.editReply({ content: `You don't have enough coins. Your balance is **${formatBalance(wallet.balance)}**.` });
     }
 
-    await updateBalance(interaction.user.id, interaction.guild.id, -bet);
+    const held = await updateBalance(interaction.user.id, interaction.guild.id, -bet);
+    if (!held) {
+        return interaction.editReply({ content: 'You no longer have enough coins to cover that bet.' });
+    }
 
     const deck = buildDeck();
     const playerHand = [deck.pop(), deck.pop()];
