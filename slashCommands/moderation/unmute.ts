@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction, GuildMember } from 'discord.js';
+import { cancelPunishments } from '../../utils/punishments';
 const { getGuildConfig } = require('../../utils/guildConfig');
 const { createCase, logModAction } = require('../../utils/cases');
 
@@ -48,6 +49,8 @@ module.exports = {
             target.roles.remove(muteRole, reason),
             createCase({ guildId: interaction.guild.id, type: 'unmute', userId: target.id, moderatorId: interaction.user.id, reason }),
         ]);
+        // A timed mute's timer must not fire later and act on a newer mute.
+        await cancelPunishments(interaction.guild.id, target.id, 'mute');
         await logModAction({ guild: interaction.guild, action: 'Unmute', target: target.user, moderator: interaction.user, reason, caseId: modCase.caseId });
         return interaction.editReply({ content: `Unmuted **${target.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
     },

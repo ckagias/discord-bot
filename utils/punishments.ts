@@ -17,8 +17,22 @@ function parseDuration(str: string): number | null {
 // Discord error codes meaning there's nothing left to undo, safe to treat as success.
 const UNKNOWN_MEMBER_OR_BAN_CODES = [10007, 10013, 10026];
 
+// Removes a member's pending timed records of one type. A newer action on the member (an unban, an unmute, or a new
+// ban or mute) replaces them, and a leftover record would later lift the newer punishment.
+async function cancelPunishments(guildId: string, userId: string, type: 'mute' | 'ban'): Promise<void> {
+    await PunishmentSchema.deleteMany({ guildId, userId, type })
+        .catch(err => logger.error('Failed to cancel pending punishments:', err));
+}
+
+// The timers hold their own copy of the record, so they have to check it is still stored before acting.
+async function isStillScheduled(punishment: { _id: unknown }): Promise<boolean> {
+    return Boolean(await PunishmentSchema.exists({ _id: punishment._id }));
+}
+
 async function liftMute(client: Client, punishment: any): Promise<void> {
     try {
+        if (!(await isStillScheduled(punishment))) return;
+
         const guild = await client.guilds.fetch(punishment.guildId).catch(() => null);
         if (!guild) {
             await PunishmentSchema.deleteOne({ _id: punishment._id }).catch(() => {});
@@ -41,6 +55,8 @@ async function liftMute(client: Client, punishment: any): Promise<void> {
 
 async function liftBan(client: Client, punishment: any): Promise<void> {
     try {
+        if (!(await isStillScheduled(punishment))) return;
+
         const guild = await client.guilds.fetch(punishment.guildId).catch(() => null);
         if (!guild) {
             await PunishmentSchema.deleteOne({ _id: punishment._id }).catch(() => {});
@@ -78,4 +94,4 @@ async function restorePunishments(client: Client): Promise<void> {
     if (active.length) logger.info(`Restored ${active.length} active timed punishment(s).`);
 }
 
-export { parseDuration, schedulePunishment, restorePunishments, liftMute, liftBan };
+export { parseDuration, schedulePunishment, restorePunishments, cancelPunishments, liftMute, liftBan };

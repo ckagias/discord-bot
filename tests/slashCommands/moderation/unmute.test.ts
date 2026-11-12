@@ -1,8 +1,10 @@
 jest.mock('../../../utils/guildConfig', () => ({ getGuildConfig: jest.fn() }));
 jest.mock('../../../utils/cases', () => ({ createCase: jest.fn(), logModAction: jest.fn() }));
+jest.mock('../../../utils/punishments', () => ({ cancelPunishments: jest.fn() }));
 
 const { getGuildConfig } = require('../../../utils/guildConfig');
 const { createCase, logModAction } = require('../../../utils/cases');
+const { cancelPunishments } = require('../../../utils/punishments');
 const unmute = require('../../../slashCommands/moderation/unmute');
 
 function makeTarget(overrides: Record<string, unknown> = {}) {
@@ -85,6 +87,7 @@ describe('unmute command', () => {
             expect.objectContaining({ content: 'That user is not muted.' })
         );
         expect(target.roles.remove).not.toHaveBeenCalled();
+        expect(cancelPunishments).not.toHaveBeenCalled();
     });
 
     test('unmutes the target and creates a case on success', async () => {
@@ -105,5 +108,15 @@ describe('unmute command', () => {
         expect(logModAction).toHaveBeenCalledWith(
             expect.objectContaining({ guild: interaction.guild, action: 'Unmute', reason: 'served time', caseId: 11 })
         );
+    });
+
+    test('cancels the pending timed mute, so its timer cannot lift a later mute', async () => {
+        const target = makeTarget();
+        const interaction = makeInteraction({ target });
+        getGuildConfig.mockResolvedValue({ muteRoleId: 'role1' });
+
+        await unmute.execute(interaction);
+
+        expect(cancelPunishments).toHaveBeenCalledWith('g1', 'target1', 'mute');
     });
 });

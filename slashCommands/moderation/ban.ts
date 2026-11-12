@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, ChatInputCommandInteraction, GuildMember } from 'discord.js';
 const PunishmentSchema = require('../../models/PunishmentSchema');
-const { parseDuration, schedulePunishment } = require('../../utils/punishments');
+const { parseDuration, schedulePunishment, cancelPunishments } = require('../../utils/punishments');
 const { formatDuration } = require('../../utils/duration');
 const { createCase, logModAction } = require('../../utils/cases');
 const log = require('../../utils/log');
@@ -66,6 +66,9 @@ module.exports = {
             ).catch(() => {});
 
             await target.ban({ reason, deleteMessageSeconds: deleteDays * 86400 });
+
+            // An earlier timed ban must not lift this one when its timer runs out.
+            await cancelPunishments(interaction.guild.id, target.id, 'ban');
 
             if (durationMs) {
                 const expiresAt = new Date(Date.now() + durationMs);

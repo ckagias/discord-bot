@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, ChatInputCommandInteraction } from 'discord.js';
+import { cancelPunishments } from '../../utils/punishments';
 const { createCase, logModAction } = require('../../utils/cases');
 
 module.exports = {
@@ -32,6 +33,8 @@ module.exports = {
             interaction.guild.members.unban(userId, reason),
             createCase({ guildId: interaction.guild.id, type: 'unban', userId, moderatorId: interaction.user.id, reason }),
         ]);
+        // A timed ban's timer must not fire later and act on a newer ban.
+        await cancelPunishments(interaction.guild.id, userId, 'ban');
         await logModAction({ guild: interaction.guild, action: 'Unban', target: ban.user, moderator: interaction.user, reason, caseId: modCase.caseId });
         return interaction.reply({ content: `Unbanned **${ban.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
     },

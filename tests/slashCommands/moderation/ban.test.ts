@@ -3,11 +3,12 @@ jest.mock('../../../utils/punishments', () => ({
     parseDuration: jest.fn(),
     formatDuration: jest.fn(),
     schedulePunishment: jest.fn(),
+    cancelPunishments: jest.fn(),
 }));
 jest.mock('../../../utils/cases', () => ({ createCase: jest.fn(), logModAction: jest.fn() }));
 
 const PunishmentSchema = require('../../../models/PunishmentSchema');
-const { parseDuration, formatDuration, schedulePunishment } = require('../../../utils/punishments');
+const { parseDuration, formatDuration, schedulePunishment, cancelPunishments } = require('../../../utils/punishments');
 const { createCase, logModAction } = require('../../../utils/cases');
 const ban = require('../../../slashCommands/moderation/ban');
 
@@ -162,5 +163,39 @@ describe('ban command', () => {
             expect.objectContaining({ content: 'An error occurred while trying to ban that user.' })
         );
         expect(interaction.reply).not.toHaveBeenCalled();
+    });
+
+    test('cancels pending timed bans for the user, so an earlier timer cannot lift a permanent ban', async () => {
+        const target = makeTarget();
+        const interaction = makeInteraction({ target, reason: 'spam' });
+        createCase.mockResolvedValue({ caseId: 9 });
+
+        await ban.execute(interaction);
+
+        expect(cancelPunishments).toHaveBeenCalledWith('g1', 'target1', 'ban');
+        expect(PunishmentSchema.create).not.toHaveBeenCalled();
+    });
+
+    test('cancels earlier timed bans before saving the new one', async () => {
+        const target = makeTarget();
+        const interaction = makeInteraction({ target, duration: '7d', reason: 'raiding' });
+        parseDuration.mockReturnValue(604800000);
+        formatDuration.mockReturnValue('7d 0h');
+        PunishmentSchema.create.mockResolvedValue({ _id: 'p2', type: 'ban' });
+        createCase.mockResolvedValue({ caseId: 10 });
+
+        await ban.execute(interaction);
+
+        expect(cancelPunishments).toHaveBeenCalledWith('g1', 'target1', 'ban');
+        expect(cancelPunishments.mock.invocationCallOrder[0]).toBeLessThan(PunishmentSchema.create.mock.invocationCallOrder[0]);
+    });
+
+    test('leaves pending timed bans alone when the ban itself fails', async () => {
+        const target = makeTarget({ ban: jest.fn().mockRejectedValue(new Error('discord api down')) });
+        const interaction = makeInteraction({ target, reason: 'spam' });
+
+        await ban.execute(interaction);
+
+        expect(cancelPunishments).not.toHaveBeenCalled();
     });
 });

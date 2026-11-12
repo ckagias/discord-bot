@@ -1,6 +1,8 @@
 jest.mock('../../../utils/cases', () => ({ createCase: jest.fn(), logModAction: jest.fn() }));
+jest.mock('../../../utils/punishments', () => ({ cancelPunishments: jest.fn() }));
 
 const { createCase, logModAction } = require('../../../utils/cases');
+const { cancelPunishments } = require('../../../utils/punishments');
 const unban = require('../../../slashCommands/moderation/unban');
 
 function makeInteraction({ userId = 'user1', reason = null, fetchBan = jest.fn().mockResolvedValue({ user: { tag: 'Target#0001' } }) } = {}) {
@@ -33,6 +35,7 @@ describe('unban command', () => {
             expect.objectContaining({ content: 'That user is not banned.' })
         );
         expect(interaction.guild.members.unban).not.toHaveBeenCalled();
+        expect(cancelPunishments).not.toHaveBeenCalled();
     });
 
     test('unbans the user and creates a case on success', async () => {
@@ -51,5 +54,13 @@ describe('unban command', () => {
         expect(logModAction).toHaveBeenCalledWith(
             expect.objectContaining({ guild: interaction.guild, action: 'Unban', reason: 'appealed', caseId: 6 })
         );
+    });
+
+    test('cancels the pending timed ban, so its timer cannot lift a later ban', async () => {
+        const interaction = makeInteraction({ userId: 'user1' });
+
+        await unban.execute(interaction);
+
+        expect(cancelPunishments).toHaveBeenCalledWith('g1', 'user1', 'ban');
     });
 });
