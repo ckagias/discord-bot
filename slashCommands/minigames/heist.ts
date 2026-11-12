@@ -66,16 +66,26 @@ module.exports = {
             return interaction.editReply({ content: `You don't have enough coins to start this heist. Your balance is **${formatBalance(wallet.balance)}**.` });
         }
 
-        await updateBalance(interaction.user.id, interaction.guild.id, -entryFee);
+        const debit = await updateBalance(interaction.user.id, interaction.guild.id, -entryFee);
+        if (!debit) {
+            return interaction.editReply({ content: 'You no longer have enough coins to start this heist.' });
+        }
 
-        const heist = await HeistSchema.create({
-            messageId: 'pending',
-            channelId: interaction.channel.id,
-            guildId: interaction.guild.id,
-            leaderId: interaction.user.id,
-            entryFee,
-            members: [{ userId: interaction.user.id, username: interaction.user.username }],
-        });
+        let heist;
+        try {
+            heist = await HeistSchema.create({
+                messageId: 'pending',
+                channelId: interaction.channel.id,
+                guildId: interaction.guild.id,
+                leaderId: interaction.user.id,
+                entryFee,
+                members: [{ userId: interaction.user.id, username: interaction.user.username }],
+            });
+        } catch (err) {
+            // The lobby could not be created, so give the fee back.
+            await updateBalance(interaction.user.id, interaction.guild.id, entryFee);
+            throw err;
+        }
 
         const message = await interaction.editReply({
             embeds: [lobbyEmbed(heist)],

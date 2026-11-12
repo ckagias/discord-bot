@@ -60,6 +60,10 @@ const components: ComponentDefinition[] = [
                 return interaction.reply({ content: 'This heist is no longer active.', flags: MessageFlags.Ephemeral });
             }
 
+            if (heist.members.some(m => m.userId === interaction.user.id)) {
+                return interaction.reply({ content: 'You have already joined this heist.', flags: MessageFlags.Ephemeral });
+            }
+
             const wallet = await getWallet(interaction.user.id, interaction.guild!.id);
             if (wallet.balance < heist.entryFee) {
                 return interaction.reply({
@@ -68,7 +72,14 @@ const components: ComponentDefinition[] = [
                 });
             }
 
-            // Atomically add member — rejects if already in the list, preventing duplicate joins and double fee charges
+            // Take the fee first. Adding the member first let someone into the crew, and into the pot, without paying
+            // when the debit failed or the heist was launched in between.
+            const debit = await updateBalance(interaction.user.id, interaction.guild!.id, -heist.entryFee);
+            if (!debit) {
+                return interaction.reply({ content: 'You no longer have enough coins to join.', flags: MessageFlags.Ephemeral });
+            }
+
+            // Atomically add member — rejects if already in the list or the heist has ended
             const updated = await HeistSchema.findOneAndUpdate(
                 { messageId: interaction.message.id, finished: false, 'members.userId': { $ne: interaction.user.id } },
                 { $push: { members: { userId: interaction.user.id, username: interaction.user.username } } },
@@ -76,11 +87,9 @@ const components: ComponentDefinition[] = [
             );
 
             if (!updated) {
-                return interaction.reply({ content: 'You have already joined this heist.', flags: MessageFlags.Ephemeral });
+                await updateBalance(interaction.user.id, interaction.guild!.id, heist.entryFee);
+                return interaction.reply({ content: 'You have already joined this heist, or it is no longer active.', flags: MessageFlags.Ephemeral });
             }
-
-            // Fee deducted only after confirmed membership — no lost coins if the save had failed
-            await updateBalance(interaction.user.id, interaction.guild!.id, -heist.entryFee);
 
             await (interaction as any).update({ embeds: [lobbyEmbed(updated)], components: [lobbyRow(updated.members.length)] });
         },
@@ -90,7 +99,7 @@ const components: ComponentDefinition[] = [
         id: 'heist_cancel',
 
         async execute(interaction: ButtonInteraction) {
-            const heist = await HeistSchema.findOne({ messageId: interaction.message.id, finished: false });
+            const heist = await HeistSchema.findOne({ messageId: interaction.message.id, finished: false }).lean();
             if (!heist) {
                 return interaction.reply({ content: 'This heist is no longer active.', flags: MessageFlags.Ephemeral });
             }
@@ -99,10 +108,17 @@ const components: ComponentDefinition[] = [
                 return interaction.reply({ content: 'Only the heist organizer can cancel it.', flags: MessageFlags.Ephemeral });
             }
 
-            heist.finished = true;
-            await heist.save();
+            // Claim the heist atomically so a double click, or a cancel that races the launch, refunds only once.
+            const claimed = await HeistSchema.findOneAndUpdate(
+                { _id: heist._id, finished: false },
+                { $set: { finished: true } },
+                { returnDocument: 'after' }
+            );
+            if (!claimed) {
+                return interaction.reply({ content: 'This heist is no longer active.', flags: MessageFlags.Ephemeral });
+            }
 
-            await Promise.all(heist.members.map(m => updateBalance(m.userId as string, interaction.guild!.id, heist.entryFee)));
+            await Promise.all(claimed.members.map(m => updateBalance(m.userId as string, interaction.guild!.id, claimed.entryFee)));
 
             const embed = new EmbedBuilder()
                 .setTitle('Heist Cancelled')
@@ -135,13 +151,17 @@ const components: ComponentDefinition[] = [
                 await launchHeist(interaction.message, interaction.guild!);
             } catch (err) {
                 logger.error('launchHeist failed after begin button:', err);
-                // Refund all members since the heist can't proceed
-                const fresh = await HeistSchema.findOne({ messageId: interaction.message.id }).lean();
-                if (fresh) {
-                    await Promise.all(fresh.members.map(m => updateBalance(m.userId as string, interaction.guild!.id, fresh.entryFee)));
-                    await HeistSchema.updateOne({ _id: fresh._id }, { $set: { finished: true } });
+                // Refund everyone, but only if the launch had not claimed the heist yet. Once it has, the outcome was
+                // already applied (survivors paid or the crew busted), and refunding would pay the entry fees twice.
+                const claimed = await HeistSchema.findOneAndUpdate(
+                    { messageId: interaction.message.id, finished: false },
+                    { $set: { finished: true } },
+                    { returnDocument: 'after' }
+                );
+                if (claimed) {
+                    await Promise.all(claimed.members.map(m => updateBalance(m.userId as string, interaction.guild!.id, claimed.entryFee)));
+                    await interaction.message.edit({ content: 'The heist failed to launch due to an error. All entry fees have been refunded.', components: [DISABLED_ROW] });
                 }
-                await interaction.message.edit({ content: 'The heist failed to launch due to an error. All entry fees have been refunded.', components: [DISABLED_ROW] });
             }
         },
     },
