@@ -51,8 +51,14 @@ function isSpamming(guildId: string, userId: string): boolean {
     const now = Date.now();
     const timestamps = (spamTracker.get(key) ?? []).filter(t => now - t < SPAM_WINDOW_MS);
     timestamps.push(now);
+    if (timestamps.length >= SPAM_THRESHOLD) {
+        // Start counting again after a detection. Otherwise every further message in the window also counts as
+        // spam, so one burst of 20 messages would be punished 16 times.
+        spamTracker.delete(key);
+        return true;
+    }
     spamTracker.set(key, timestamps);
-    return timestamps.length >= SPAM_THRESHOLD;
+    return false;
 }
 
 function exceedsMentionLimit(message: Message, limit: number): boolean {
