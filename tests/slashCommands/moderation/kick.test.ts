@@ -58,6 +58,34 @@ describe('kick command', () => {
         expect(target.kick).not.toHaveBeenCalled();
     });
 
+    test('lets the server owner kick a member whose role is equal or higher', async () => {
+        const target = makeTarget({ roles: { highest: { position: 10 } } });
+        const interaction = makeInteraction({ target });
+        interaction.member.roles.highest.position = 5;
+        interaction.user.id = 'owner1';
+        Object.assign(interaction.guild, { ownerId: 'owner1' });
+
+        await kick.execute(interaction);
+
+        expect(interaction.reply).not.toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('equal or higher role') })
+        );
+        expect(target.kick).toHaveBeenCalled();
+    });
+
+    test('does not let a moderator kick the server owner, even one with a lower role', async () => {
+        const target = makeTarget({ id: 'owner1' });
+        const interaction = makeInteraction({ target });
+        Object.assign(interaction.guild, { ownerId: 'owner1' });
+
+        await kick.execute(interaction);
+
+        expect(interaction.reply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('equal or higher role') })
+        );
+        expect(target.kick).not.toHaveBeenCalled();
+    });
+
     test('rejects when the target is not kickable', async () => {
         const target = makeTarget({ kickable: false });
         const interaction = makeInteraction({ target });

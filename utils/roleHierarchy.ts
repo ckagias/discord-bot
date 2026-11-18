@@ -23,4 +23,18 @@ function roleHierarchyError(interaction: ChatInputCommandInteraction, role: { id
     return allowed ? null : `You can't use <@&${role.id}> here, because it is higher than or equal to your highest role.`;
 }
 
-export { canAssignRole, roleHierarchyError };
+// Whether the invoker may act on the target member (ban, kick, mute, timeout, warn). Discord's own rule: the invoker's
+// highest role has to be above the target's, and the server owner is exempt. Nobody can act on the owner, whatever
+// their roles, so an owner with no roles is not exposed to a moderator whose highest role is above theirs.
+function outranksTarget(interaction: ChatInputCommandInteraction, target: GuildMember): boolean {
+    const ownerId = interaction.guild?.ownerId;
+    if (target.id === ownerId) return false;
+    if (interaction.user.id === ownerId) return true;
+
+    // If their roles can't be read, refuse rather than guess.
+    const invokerHighest = (interaction.member as GuildMember | null)?.roles?.highest;
+    const targetHighest = target.roles?.highest;
+    return Boolean(invokerHighest) && Boolean(targetHighest) && invokerHighest!.position > targetHighest!.position;
+}
+
+export { canAssignRole, roleHierarchyError, outranksTarget };

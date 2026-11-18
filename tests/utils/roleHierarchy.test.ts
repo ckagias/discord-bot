@@ -1,4 +1,4 @@
-const { roleHierarchyError, canAssignRole } = require('../../utils/roleHierarchy');
+const { roleHierarchyError, canAssignRole, outranksTarget } = require('../../utils/roleHierarchy');
 
 function makeInteraction({ userId = 'invoker', ownerId = 'owner', highest = { position: 5 }, member = true } = {}) {
     return {
@@ -50,5 +50,34 @@ describe('canAssignRole', () => {
 
     test('refuses when there is no member and the user is not the owner', () => {
         expect(canAssignRole('owner', 'u1', null, { position: 0 })).toBe(false);
+    });
+});
+
+describe('outranksTarget', () => {
+    const target = (position: number, id = 'target') => ({ id, roles: { highest: { position } } });
+
+    test('allows a moderator whose highest role is above the target\'s', () => {
+        expect(outranksTarget(makeInteraction(), target(4))).toBe(true);
+    });
+
+    test('rejects a target at the same position or higher', () => {
+        expect(outranksTarget(makeInteraction(), target(5))).toBe(false);
+        expect(outranksTarget(makeInteraction(), target(9))).toBe(false);
+    });
+
+    test('exempts the server owner, even with no roles against a member with none', () => {
+        const interaction = makeInteraction({ userId: 'owner', highest: { position: 0 } });
+        expect(outranksTarget(interaction, target(0))).toBe(true);
+        expect(outranksTarget(interaction, target(50))).toBe(true);
+    });
+
+    test('never allows acting on the server owner, whatever the moderator\'s role', () => {
+        expect(outranksTarget(makeInteraction({ highest: { position: 50 } }), target(0, 'owner'))).toBe(false);
+        expect(outranksTarget(makeInteraction({ userId: 'owner' }), target(0, 'owner'))).toBe(false);
+    });
+
+    test('rejects when the moderator\'s or the target\'s roles cannot be read', () => {
+        expect(outranksTarget(makeInteraction({ member: false }), target(1))).toBe(false);
+        expect(outranksTarget(makeInteraction(), { id: 'target', roles: {} })).toBe(false);
     });
 });

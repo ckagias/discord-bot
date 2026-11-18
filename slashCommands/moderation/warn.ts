@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, ChatInputCommandInteraction, GuildMember } from 'discord.js';
+import { outranksTarget } from '../../utils/roleHierarchy';
 const WarnSchema = require('../../models/WarnSchema');
 const { getGuildConfig } = require('../../utils/guildConfig');
 const { checkWarnThresholds } = require('../../utils/warnThresholds');
@@ -36,7 +37,7 @@ module.exports = {
             return interaction.reply({ content: 'You cannot warn the server owner.', flags: MessageFlags.Ephemeral });
         }
 
-        if ((interaction.member as any).roles.highest.position <= target.roles.highest.position) {
+        if (!outranksTarget(interaction, target)) {
             return interaction.reply({ content: 'You cannot warn someone with an equal or higher role.', flags: MessageFlags.Ephemeral });
         }
 
