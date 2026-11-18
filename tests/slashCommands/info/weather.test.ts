@@ -163,3 +163,32 @@ describe('weather command', () => {
         );
     });
 });
+
+describe('weather command (failing Discord calls in the collector)', () => {
+    let errorSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        errorSpy.mockRestore();
+    });
+
+    test('does not throw when the timeout message cannot be edited', async () => {
+        const interaction = makeInteraction();
+        (axios.get as jest.Mock).mockResolvedValue({
+            data: [
+                { lat: 1, lon: 2, name: 'Athens', country: 'GR', state: null },
+                { lat: 3, lon: 4, name: 'Athens', country: 'US', state: 'GA' },
+            ],
+        });
+        await weather.execute(interaction);
+        interaction.editReply.mockRejectedValue(new Error('Unknown Message'));
+
+        await expect(interaction._collector.handlers.end(new Map())).resolves.toBeUndefined();
+
+        expect(errorSpy).toHaveBeenCalled();
+    });
+});

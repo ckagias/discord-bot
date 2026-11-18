@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction } from 'discord.js';
 const InventorySchema = require('../../models/InventorySchema');
+import { safeCollector } from '../../utils/safeCollector';
 
 const PAGE_SIZE = 5;
 
@@ -60,19 +61,20 @@ module.exports = {
 
         const collector = message.createMessageComponentCollector({ time: 120_000 });
 
-        collector.on('collect', async (i) => {
-            if (i.user.id !== interaction.user.id) {
-                return i.reply({ content: 'This is not your inventory.', ephemeral: true });
-            }
+        safeCollector(collector, {
+            onCollect: async (i) => {
+                if (i.user.id !== interaction.user.id) {
+                    return i.reply({ content: 'This is not your inventory.', ephemeral: true });
+                }
 
-            if (i.customId.startsWith('inv_prev_')) page = Math.max(0, page - 1);
-            if (i.customId.startsWith('inv_next_')) page = Math.min(totalPages - 1, page + 1);
+                if (i.customId.startsWith('inv_prev_')) page = Math.max(0, page - 1);
+                if (i.customId.startsWith('inv_next_')) page = Math.min(totalPages - 1, page + 1);
 
-            await i.update({ embeds: [buildEmbed(page)], components: [buildRow(page)] });
-        });
-
-        collector.on('end', () => {
-            interaction.editReply({ components: [] }).catch(() => {});
-        });
+                await i.update({ embeds: [buildEmbed(page)], components: [buildRow(page)] });
+            },
+            onEnd: async () => {
+                await interaction.editReply({ components: [] }).catch(() => {});
+            },
+        }, 'inventory');
     },
 };
