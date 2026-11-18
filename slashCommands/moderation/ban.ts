@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, ChatInputCommandInteraction, GuildMember } from 'discord.js';
+import { outranksTarget } from '../../utils/roleHierarchy';
 const PunishmentSchema = require('../../models/PunishmentSchema');
 const { parseDuration, schedulePunishment, cancelPunishments } = require('../../utils/punishments');
 const { formatDuration } = require('../../utils/duration');
@@ -43,7 +44,7 @@ module.exports = {
                 return interaction.reply({ content: 'That user is not in this server.', flags: MessageFlags.Ephemeral });
             }
 
-            if ((interaction.member as any).roles.highest.position <= target.roles.highest.position) {
+            if (!outranksTarget(interaction, target)) {
                 return interaction.reply({ content: 'You cannot ban someone with an equal or higher role.', flags: MessageFlags.Ephemeral });
             }
 

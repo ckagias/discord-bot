@@ -2,6 +2,7 @@ import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, But
 const { getWallet, updateBalance, formatBalance } = require('../../utils/economy');
 const { buildDeck, isBlackjack, buildEmbed, buildRow, disabledRow, buildPvpEmbed, buildPvpRow } = require('../../utils/blackjack');
 const BlackjackGame = require('../../models/BlackjackSchema');
+import { safeCollector } from '../../utils/safeCollector';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -63,62 +64,63 @@ async function handlePvpChallenge(interaction: ChatInputCommandInteraction, bet:
         },
     });
 
-    acceptCollector.on('collect', async (i) => {
-        if (i.customId === 'bj_pvp_decline') {
-            return i.update({ embeds: [new EmbedBuilder().setTitle('Challenge Declined').setDescription(`${opponent} declined the Blackjack challenge.`).setColor(0xc0392b)], components: [] });
-        }
+    safeCollector(acceptCollector, {
+        onCollect: async (i) => {
+            if (i.customId === 'bj_pvp_decline') {
+                return i.update({ embeds: [new EmbedBuilder().setTitle('Challenge Declined').setDescription(`${opponent} declined the Blackjack challenge.`).setColor(0xc0392b)], components: [] });
+            }
 
-        const opponentWallet = await getWallet(opponent.id, interaction.guild.id);
-        if (opponentWallet.balance < bet) {
-            return i.update({ content: `${opponent} doesn't have enough coins to accept.`, embeds: [], components: [] });
-        }
+            const opponentWallet = await getWallet(opponent.id, interaction.guild.id);
+            if (opponentWallet.balance < bet) {
+                return i.update({ content: `${opponent} doesn't have enough coins to accept.`, embeds: [], components: [] });
+            }
 
-        const deck = buildDeck();
-        const playerHand = [deck.pop(), deck.pop()];
-        const opponentHand = [deck.pop(), deck.pop()];
-        const dealerHand = [deck.pop(), deck.pop()];
+            const deck = buildDeck();
+            const playerHand = [deck.pop(), deck.pop()];
+            const opponentHand = [deck.pop(), deck.pop()];
+            const dealerHand = [deck.pop(), deck.pop()];
 
-        const game = { playerHand, opponentHand, dealerHand, bet, opponentBet: bet };
+            const game = { playerHand, opponentHand, dealerHand, bet, opponentBet: bet };
 
-        // Deduct both bets — if either fails, abort before creating the game record
-        const challengerDebit = await updateBalance(interaction.user.id, interaction.guild.id, -bet);
-        const opponentDebit = await updateBalance(opponent.id, interaction.guild.id, -bet);
+            // Deduct both bets — if either fails, abort before creating the game record
+            const challengerDebit = await updateBalance(interaction.user.id, interaction.guild.id, -bet);
+            const opponentDebit = await updateBalance(opponent.id, interaction.guild.id, -bet);
 
-        if (!challengerDebit || !opponentDebit) {
-            if (challengerDebit) await updateBalance(interaction.user.id, interaction.guild.id, bet);
-            if (opponentDebit) await updateBalance(opponent.id, interaction.guild.id, bet);
-            return i.update({ content: 'One of the players no longer has enough coins. Challenge cancelled and bets refunded.', embeds: [], components: [] });
-        }
+            if (!challengerDebit || !opponentDebit) {
+                if (challengerDebit) await updateBalance(interaction.user.id, interaction.guild.id, bet);
+                if (opponentDebit) await updateBalance(opponent.id, interaction.guild.id, bet);
+                return i.update({ content: 'One of the players no longer has enough coins. Challenge cancelled and bets refunded.', embeds: [], components: [] });
+            }
 
-        const challengerWallet2 = await getWallet(interaction.user.id, interaction.guild.id);
-        const challengerCanDouble = challengerWallet2.balance >= bet;
+            const challengerWallet2 = await getWallet(interaction.user.id, interaction.guild.id);
+            const challengerCanDouble = challengerWallet2.balance >= bet;
 
-        const message = await i.update({
-            embeds: [buildPvpEmbed(game, { challenger: interaction.user, opponent })],
-            components: [buildPvpRow(true, challengerCanDouble)],
-            fetchReply: true,
-        });
+            const message = await i.update({
+                embeds: [buildPvpEmbed(game, { challenger: interaction.user, opponent })],
+                components: [buildPvpRow(true, challengerCanDouble)],
+                fetchReply: true,
+            });
 
-        // Create game record after message exists so messageId is valid
-        await BlackjackGame.create({
-            messageId: message.id,
-            userId: interaction.user.id,
-            guildId: interaction.guild.id,
-            bet,
-            deck,
-            playerHand,
-            dealerHand,
-            opponentId: opponent.id,
-            opponentHand,
-            opponentBet: bet,
-        });
-    });
-
-    acceptCollector.on('end', (collected, reason) => {
-        if (reason === 'time' && collected.size === 0) {
-            interaction.editReply({ content: `${opponent} didn't respond in time. Challenge cancelled.`, embeds: [], components: [] });
-        }
-    });
+            // Create game record after message exists so messageId is valid
+            await BlackjackGame.create({
+                messageId: message.id,
+                userId: interaction.user.id,
+                guildId: interaction.guild.id,
+                bet,
+                deck,
+                playerHand,
+                dealerHand,
+                opponentId: opponent.id,
+                opponentHand,
+                opponentBet: bet,
+            });
+        },
+        onEnd: async (collected, reason) => {
+            if (reason === 'time' && collected.size === 0) {
+                await interaction.editReply({ content: `${opponent} didn't respond in time. Challenge cancelled.`, embeds: [], components: [] });
+            }
+        },
+    }, 'blackjack');
 }
 
 async function handleVsDealer(interaction: ChatInputCommandInteraction, bet: number) {

@@ -163,3 +163,31 @@ describe('blackjack command (pvp)', () => {
         expect(response.createMessageComponentCollector).toHaveBeenCalled();
     });
 });
+
+describe('blackjack command (failing Discord calls in the collector)', () => {
+    let errorSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        errorSpy.mockRestore();
+    });
+
+    test('does not throw when the challenge timeout message cannot be edited', async () => {
+        const interaction = makeInteraction({ bet: 100, opponent: { id: 'target1', bot: false } });
+        getWallet.mockResolvedValue({ balance: 500 });
+        const handlers: Record<string, (...args: any[]) => any> = {};
+        const collector = { on: jest.fn((event, fn) => { handlers[event] = fn; }) };
+        const response = { createMessageComponentCollector: jest.fn().mockReturnValue(collector) };
+        interaction.editReply.mockResolvedValue(response);
+        await blackjack.execute(interaction);
+        interaction.editReply.mockRejectedValue(new Error('Unknown Message'));
+
+        await expect(handlers.end({ size: 0 }, 'time')).resolves.toBeUndefined();
+
+        expect(errorSpy).toHaveBeenCalled();
+    });
+});

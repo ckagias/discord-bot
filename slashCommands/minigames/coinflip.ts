@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, ChatInputCommandInteraction } from 'discord.js';
 const { getWallet, updateBalance, formatBalance } = require('../../utils/economy');
+import { safeCollector } from '../../utils/safeCollector';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -71,51 +72,52 @@ async function handlePvpCoinflip(interaction: ChatInputCommandInteraction, guess
         },
     });
 
-    collector.on('collect', async (i) => {
-        if (i.customId === 'cf_decline') {
-            return i.update({ embeds: [new EmbedBuilder().setTitle('Challenge Declined').setDescription(`${opponent} declined the coinflip.`).setColor(0xc0392b)], components: [] });
-        }
+    safeCollector(collector, {
+        onCollect: async (i) => {
+            if (i.customId === 'cf_decline') {
+                return i.update({ embeds: [new EmbedBuilder().setTitle('Challenge Declined').setDescription(`${opponent} declined the coinflip.`).setColor(0xc0392b)], components: [] });
+            }
 
-        const opponentWallet = await getWallet(opponent.id, interaction.guild.id);
-        if (opponentWallet.balance < bet) {
-            return i.update({ content: `${opponent} doesn't have enough credits to accept.`, embeds: [], components: [] });
-        }
+            const opponentWallet = await getWallet(opponent.id, interaction.guild.id);
+            if (opponentWallet.balance < bet) {
+                return i.update({ content: `${opponent} doesn't have enough credits to accept.`, embeds: [], components: [] });
+            }
 
-        const result = Math.random() < 0.5 ? 'heads' : 'tails';
-        const emoji = result === 'heads' ? '🪙' : '🟤';
-        const challengerGuess = guess ?? (Math.random() < 0.5 ? 'heads' : 'tails');
-        const challengerWon = challengerGuess === result;
+            const result = Math.random() < 0.5 ? 'heads' : 'tails';
+            const emoji = result === 'heads' ? '🪙' : '🟤';
+            const challengerGuess = guess ?? (Math.random() < 0.5 ? 'heads' : 'tails');
+            const challengerWon = challengerGuess === result;
 
-        // Deduct both bets up front, then credit the winner — prevents one side paying if the other spent coins after accepting
-        const challengerDebit = await updateBalance(interaction.user.id, interaction.guild.id, -bet);
-        const opponentDebit = await updateBalance(opponent.id, interaction.guild.id, -bet);
+            // Deduct both bets up front, then credit the winner — prevents one side paying if the other spent coins after accepting
+            const challengerDebit = await updateBalance(interaction.user.id, interaction.guild.id, -bet);
+            const opponentDebit = await updateBalance(opponent.id, interaction.guild.id, -bet);
 
-        if (!challengerDebit || !opponentDebit) {
-            if (challengerDebit) await updateBalance(interaction.user.id, interaction.guild.id, bet);
-            if (opponentDebit) await updateBalance(opponent.id, interaction.guild.id, bet);
-            return i.update({ content: 'One of the players no longer has enough credits. Game cancelled and bets refunded.', embeds: [], components: [] });
-        }
+            if (!challengerDebit || !opponentDebit) {
+                if (challengerDebit) await updateBalance(interaction.user.id, interaction.guild.id, bet);
+                if (opponentDebit) await updateBalance(opponent.id, interaction.guild.id, bet);
+                return i.update({ content: 'One of the players no longer has enough credits. Game cancelled and bets refunded.', embeds: [], components: [] });
+            }
 
-        await updateBalance(challengerWon ? interaction.user.id : opponent.id, interaction.guild.id, bet * 2);
+            await updateBalance(challengerWon ? interaction.user.id : opponent.id, interaction.guild.id, bet * 2);
 
-        const guessLabel = challengerGuess.charAt(0).toUpperCase() + challengerGuess.slice(1);
-        const resultEmbed = new EmbedBuilder()
-            .setTitle(`${challengerWon ? interaction.user.username : opponent.username} wins!`)
-            .setDescription(`The coin landed on **${result.charAt(0).toUpperCase() + result.slice(1)}**! ${emoji}\n\n${interaction.user} called **${guessLabel}** — ${challengerWon ? '✅ correct!' : '❌ wrong!'}`)
-            .addFields(
-                { name: interaction.user.username, value: challengerWon ? `💰 +${formatBalance(bet)}` : `💸 -${formatBalance(bet)}`, inline: true },
-                { name: opponent.username, value: challengerWon ? `💸 -${formatBalance(bet)}` : `💰 +${formatBalance(bet)}`, inline: true },
-            )
-            .setColor(challengerWon ? 0x538d4e : 0xc0392b);
+            const guessLabel = challengerGuess.charAt(0).toUpperCase() + challengerGuess.slice(1);
+            const resultEmbed = new EmbedBuilder()
+                .setTitle(`${challengerWon ? interaction.user.username : opponent.username} wins!`)
+                .setDescription(`The coin landed on **${result.charAt(0).toUpperCase() + result.slice(1)}**! ${emoji}\n\n${interaction.user} called **${guessLabel}** — ${challengerWon ? '✅ correct!' : '❌ wrong!'}`)
+                .addFields(
+                    { name: interaction.user.username, value: challengerWon ? `💰 +${formatBalance(bet)}` : `💸 -${formatBalance(bet)}`, inline: true },
+                    { name: opponent.username, value: challengerWon ? `💸 -${formatBalance(bet)}` : `💰 +${formatBalance(bet)}`, inline: true },
+                )
+                .setColor(challengerWon ? 0x538d4e : 0xc0392b);
 
-        await i.update({ embeds: [resultEmbed], components: [] });
-    });
-
-    collector.on('end', (collected, reason) => {
-        if (reason === 'time' && collected.size === 0) {
-            interaction.editReply({ content: `${opponent} didn't respond in time. Challenge cancelled.`, embeds: [], components: [] });
-        }
-    });
+            await i.update({ embeds: [resultEmbed], components: [] });
+        },
+        onEnd: async (collected, reason) => {
+            if (reason === 'time' && collected.size === 0) {
+                await interaction.editReply({ content: `${opponent} didn't respond in time. Challenge cancelled.`, embeds: [], components: [] });
+            }
+        },
+    }, 'coinflip');
 }
 
 async function handleVsBotCoinflip(interaction: ChatInputCommandInteraction, guess: string | null, bet: number | null) {

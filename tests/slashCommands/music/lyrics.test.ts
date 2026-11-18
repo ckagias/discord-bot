@@ -110,3 +110,32 @@ describe('lyrics command', () => {
         );
     });
 });
+
+describe('lyrics command (failing Discord calls in the collector)', () => {
+    let errorSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        errorSpy.mockRestore();
+    });
+
+    test('does not throw when the page cannot be updated', async () => {
+        const interaction = makeInteraction();
+        const client = makeClient({ queue: { current: makeTrack() } });
+        const longLyrics = Array.from({ length: 200 }, (_, i) => `line ${i} `.repeat(30)).join('\n');
+        axios.get.mockResolvedValueOnce({ data: { plainLyrics: longLyrics } });
+        const collector = { on: jest.fn() };
+        interaction.editReply.mockResolvedValue({ createMessageComponentCollector: jest.fn().mockReturnValue(collector) });
+        await lyrics.execute(interaction, client);
+        const onCollect = collector.on.mock.calls.find(([event]: [string]) => event === 'collect')![1];
+        const i = { customId: 'lyrics_next', update: jest.fn().mockRejectedValue(new Error('Unknown Interaction')) };
+
+        await expect(onCollect(i)).resolves.toBeUndefined();
+
+        expect(errorSpy).toHaveBeenCalled();
+    });
+});

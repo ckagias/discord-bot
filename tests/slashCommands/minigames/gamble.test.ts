@@ -202,3 +202,40 @@ describe('gamble command', () => {
         expect(updateBalance).not.toHaveBeenCalled();
     });
 });
+
+describe('gamble command (failing Discord calls in the collector)', () => {
+    let errorSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        updateBalance.mockResolvedValue({ balance: 400 });
+        errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        errorSpy.mockRestore();
+    });
+
+    test('still refunds the bet, and does not throw, when the time-up message cannot be edited', async () => {
+        const interaction = makeInteraction({ amount: 100 });
+        getWallet.mockResolvedValue({ balance: 500 });
+        await gamble.execute(interaction);
+        interaction.editReply.mockRejectedValue(new Error('Unknown Message'));
+
+        await expect(interaction._collector.handlers.end({ size: 0 }, 'time')).resolves.toBeUndefined();
+
+        expect(updateBalance).toHaveBeenLastCalledWith('user1', 'g1', 100);
+        expect(errorSpy).toHaveBeenCalled();
+    });
+
+    test('does not throw when the result cannot be shown', async () => {
+        const interaction = makeInteraction({ amount: 100 });
+        getWallet.mockResolvedValue({ balance: 500 });
+        await gamble.execute(interaction);
+        const i = { customId: 'gamble_interaction1_higher', update: jest.fn().mockRejectedValue(new Error('Unknown Interaction')) };
+
+        await expect(interaction._collector.handlers.collect(i)).resolves.toBeUndefined();
+
+        expect(errorSpy).toHaveBeenCalled();
+    });
+});

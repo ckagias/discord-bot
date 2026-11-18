@@ -224,3 +224,51 @@ describe('rps command', () => {
         });
     });
 });
+
+describe('rps command (failing Discord calls in the collector)', () => {
+    let errorSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        updateBalance.mockResolvedValue({ balance: 400 });
+        errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        errorSpy.mockRestore();
+    });
+
+    test('still refunds the bet, and does not throw, when the time-up message cannot be edited', async () => {
+        const interaction = makeInteraction({ amount: 100 });
+        getWallet.mockResolvedValue({ balance: 500 });
+        await rps.execute(interaction);
+        interaction.editReply.mockRejectedValue(new Error('Unknown Message'));
+
+        await expect(interaction._collector.handlers.end({ size: 0 }, 'time')).resolves.toBeUndefined();
+
+        expect(updateBalance).toHaveBeenLastCalledWith('user1', 'g1', 100);
+        expect(errorSpy).toHaveBeenCalled();
+    });
+
+    test('does not throw when the result cannot be shown', async () => {
+        const interaction = makeInteraction();
+        getWallet.mockResolvedValue({ balance: 500 });
+        await rps.execute(interaction);
+        const i = { customId: 'rps_interaction1_rock', update: jest.fn().mockRejectedValue(new Error('Unknown Interaction')) };
+
+        await expect(interaction._collector.handlers.collect(i)).resolves.toBeUndefined();
+
+        expect(errorSpy).toHaveBeenCalled();
+    });
+
+    test('does not throw when the challenge timeout message cannot be edited', async () => {
+        const interaction = makeInteraction({ amount: 100, opponent: { id: 'target1', bot: false, username: 'Target' } });
+        getWallet.mockResolvedValue({ balance: 500 });
+        await rps.execute(interaction);
+        interaction.editReply.mockRejectedValue(new Error('Unknown Message'));
+
+        await expect(interaction._collector.handlers.end({ size: 0 }, 'time')).resolves.toBeUndefined();
+
+        expect(errorSpy).toHaveBeenCalled();
+    });
+});

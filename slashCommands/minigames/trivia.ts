@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, ChatInputCommandInteraction } from 'discord.js';
 const axios = require('axios');
 const { updateBalance, formatBalance } = require('../../utils/economy');
+import { safeCollector } from '../../utils/safeCollector';
 
 const REWARDS: Record<string, number> = { easy: 50, medium: 100, hard: 200 };
 const TIMEOUT_MS = 20_000;
@@ -105,70 +106,71 @@ module.exports = {
             max: 1,
         });
 
-        collector.on('collect', async (i) => {
-            const chosen = parseInt(i.customId.split('_')[1]);
-            const isCorrect = chosen === correctIndex;
+        safeCollector(collector, {
+            onCollect: async (i) => {
+                const chosen = parseInt(i.customId.split('_')[1]);
+                const isCorrect = chosen === correctIndex;
 
-            const updatedRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-                answers.map((ans, idx) => {
-                    let style = ButtonStyle.Secondary;
-                    if (idx === correctIndex) style = ButtonStyle.Success;
-                    else if (idx === chosen && !isCorrect) style = ButtonStyle.Danger;
-                    return new ButtonBuilder()
-                        .setCustomId(`trivia_result_${idx}`)
-                        .setLabel(`${LABELS[idx]}. ${ans}`)
-                        .setStyle(style)
-                        .setDisabled(true);
-                })
-            );
-
-            let resultText, newBalance;
-            if (isCorrect) {
-                const updated = await updateBalance(interaction.user.id, interaction.guild.id, reward);
-                newBalance = updated?.balance;
-                resultText = `✅ Correct! **+${formatBalance(reward)} coins**` + (newBalance != null ? ` → 💳 ${formatBalance(newBalance)}` : '');
-            } else {
-                resultText = `❌ Wrong! The correct answer was **${correct}**.`;
-            }
-
-            const resultEmbed = new EmbedBuilder()
-                .setTitle(isCorrect ? 'Correct!' : 'Wrong!')
-                .setDescription(`**${question}**\n\n${resultText}`)
-                .addFields(
-                    { name: 'Category', value: category, inline: true },
-                    { name: 'Difficulty', value: diff.charAt(0).toUpperCase() + diff.slice(1), inline: true },
-                )
-                .setColor(isCorrect ? 0x538d4e : 0xc0392b);
-
-            await i.update({ embeds: [resultEmbed], components: [updatedRow] });
-        });
-
-        collector.on('end', (collected, reason) => {
-            if (reason === 'time' && collected.size === 0) {
-                const timedOutRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-                    answers.map((ans, idx) =>
-                        new ButtonBuilder()
-                            .setCustomId(`trivia_timeout_${idx}`)
+                const updatedRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    answers.map((ans, idx) => {
+                        let style = ButtonStyle.Secondary;
+                        if (idx === correctIndex) style = ButtonStyle.Success;
+                        else if (idx === chosen && !isCorrect) style = ButtonStyle.Danger;
+                        return new ButtonBuilder()
+                            .setCustomId(`trivia_result_${idx}`)
                             .setLabel(`${LABELS[idx]}. ${ans}`)
-                            .setStyle(idx === correctIndex ? ButtonStyle.Success : ButtonStyle.Secondary)
-                            .setDisabled(true)
-                    )
+                            .setStyle(style)
+                            .setDisabled(true);
+                    })
                 );
 
-                interaction.editReply({
-                    embeds: [
-                        new EmbedBuilder()
-                            .setTitle('Time\'s up!')
-                            .setDescription(`**${question}**\n\n⏰ You ran out of time. The correct answer was **${correct}**.`)
-                            .addFields(
-                                { name: 'Category', value: category, inline: true },
-                                { name: 'Difficulty', value: diff.charAt(0).toUpperCase() + diff.slice(1), inline: true },
-                            )
-                            .setColor(0x3a3a3c),
-                    ],
-                    components: [timedOutRow],
-                });
-            }
-        });
+                let resultText, newBalance;
+                if (isCorrect) {
+                    const updated = await updateBalance(interaction.user.id, interaction.guild.id, reward);
+                    newBalance = updated?.balance;
+                    resultText = `✅ Correct! **+${formatBalance(reward)} coins**` + (newBalance != null ? ` → 💳 ${formatBalance(newBalance)}` : '');
+                } else {
+                    resultText = `❌ Wrong! The correct answer was **${correct}**.`;
+                }
+
+                const resultEmbed = new EmbedBuilder()
+                    .setTitle(isCorrect ? 'Correct!' : 'Wrong!')
+                    .setDescription(`**${question}**\n\n${resultText}`)
+                    .addFields(
+                        { name: 'Category', value: category, inline: true },
+                        { name: 'Difficulty', value: diff.charAt(0).toUpperCase() + diff.slice(1), inline: true },
+                    )
+                    .setColor(isCorrect ? 0x538d4e : 0xc0392b);
+
+                await i.update({ embeds: [resultEmbed], components: [updatedRow] });
+            },
+            onEnd: async (collected, reason) => {
+                if (reason === 'time' && collected.size === 0) {
+                    const timedOutRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                        answers.map((ans, idx) =>
+                            new ButtonBuilder()
+                                .setCustomId(`trivia_timeout_${idx}`)
+                                .setLabel(`${LABELS[idx]}. ${ans}`)
+                                .setStyle(idx === correctIndex ? ButtonStyle.Success : ButtonStyle.Secondary)
+                                .setDisabled(true)
+                        )
+                    );
+
+                    await interaction.editReply({
+                        embeds: [
+                            new EmbedBuilder()
+                                .setTitle('Time\'s up!')
+                                .setDescription(`**${question}**\n\n⏰ You ran out of time. The correct answer was **${correct}**.`)
+                                .addFields(
+                                    { name: 'Category', value: category, inline: true },
+                                    { name: 'Difficulty', value: diff.charAt(0).toUpperCase() + diff.slice(1), inline: true },
+                                )
+                                .setColor(0x3a3a3c),
+                        ],
+                        components: [timedOutRow],
+                    });
+                }
+            },
+        }, 'trivia');
     },
 };

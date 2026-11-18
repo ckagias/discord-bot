@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, MessageFlags, ChatInputCommandInteraction, Client } from 'discord.js';
 const axios = require('axios');
 const log = require('../../utils/log');
+import { safeCollector } from '../../utils/safeCollector';
 const logger = log.scope('lyrics');
 
 const PAGE_SIZE = 3900;
@@ -132,18 +133,19 @@ module.exports = {
                 filter: i => i.user.id === interaction.user.id,
             });
 
-            collector.on('collect', async (i) => {
-                if (i.customId === 'lyrics_prev') pageIndex = Math.max(0, pageIndex - 1);
-                if (i.customId === 'lyrics_next') pageIndex = Math.min(pages.length - 1, pageIndex + 1);
-                await i.update({
-                    embeds: [buildEmbed(client, track, pages, pageIndex, color)],
-                    components: [buildRow(pageIndex, pages.length)],
-                });
-            });
-
-            collector.on('end', () => {
-                interaction.editReply({ components: [] }).catch(() => {});
-            });
+            safeCollector(collector, {
+                onCollect: async (i) => {
+                    if (i.customId === 'lyrics_prev') pageIndex = Math.max(0, pageIndex - 1);
+                    if (i.customId === 'lyrics_next') pageIndex = Math.min(pages.length - 1, pageIndex + 1);
+                    await i.update({
+                        embeds: [buildEmbed(client, track, pages, pageIndex, color)],
+                        components: [buildRow(pageIndex, pages.length)],
+                    });
+                },
+                onEnd: async () => {
+                    await interaction.editReply({ components: [] }).catch(() => {});
+                },
+            }, 'lyrics');
         } catch (error) {
             logger.error('Error fetching lyrics:', error);
             await interaction.editReply({ content: '❌ Failed to fetch lyrics. Please try again.' }).catch(() => {});

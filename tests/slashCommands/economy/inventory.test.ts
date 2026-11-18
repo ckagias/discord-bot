@@ -73,3 +73,30 @@ describe('inventory command', () => {
         expect(interaction._message.createMessageComponentCollector).toHaveBeenCalledWith({ time: 120_000 });
     });
 });
+
+describe('inventory command (failing Discord calls in the collector)', () => {
+    let errorSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        errorSpy.mockRestore();
+    });
+
+    test('does not throw when the page cannot be updated', async () => {
+        const interaction = makeInteraction();
+        const items = Array.from({ length: 8 }, (_, i) => ({ itemId: `i${i}`, name: `Item ${i}`, type: 'badge', emoji: '⭐', acquiredAt: new Date() }));
+        InventorySchema.findOne.mockResolvedValue({ items });
+        await inventory.execute(interaction);
+        const collector = interaction._message.createMessageComponentCollector.mock.results[0].value;
+        const onCollect = collector.on.mock.calls.find(([event]: [string]) => event === 'collect')[1];
+        const i = { user: { id: 'user1' }, customId: 'inv_next_user1', update: jest.fn().mockRejectedValue(new Error('Unknown Interaction')) };
+
+        await expect(onCollect(i)).resolves.toBeUndefined();
+
+        expect(errorSpy).toHaveBeenCalled();
+    });
+});
