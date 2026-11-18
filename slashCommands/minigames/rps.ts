@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, ChatInputCommandInteraction } from 'discord.js';
 const { getWallet, updateBalance, formatBalance } = require('../../utils/economy');
+import { safeCollector } from '../../utils/safeCollector';
 
 const choices: Record<string, string> = { rock: '🪨', paper: '📄', scissors: '✂️' };
 
@@ -80,112 +81,114 @@ async function handlePvpRps(interaction: ChatInputCommandInteraction, bet: numbe
         },
     });
 
-    acceptCollector.on('collect', async (i) => {
-        if (i.customId === `${prefix}_decline`) {
-            return i.update({ embeds: [new EmbedBuilder().setTitle('Challenge Declined').setDescription(`${opponent} declined the challenge.`).setColor(0xc0392b)], components: [] });
-        }
-
-        if (bet) {
-            const opponentWallet = await getWallet(opponent.id, interaction.guild.id);
-            if (opponentWallet.balance < bet) {
-                return i.update({ content: `${opponent} doesn't have enough credits to accept.`, embeds: [], components: [] });
+    safeCollector(acceptCollector, {
+        onCollect: async (i) => {
+            if (i.customId === `${prefix}_decline`) {
+                return i.update({ embeds: [new EmbedBuilder().setTitle('Challenge Declined').setDescription(`${opponent} declined the challenge.`).setColor(0xc0392b)], components: [] });
             }
-        }
-
-        await i.update({
-            embeds: [
-                new EmbedBuilder()
-                    .setTitle('RPS — Choose your move!')
-                    .setDescription(`Both players: make your move below.\n${interaction.user} vs ${opponent}`)
-                    .setColor(Math.floor(Math.random() * 0xFFFFFF))
-                    .setFooter({ text: 'You have 30 seconds to choose.' }),
-            ],
-            components: [moveRow(prefix)],
-        });
-
-        const picks: Record<string, string> = {};
-
-        const moveCollector = response.createMessageComponentCollector({
-            componentType: ComponentType.Button,
-            time: 30_000,
-            filter: async (j) => {
-                if (j.user.id !== interaction.user.id && j.user.id !== opponent.id) {
-                    await j.reply({ content: 'This game is not for you!', ephemeral: true });
-                    return false;
-                }
-                if (picks[j.user.id]) {
-                    await j.reply({ content: 'You already picked your move!', ephemeral: true });
-                    return false;
-                }
-                return true;
-            },
-        });
-
-        moveCollector.on('collect', async (j) => {
-            const move = j.customId.replace(`${prefix}_`, '');
-            picks[j.user.id] = move;
-            await j.reply({ content: `You picked ${choices[move]} **${move}**. Waiting for the other player...`, ephemeral: true });
-
-            if (Object.keys(picks).length === 2) {
-                moveCollector.stop('done');
-            }
-        });
-
-        moveCollector.on('end', async (collected, reason) => {
-            if (reason === 'time' && Object.keys(picks).length < 2) {
-                const missing = [interaction.user, opponent].find(u => !picks[u.id]);
-                return interaction.editReply({ content: `${missing} didn't pick in time. Game cancelled.`, embeds: [], components: [] });
-            }
-
-            const challengerMove = picks[interaction.user.id];
-            const opponentMove = picks[opponent.id];
-            const outcome = outcomes[challengerMove][opponentMove];
-
-            const titles: Record<string, string> = { win: `🎉 ${interaction.user.username} wins!`, lose: `🎉 ${opponent.username} wins!`, tie: '🤝 It\'s a Tie!' };
-            const colors: Record<string, number> = { win: 0x538d4e, lose: 0xc0392b, tie: 0xe3a015 };
-
-            const fields = [
-                { name: interaction.user.username, value: `${choices[challengerMove]} ${challengerMove}`, inline: true },
-                { name: opponent.username, value: `${choices[opponentMove]} ${opponentMove}`, inline: true },
-            ];
 
             if (bet) {
-                if (outcome === 'tie') {
-                    fields.push({ name: 'Result', value: '🤝 Tie — no coins exchanged', inline: false });
-                } else {
-                    // Deduct both bets up front, then credit the winner
-                    const challengerDebit = await updateBalance(interaction.user.id, interaction.guild.id, -bet);
-                    const opponentDebit = await updateBalance(opponent.id, interaction.guild.id, -bet);
-
-                    if (!challengerDebit || !opponentDebit) {
-                        if (challengerDebit) await updateBalance(interaction.user.id, interaction.guild.id, bet);
-                        if (opponentDebit) await updateBalance(opponent.id, interaction.guild.id, bet);
-                        return interaction.editReply({ content: 'One of the players no longer has enough credits. Game cancelled and bets refunded.', embeds: [], components: [] });
-                    }
-
-                    const winnerId = outcome === 'win' ? interaction.user.id : opponent.id;
-                    await updateBalance(winnerId, interaction.guild.id, bet * 2);
-
-                    if (outcome === 'win') {
-                        fields.push({ name: 'Result', value: `${interaction.user}: 💰 +${formatBalance(bet)}\n${opponent}: 💸 -${formatBalance(bet)}`, inline: false });
-                    } else {
-                        fields.push({ name: 'Result', value: `${interaction.user}: 💸 -${formatBalance(bet)}\n${opponent}: 💰 +${formatBalance(bet)}`, inline: false });
-                    }
+                const opponentWallet = await getWallet(opponent.id, interaction.guild.id);
+                if (opponentWallet.balance < bet) {
+                    return i.update({ content: `${opponent} doesn't have enough credits to accept.`, embeds: [], components: [] });
                 }
             }
 
-            await interaction.editReply({
-                embeds: [new EmbedBuilder().setTitle(titles[outcome]).addFields(fields).setColor(colors[outcome])],
-                components: [],
+            await i.update({
+                embeds: [
+                    new EmbedBuilder()
+                        .setTitle('RPS — Choose your move!')
+                        .setDescription(`Both players: make your move below.\n${interaction.user} vs ${opponent}`)
+                        .setColor(Math.floor(Math.random() * 0xFFFFFF))
+                        .setFooter({ text: 'You have 30 seconds to choose.' }),
+                ],
+                components: [moveRow(prefix)],
             });
-        });
-    });
 
-    acceptCollector.on('end', (collected, reason) => {
-        if (reason === 'time' && collected.size === 0) {
-            interaction.editReply({ content: `${opponent} didn't respond in time. Challenge cancelled.`, embeds: [], components: [] });
-        }
-    });
+            const picks: Record<string, string> = {};
+
+            const moveCollector = response.createMessageComponentCollector({
+                componentType: ComponentType.Button,
+                time: 30_000,
+                filter: async (j) => {
+                    if (j.user.id !== interaction.user.id && j.user.id !== opponent.id) {
+                        await j.reply({ content: 'This game is not for you!', ephemeral: true });
+                        return false;
+                    }
+                    if (picks[j.user.id]) {
+                        await j.reply({ content: 'You already picked your move!', ephemeral: true });
+                        return false;
+                    }
+                    return true;
+                },
+            });
+
+            safeCollector(moveCollector, {
+                onCollect: async (j) => {
+                    const move = j.customId.replace(`${prefix}_`, '');
+                    picks[j.user.id] = move;
+                    await j.reply({ content: `You picked ${choices[move]} **${move}**. Waiting for the other player...`, ephemeral: true });
+
+                    if (Object.keys(picks).length === 2) {
+                        moveCollector.stop('done');
+                    }
+                },
+                onEnd: async (collected, reason) => {
+                    if (reason === 'time' && Object.keys(picks).length < 2) {
+                        const missing = [interaction.user, opponent].find(u => !picks[u.id]);
+                        return interaction.editReply({ content: `${missing} didn't pick in time. Game cancelled.`, embeds: [], components: [] });
+                    }
+
+                    const challengerMove = picks[interaction.user.id];
+                    const opponentMove = picks[opponent.id];
+                    const outcome = outcomes[challengerMove][opponentMove];
+
+                    const titles: Record<string, string> = { win: `🎉 ${interaction.user.username} wins!`, lose: `🎉 ${opponent.username} wins!`, tie: '🤝 It\'s a Tie!' };
+                    const colors: Record<string, number> = { win: 0x538d4e, lose: 0xc0392b, tie: 0xe3a015 };
+
+                    const fields = [
+                        { name: interaction.user.username, value: `${choices[challengerMove]} ${challengerMove}`, inline: true },
+                        { name: opponent.username, value: `${choices[opponentMove]} ${opponentMove}`, inline: true },
+                    ];
+
+                    if (bet) {
+                        if (outcome === 'tie') {
+                            fields.push({ name: 'Result', value: '🤝 Tie — no coins exchanged', inline: false });
+                        } else {
+                            // Deduct both bets up front, then credit the winner
+                            const challengerDebit = await updateBalance(interaction.user.id, interaction.guild.id, -bet);
+                            const opponentDebit = await updateBalance(opponent.id, interaction.guild.id, -bet);
+
+                            if (!challengerDebit || !opponentDebit) {
+                                if (challengerDebit) await updateBalance(interaction.user.id, interaction.guild.id, bet);
+                                if (opponentDebit) await updateBalance(opponent.id, interaction.guild.id, bet);
+                                return interaction.editReply({ content: 'One of the players no longer has enough credits. Game cancelled and bets refunded.', embeds: [], components: [] });
+                            }
+
+                            const winnerId = outcome === 'win' ? interaction.user.id : opponent.id;
+                            await updateBalance(winnerId, interaction.guild.id, bet * 2);
+
+                            if (outcome === 'win') {
+                                fields.push({ name: 'Result', value: `${interaction.user}: 💰 +${formatBalance(bet)}\n${opponent}: 💸 -${formatBalance(bet)}`, inline: false });
+                            } else {
+                                fields.push({ name: 'Result', value: `${interaction.user}: 💸 -${formatBalance(bet)}\n${opponent}: 💰 +${formatBalance(bet)}`, inline: false });
+                            }
+                        }
+                    }
+
+                    await interaction.editReply({
+                        embeds: [new EmbedBuilder().setTitle(titles[outcome]).addFields(fields).setColor(colors[outcome])],
+                        components: [],
+                    });
+                },
+            }, 'rps moves');
+        },
+        onEnd: async (collected, reason) => {
+            if (reason === 'time' && collected.size === 0) {
+                await interaction.editReply({ content: `${opponent} didn't respond in time. Challenge cancelled.`, embeds: [], components: [] });
+            }
+        },
+    }, 'rps challenge');
 }
 
 async function handleVsBotRps(interaction: ChatInputCommandInteraction, bet: number | null) {
@@ -226,47 +229,48 @@ async function handleVsBotRps(interaction: ChatInputCommandInteraction, bet: num
         max: 1,
     });
 
-    collector.on('collect', async (i) => {
-        const userChoice = i.customId.replace(`${botPrefix}_`, '');
-        const botChoice = Object.keys(choices)[Math.floor(Math.random() * 3)];
-        const outcome = outcomes[userChoice][botChoice];
+    safeCollector(collector, {
+        onCollect: async (i) => {
+            const userChoice = i.customId.replace(`${botPrefix}_`, '');
+            const botChoice = Object.keys(choices)[Math.floor(Math.random() * 3)];
+            const outcome = outcomes[userChoice][botChoice];
 
-        const titles: Record<string, string> = { win: '🎉 You Win!', lose: '💀 You Lose!', tie: '🤝 It\'s a Tie!' };
-        const colors: Record<string, number> = { win: 0x538d4e, lose: 0xc0392b, tie: 0xe3a015 };
+            const titles: Record<string, string> = { win: '🎉 You Win!', lose: '💀 You Lose!', tie: '🤝 It\'s a Tie!' };
+            const colors: Record<string, number> = { win: 0x538d4e, lose: 0xc0392b, tie: 0xe3a015 };
 
-        const fields = [
-            { name: 'Your Choice', value: `${choices[userChoice]} ${userChoice.charAt(0).toUpperCase() + userChoice.slice(1)}`, inline: true },
-            { name: 'Bot\'s Choice', value: `${choices[botChoice]} ${botChoice.charAt(0).toUpperCase() + botChoice.slice(1)}`, inline: true },
-        ];
+            const fields = [
+                { name: 'Your Choice', value: `${choices[userChoice]} ${userChoice.charAt(0).toUpperCase() + userChoice.slice(1)}`, inline: true },
+                { name: 'Bot\'s Choice', value: `${choices[botChoice]} ${botChoice.charAt(0).toUpperCase() + botChoice.slice(1)}`, inline: true },
+            ];
 
-        if (bet) {
-            let newBalance;
-            // The bet is already held: a win returns it plus the winnings, a loss keeps it, a tie gives it back.
-            if (outcome === 'win') {
-                const updated = await updateBalance(interaction.user.id, interaction.guild.id, bet * 2);
-                newBalance = updated.balance;
-                fields.push({ name: 'Result', value: `💰 +${formatBalance(bet)} → 💳 ${formatBalance(newBalance)}`, inline: false });
-            } else if (outcome === 'lose') {
-                newBalance = (await getWallet(interaction.user.id, interaction.guild.id)).balance;
-                fields.push({ name: 'Result', value: `💸 -${formatBalance(bet)} → 💳 ${formatBalance(newBalance)}`, inline: false });
+            if (bet) {
+                let newBalance;
+                // The bet is already held: a win returns it plus the winnings, a loss keeps it, a tie gives it back.
+                if (outcome === 'win') {
+                    const updated = await updateBalance(interaction.user.id, interaction.guild.id, bet * 2);
+                    newBalance = updated.balance;
+                    fields.push({ name: 'Result', value: `💰 +${formatBalance(bet)} → 💳 ${formatBalance(newBalance)}`, inline: false });
+                } else if (outcome === 'lose') {
+                    newBalance = (await getWallet(interaction.user.id, interaction.guild.id)).balance;
+                    fields.push({ name: 'Result', value: `💸 -${formatBalance(bet)} → 💳 ${formatBalance(newBalance)}`, inline: false });
+                } else {
+                    const updated = await updateBalance(interaction.user.id, interaction.guild.id, bet);
+                    fields.push({ name: 'Result', value: `🤝 Tie — bet returned → 💳 ${formatBalance(updated.balance)}`, inline: false });
+                }
             } else {
-                const updated = await updateBalance(interaction.user.id, interaction.guild.id, bet);
-                fields.push({ name: 'Result', value: `🤝 Tie — bet returned → 💳 ${formatBalance(updated.balance)}`, inline: false });
+                const wallet = await getWallet(interaction.user.id, interaction.guild.id);
+                fields.push({ name: 'Your Balance', value: `💳 ${formatBalance(wallet.balance)} credits`, inline: false });
             }
-        } else {
-            const wallet = await getWallet(interaction.user.id, interaction.guild.id);
-            fields.push({ name: 'Your Balance', value: `💳 ${formatBalance(wallet.balance)} credits`, inline: false });
-        }
 
-        await i.update({ embeds: [new EmbedBuilder().setTitle(titles[outcome]).addFields(fields).setColor(colors[outcome])], components: [] });
-    });
-
-    collector.on('end', async (collected, reason) => {
-        // No move was made (timeout, deleted message, ...), so give the held bet back.
-        if (collected.size > 0) return;
-        if (bet) await updateBalance(interaction.user.id, interaction.guild.id, bet);
-        if (reason === 'time') {
-            interaction.editReply({ content: '⏰ Time is up! Game cancelled.', embeds: [], components: [] });
-        }
-    });
+            await i.update({ embeds: [new EmbedBuilder().setTitle(titles[outcome]).addFields(fields).setColor(colors[outcome])], components: [] });
+        },
+        onEnd: async (collected, reason) => {
+            // No move was made (timeout, deleted message, ...), so give the held bet back.
+            if (collected.size > 0) return;
+            if (bet) await updateBalance(interaction.user.id, interaction.guild.id, bet);
+            if (reason === 'time') {
+                await interaction.editReply({ content: '⏰ Time is up! Game cancelled.', embeds: [], components: [] });
+            }
+        },
+    }, 'rps');
 }

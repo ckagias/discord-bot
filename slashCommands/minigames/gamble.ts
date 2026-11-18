@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, ChatInputCommandInteraction } from 'discord.js';
 const { getWallet, updateBalance, formatBalance } = require('../../utils/economy');
 const { resolveGamble } = require('../../utils/gamble');
+import { safeCollector } from '../../utils/safeCollector';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -58,50 +59,51 @@ module.exports = {
             max: 1,
         });
 
-        collector.on('collect', async (i) => {
-            const secondNumber = Math.floor(Math.random() * 100) + 1;
-            const choice = i.customId === `${prefix}_higher` ? 'higher' : 'lower';
-            const outcome = resolveGamble(firstNumber, secondNumber, choice);
-            const userWon = outcome === 'win';
+        safeCollector(collector, {
+            onCollect: async (i) => {
+                const secondNumber = Math.floor(Math.random() * 100) + 1;
+                const choice = i.customId === `${prefix}_higher` ? 'higher' : 'lower';
+                const outcome = resolveGamble(firstNumber, secondNumber, choice);
+                const userWon = outcome === 'win';
 
-            if (outcome === 'tie') {
+                if (outcome === 'tie') {
+                    await updateBalance(interaction.user.id, interaction.guild.id, bet);
+                    return i.update({
+                        content: `😲 It was a tie! Both rolls were **${secondNumber}**. Your bet was returned.`,
+                        embeds: [],
+                        components: [],
+                    });
+                }
+
+                // The bet is already held: a win returns it plus the winnings, a loss keeps it.
+                let newBalance;
+                if (userWon) {
+                    const updated = await updateBalance(interaction.user.id, interaction.guild.id, bet * 2);
+                    newBalance = updated.balance;
+                } else {
+                    newBalance = (await getWallet(interaction.user.id, interaction.guild.id)).balance;
+                }
+
+                const resultEmbed = new EmbedBuilder()
+                    .setTitle(userWon ? '🎉 You Won!' : '💀 You Lost!')
+                    .setDescription(`The hidden number was **${firstNumber}** and the next roll was **${secondNumber}**!`)
+                    .addFields(
+                        { name: 'Your Choice',  value: i.customId.replace(`${prefix}_`, '').toUpperCase(),            inline: true },
+                        { name: 'Result',       value: userWon ? `💰 +${formatBalance(bet)}` : `💸 -${formatBalance(bet)}`, inline: true },
+                        { name: 'New Balance',  value: `💳 ${formatBalance(newBalance)} credits`,                     inline: true },
+                    )
+                    .setColor(userWon ? 'Green' : 'Red');
+
+                await i.update({ embeds: [resultEmbed], components: [] });
+            },
+            onEnd: async (collected, reason) => {
+                // No choice was made (timeout, deleted message, ...), so give the held bet back.
+                if (collected.size > 0) return;
                 await updateBalance(interaction.user.id, interaction.guild.id, bet);
-                return i.update({
-                    content: `😲 It was a tie! Both rolls were **${secondNumber}**. Your bet was returned.`,
-                    embeds: [],
-                    components: [],
-                });
-            }
-
-            // The bet is already held: a win returns it plus the winnings, a loss keeps it.
-            let newBalance;
-            if (userWon) {
-                const updated = await updateBalance(interaction.user.id, interaction.guild.id, bet * 2);
-                newBalance = updated.balance;
-            } else {
-                newBalance = (await getWallet(interaction.user.id, interaction.guild.id)).balance;
-            }
-
-            const resultEmbed = new EmbedBuilder()
-                .setTitle(userWon ? '🎉 You Won!' : '💀 You Lost!')
-                .setDescription(`The hidden number was **${firstNumber}** and the next roll was **${secondNumber}**!`)
-                .addFields(
-                    { name: 'Your Choice',  value: i.customId.replace(`${prefix}_`, '').toUpperCase(),            inline: true },
-                    { name: 'Result',       value: userWon ? `💰 +${formatBalance(bet)}` : `💸 -${formatBalance(bet)}`, inline: true },
-                    { name: 'New Balance',  value: `💳 ${formatBalance(newBalance)} credits`,                     inline: true },
-                )
-                .setColor(userWon ? 'Green' : 'Red');
-
-            await i.update({ embeds: [resultEmbed], components: [] });
-        });
-
-        collector.on('end', async (collected, reason) => {
-            // No choice was made (timeout, deleted message, ...), so give the held bet back.
-            if (collected.size > 0) return;
-            await updateBalance(interaction.user.id, interaction.guild.id, bet);
-            if (reason === 'time') {
-                interaction.editReply({ content: '⏰ Time is up! Gamble cancelled.', embeds: [], components: [] });
-            }
-        });
+                if (reason === 'time') {
+                    await interaction.editReply({ content: '⏰ Time is up! Gamble cancelled.', embeds: [], components: [] });
+                }
+            },
+        }, 'gamble');
     },
 };

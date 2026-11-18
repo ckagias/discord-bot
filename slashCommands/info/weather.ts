@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ComponentType, MessageFlags, ChatInputCommandInteraction } from 'discord.js';
 const log = require('../../utils/log');
+import { safeCollector } from '../../utils/safeCollector';
 const logger = log.scope('weather');
 
 const COOLDOWN_MS = 60_000;
@@ -60,19 +61,20 @@ module.exports = {
 
             const collector = response.createMessageComponentCollector({ componentType: ComponentType.StringSelect, time: 60000 });
 
-            collector.on('collect', async i => {
-                if (i.user.id !== interaction.user.id) {
-                    return i.reply({ content: '❌ This menu is not for you!', flags: MessageFlags.Ephemeral });
-                }
-                const selectedPlace = places[parseInt(i.values[0])];
-                await sendWeather(i, selectedPlace, apiKey);
-            });
-
-            collector.on('end', collected => {
-                if (collected.size === 0) {
-                    interaction.editReply({ content: '❌ Time expired.', components: [] });
-                }
-            });
+            safeCollector(collector, {
+                onCollect: async i => {
+                    if (i.user.id !== interaction.user.id) {
+                        return i.reply({ content: '❌ This menu is not for you!', flags: MessageFlags.Ephemeral });
+                    }
+                    const selectedPlace = places[parseInt(i.values[0])];
+                    await sendWeather(i, selectedPlace, apiKey);
+                },
+                onEnd: async collected => {
+                    if (collected.size === 0) {
+                        await interaction.editReply({ content: '❌ Time expired.', components: [] });
+                    }
+                },
+            }, 'weather');
 
         } catch (err) {
             logger.error('Error:', err);
