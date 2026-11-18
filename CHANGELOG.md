@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-11-18
+
 ### Fixed
 
 - `/ticket close` can no longer close a ticket twice. It checked that the ticket was open, replied, and only then marked it closed, so two closes at the same moment (or `/ticket close` racing the Close button) both passed the check and both replied and scheduled a delete. The ticket is now claimed atomically before the reply, and the loser gets "This ticket is already closed." A failed channel delete is now logged instead of ignored.
@@ -197,7 +199,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Also includes full test coverage for `events/` and `slashCommands/`, and a Vitest and ESLint setup for the dashboard covering its server actions.
 
-[Unreleased]: https://github.com/ckagias/discord-bot/compare/v1.4.1...HEAD
+[Unreleased]: https://github.com/ckagias/discord-bot/compare/v1.4.2...HEAD
+[1.4.2]: https://github.com/ckagias/discord-bot/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/ckagias/discord-bot/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/ckagias/discord-bot/compare/v1.3.2...v1.4.0
 [1.3.2]: https://github.com/ckagias/discord-bot/compare/v1.3.1...v1.3.2
