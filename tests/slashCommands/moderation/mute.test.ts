@@ -83,6 +83,37 @@ describe('mute command', () => {
         );
     });
 
+    test('lets the server owner mute a member whose role is equal or higher', async () => {
+        const target = makeTarget({ roles: { highest: { position: 10 }, cache: { has: jest.fn() }, add: jest.fn() } });
+        const interaction = makeInteraction({ target });
+        interaction.member.roles.highest.position = 5;
+        interaction.user.id = 'owner1';
+        Object.assign(interaction.guild, { ownerId: 'owner1' });
+        getGuildConfig.mockResolvedValue({ muteRoleId: 'role1' });
+        createCase.mockResolvedValue({ caseId: 1 });
+
+        await mute.execute(interaction);
+
+        expect(interaction.reply).not.toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('equal or higher role') })
+        );
+        expect(target.roles.add).toHaveBeenCalled();
+    });
+
+    test('does not let a moderator mute the server owner, even one with a lower role', async () => {
+        const target = makeTarget({ id: 'owner1' });
+        const interaction = makeInteraction({ target });
+        Object.assign(interaction.guild, { ownerId: 'owner1' });
+        getGuildConfig.mockResolvedValue({ muteRoleId: 'role1' });
+
+        await mute.execute(interaction);
+
+        expect(interaction.reply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('equal or higher role') })
+        );
+        expect(target.roles.add).not.toHaveBeenCalled();
+    });
+
     test('rejects when no mute role has been configured', async () => {
         const target = makeTarget();
         const interaction = makeInteraction({ target });

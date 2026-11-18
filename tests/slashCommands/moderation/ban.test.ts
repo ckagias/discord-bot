@@ -71,6 +71,34 @@ describe('ban command', () => {
         expect(target.ban).not.toHaveBeenCalled();
     });
 
+    test('lets the server owner ban a member whose role is equal or higher', async () => {
+        const target = makeTarget({ roles: { highest: { position: 10 } } });
+        const interaction = makeInteraction({ target });
+        interaction.member.roles.highest.position = 5;
+        interaction.user.id = 'owner1';
+        Object.assign(interaction.guild, { ownerId: 'owner1' });
+
+        await ban.execute(interaction);
+
+        expect(interaction.reply).not.toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('equal or higher role') })
+        );
+        expect(target.ban).toHaveBeenCalled();
+    });
+
+    test('does not let a moderator ban the server owner, even one with a lower role', async () => {
+        const target = makeTarget({ id: 'owner1' });
+        const interaction = makeInteraction({ target });
+        Object.assign(interaction.guild, { ownerId: 'owner1' });
+
+        await ban.execute(interaction);
+
+        expect(interaction.reply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('equal or higher role') })
+        );
+        expect(target.ban).not.toHaveBeenCalled();
+    });
+
     test('rejects when the target is not bannable', async () => {
         const target = makeTarget({ bannable: false });
         const interaction = makeInteraction({ target });

@@ -91,6 +91,19 @@ describe('warn command', () => {
         expect(WarnSchema.create).not.toHaveBeenCalled();
     });
 
+    test('lets the server owner warn a member whose role is equal or higher', async () => {
+        const target = makeTarget({ roles: { highest: { position: 10 } } });
+        const interaction = makeInteraction({ target, modId: 'owner1', ownerId: 'owner1' });
+        interaction.member.roles.highest.position = 5;
+
+        await warn.execute(interaction);
+
+        expect(interaction.reply).not.toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('equal or higher role') })
+        );
+        expect(WarnSchema.create).toHaveBeenCalled();
+    });
+
     test('records the warning, dms the user, checks thresholds, and creates a case', async () => {
         const target = makeTarget();
         const interaction = makeInteraction({ target, reason: 'spam' });

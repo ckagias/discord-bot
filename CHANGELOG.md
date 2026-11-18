@@ -9,6 +9,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 
 - `/ticket close` can no longer close a ticket twice. It checked that the ticket was open, replied, and only then marked it closed, so two closes at the same moment (or `/ticket close` racing the Close button) both passed the check and both replied and scheduled a delete. The ticket is now claimed atomically before the reply, and the loser gets "This ticket is already closed." A failed channel delete is now logged instead of ignored.
+- The server owner can now use `/ban`, `/kick`, `/mute`, `/timeout` and `/warn` on a member whose highest role is equal to or above theirs. These commands compared role positions with no owner exemption, so an owner with a low role (or none) was refused with "equal or higher role", unlike Discord's own rule. They now share one check that exempts the owner. The same check also refuses any attempt to act on the owner, which `/mute` did not do before: a moderator whose highest role was above an owner with no roles could mute the owner.
 
 ## [1.4.1] - 2026-11-12
 

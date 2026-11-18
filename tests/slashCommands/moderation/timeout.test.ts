@@ -58,6 +58,34 @@ describe('timeout command', () => {
         );
     });
 
+    test('lets the server owner timeout a member whose role is equal or higher', async () => {
+        const target = makeTarget({ roles: { highest: { position: 10 } } });
+        const interaction = makeInteraction({ target, sub: 'add', duration: 3600 });
+        interaction.member.roles.highest.position = 5;
+        interaction.user.id = 'owner1';
+        Object.assign(interaction.guild, { ownerId: 'owner1' });
+
+        await timeout.execute(interaction);
+
+        expect(interaction.reply).not.toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('equal or higher role') })
+        );
+        expect(target.timeout).toHaveBeenCalled();
+    });
+
+    test('does not let a moderator timeout the server owner, even one with a lower role', async () => {
+        const target = makeTarget({ id: 'owner1' });
+        const interaction = makeInteraction({ target, sub: 'add', duration: 3600 });
+        Object.assign(interaction.guild, { ownerId: 'owner1' });
+
+        await timeout.execute(interaction);
+
+        expect(interaction.reply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('equal or higher role') })
+        );
+        expect(target.timeout).not.toHaveBeenCalled();
+    });
+
     test('rejects when the target is not moderatable', async () => {
         const target = makeTarget({ moderatable: false });
         const interaction = makeInteraction({ target, sub: 'add' });
