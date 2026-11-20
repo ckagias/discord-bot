@@ -122,6 +122,22 @@ export = async (client: Client) => {
         ).catch((err) => logger.error(`Failed to persist player state for guild "${player.guildId}":`, err));
     });
 
+    // Lavalink emits trackStart before it resolves the stream, so a track that can't be played (YouTube bot-check, unavailable video) shows "Now playing" first and fails shortly after.
+    client.lavalink.on('trackError', (player, track, payload) => {
+        const title = track?.info?.title ?? payload?.track?.info?.title ?? 'Unknown track';
+        const exception = payload?.exception;
+        logger.error(
+            `Track "${title}" failed in guild "${player.guildId}" (${exception?.severity ?? 'unknown severity'}): ${exception?.message ?? payload?.error ?? 'no message'}${exception?.cause ? ` | cause: ${exception.cause}` : ''}`
+        );
+
+        const channel = client.channels.cache.get(player.textChannelId as string) as TextBasedChannel | undefined;
+        if (channel && 'send' in channel) {
+            const reason = exception?.message ? `: ${exception.message}` : '.';
+            channel.send({ content: `Couldn't play **${title}**${reason}`, allowedMentions: { parse: [] } })
+                .catch((err: unknown) => logger.error(`Failed to send track error message for guild "${player.guildId}":`, err));
+        }
+    });
+
     client.lavalink.on('queueEnd', (player) => {
         if (player.getData('manual_stop')) return;
         const channel = client.channels.cache.get(player.textChannelId as string) as TextBasedChannel | undefined;
