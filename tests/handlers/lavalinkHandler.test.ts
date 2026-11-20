@@ -9,6 +9,9 @@ jest.mock('../../utils/musicPersistence', () => ({
     saveSessionId: jest.fn().mockResolvedValue(undefined),
 }));
 
+const mockLogger = { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() };
+jest.mock('../../utils/log', () => ({ scope: () => mockLogger }));
+
 let capturedOptions: any;
 let fakeManager: any;
 
@@ -162,5 +165,59 @@ describe('lavalinkHandler', () => {
         await Promise.resolve();
 
         expect(mockedDeleteMusicPlayer).toHaveBeenCalledWith('g1');
+    });
+
+    describe('trackError', () => {
+        const player = { guildId: 'g1', textChannelId: 'tc1' };
+
+        function clientWithChannel(send: jest.Mock) {
+            const client = makeClient();
+            client.channels.cache.set('tc1', { send });
+            return client;
+        }
+
+        test('tells the text channel which track failed and why, without pinging anyone', async () => {
+            const send = jest.fn().mockResolvedValue(undefined);
+            const lavalinkHandler = require('../../handlers/lavalinkHandler');
+            await lavalinkHandler(clientWithChannel(send));
+
+            fakeManager.emit('trackError', player, { info: { title: 'Song @everyone' } }, {
+                exception: { severity: 'suspicious', message: 'All clients failed to load the item.', cause: 'Sign in to confirm you\'re not a bot' },
+            });
+
+            expect(mockLogger.error).toHaveBeenCalledWith(
+                expect.stringContaining('Track "Song @everyone" failed in guild "g1" (suspicious): All clients failed to load the item.')
+            );
+            expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("cause: Sign in to confirm you're not a bot"));
+            expect(send).toHaveBeenCalledTimes(1);
+            expect(send).toHaveBeenCalledWith({
+                content: "Couldn't play **Song @everyone**: All clients failed to load the item.",
+                allowedMentions: { parse: [] },
+            });
+        });
+
+        test('falls back to the payload track and a plain message when the exception has no detail', async () => {
+            const send = jest.fn().mockResolvedValue(undefined);
+            const lavalinkHandler = require('../../handlers/lavalinkHandler');
+            await lavalinkHandler(clientWithChannel(send));
+
+            fakeManager.emit('trackError', player, null, { track: { info: { title: 'From payload' } }, error: 'boom' });
+
+            expect(send).toHaveBeenCalledWith(expect.objectContaining({ content: "Couldn't play **From payload**." }));
+        });
+
+        test('does not throw when the text channel is gone or the send is rejected', async () => {
+            const lavalinkHandler = require('../../handlers/lavalinkHandler');
+
+            await lavalinkHandler(makeClient());
+            expect(() => fakeManager.emit('trackError', player, { info: { title: 'Song' } }, {})).not.toThrow();
+
+            const send = jest.fn().mockRejectedValue(new Error('Missing Access'));
+            await lavalinkHandler(clientWithChannel(send));
+            fakeManager.emit('trackError', player, { info: { title: 'Song' } }, {});
+            await new Promise((resolve) => setImmediate(resolve));
+
+            expect(send).toHaveBeenCalled();
+        });
     });
 });

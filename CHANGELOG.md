@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `/play` now says when a track fails to play. Lavalink announces the track as started before it resolves the stream, so a track that YouTube refused (bot-check, unavailable video) showed "Now playing" and then "Queue finished" with no explanation, and the bot logged nothing. The bot now handles the player's `trackError` event: it logs the track, severity, message and cause, and posts "Couldn't play **title**: reason" in the music text channel without pinging anyone.
+
 ## [1.4.2] - 2026-11-18
 
 ### Fixed
