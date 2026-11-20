@@ -3,9 +3,10 @@ server:
   address: 0.0.0.0
 
 lavalink:
-  plugins:
-    - dependency: "dev.lavalink.youtube:youtube-plugin:1.18.1"
-      repository: "https://maven.lavalink.dev/releases"
+  # youtube-plugin is NOT downloaded from Maven. lavalink/plugins/ holds a jar built from
+  # lavalink-devs/youtube-source main (e41dd95) with AndroidVr.CLIENT_VERSION 1.60.19 -> 1.65.10,
+  # because YouTube bot-checks 1.60.19 (upstream issue #255). Go back to a Maven
+  # `dev.lavalink.youtube:youtube-plugin:<version>` dependency once a release ships that fix.
   server:
     password: "${LAVALINK_PASSWORD}"
     sources:
@@ -32,8 +33,9 @@ plugins:
     allowDirectPlaylistIds: true
     clients:
       - MUSIC
-      - IOS
       - ANDROID_VR
+      - IOS  # must stay after ANDROID_VR: IOS first makes ytsearch return empty (upstream #250)
+      - TVHTML5_SIMPLY
 
 metrics:
   prometheus:
