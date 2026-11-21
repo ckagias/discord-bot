@@ -12,12 +12,15 @@ function formatDuration(ms: number): string {
 const SPOTIFY_TRACK_URL = /open\.spotify\.com\/(?:intl-\w+\/)?track\/([A-Za-z0-9]+)/i;
 const SPOTIFY_OTHER_URL = /open\.spotify\.com\/(?:intl-\w+\/)?(album|playlist|artist)\//i;
 
+// Without a timeout a stalled Spotify request would hold the /play command until Discord gives up on the interaction.
+const SPOTIFY_TIMEOUT_MS = 5000;
+
 // Spotify's embed page ships track names in its __NEXT_DATA__ blob and needs no API credentials.
 async function resolveSpotifyTrackQuery(url: string): Promise<string | null> {
     const match = url.match(SPOTIFY_TRACK_URL);
     if (!match) return null;
 
-    const res = await fetch(`https://open.spotify.com/embed/track/${match[1]}`);
+    const res = await fetch(`https://open.spotify.com/embed/track/${match[1]}`, { signal: AbortSignal.timeout(SPOTIFY_TIMEOUT_MS) });
     if (!res.ok) return null;
 
     const html = await res.text();

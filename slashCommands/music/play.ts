@@ -32,17 +32,18 @@ module.exports = {
             return interaction.reply({ content: 'Spotify album, playlist, and artist links aren\'t supported yet — please use a track link or a search query.', flags: MessageFlags.Ephemeral });
         }
 
+        // Defer first: the Spotify lookup is a network call and can pass Discord's 3-second window for a first response.
+        await interaction.deferReply();
+
         let searchedFromSpotify = false;
         if (SPOTIFY_TRACK_URL.test(query)) {
             const resolved = await resolveSpotifyTrackQuery(query).catch(() => null);
             if (!resolved) {
-                return interaction.reply({ content: 'Could not resolve that Spotify link.', flags: MessageFlags.Ephemeral });
+                return interaction.editReply({ content: 'Could not resolve that Spotify link.' });
             }
             query = resolved;
             searchedFromSpotify = true;
         }
-
-        await interaction.deferReply();
 
         try {
             let player = client.lavalink.getPlayer(interaction.guild.id);

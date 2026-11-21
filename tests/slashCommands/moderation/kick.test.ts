@@ -26,6 +26,8 @@ function makeInteraction({ target, reason = null }: { target: any; reason?: stri
         replied: false,
         deferred: false,
         reply: jest.fn().mockResolvedValue({}),
+        // Like discord.js: a deferred interaction can no longer be answered with reply().
+        deferReply: jest.fn(function (this: any) { this.deferred = true; return Promise.resolve({}); }),
         editReply: jest.fn().mockResolvedValue({}),
     };
 }
@@ -109,12 +111,35 @@ describe('kick command', () => {
         expect(createCase).toHaveBeenCalledWith(
             expect.objectContaining({ guildId: 'g1', type: 'kick', userId: 'target1', moderatorId: 'mod1', reason: 'toxicity' })
         );
-        expect(interaction.reply).toHaveBeenCalledWith(
+        expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Case #3') })
         );
         expect(logModAction).toHaveBeenCalledWith(
             expect.objectContaining({ guild: interaction.guild, action: 'Kick', reason: 'toxicity', caseId: 3 })
         );
+    });
+
+    test('defers before the slow work and answers through editReply, so the 3-second window is not at risk', async () => {
+        const order: string[] = [];
+        const target = makeTarget({ kick: jest.fn().mockImplementation(async () => { order.push('kick'); }) });
+        const interaction = makeInteraction({ target });
+        interaction.deferReply.mockImplementation(async function (this: any) { order.push('defer'); this.deferred = true; return {}; });
+        createCase.mockResolvedValue({ caseId: 4 });
+
+        await kick.execute(interaction);
+
+        expect(order).toEqual(['defer', 'kick']);
+        expect(interaction.reply).not.toHaveBeenCalled();
+        expect(interaction.editReply).toHaveBeenCalledWith(expect.objectContaining({ content: expect.stringContaining('Case #4') }));
+    });
+
+    test('does not defer when a check rejects the request, so the refusal stays ephemeral', async () => {
+        const interaction = makeInteraction({ target: null });
+
+        await kick.execute(interaction);
+
+        expect(interaction.deferReply).not.toHaveBeenCalled();
+        expect(interaction.reply).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.anything() }));
     });
 
     test('replies with a generic error and does not throw when kicking fails', async () => {
@@ -123,7 +148,7 @@ describe('kick command', () => {
 
         await expect(kick.execute(interaction)).resolves.not.toThrow();
 
-        expect(interaction.reply).toHaveBeenCalledWith(
+        expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: 'An error occurred while trying to kick that user.' })
         );
     });

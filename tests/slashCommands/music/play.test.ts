@@ -92,9 +92,23 @@ describe('play command', () => {
 
         await play.execute(interaction, client);
 
-        expect(interaction.reply).toHaveBeenCalledWith(
+        expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Could not resolve that Spotify link') })
         );
+    });
+
+    test('defers before the Spotify lookup, so a slow lookup cannot pass the 3-second window', async () => {
+        const interaction = makeInteraction({ query: 'https://open.spotify.com/track/abc123' });
+        const client = makeClient(makePlayer());
+        let deferredBeforeLookup: boolean | undefined;
+        resolveSpotifyTrackQuery.mockImplementation(async () => {
+            deferredBeforeLookup = interaction.deferReply.mock.calls.length > 0;
+            return null;
+        });
+
+        await play.execute(interaction, client);
+
+        expect(deferredBeforeLookup).toBe(true);
     });
 
     test('resolves a Spotify track link into a search query and searches without the URL flag', async () => {

@@ -37,12 +37,15 @@ module.exports = {
                 return interaction.reply({ content: 'I cannot kick that user (check my role position).', flags: MessageFlags.Ephemeral });
             }
 
+            // The kick, the database write and the log post can together pass Discord's 3-second window for a first response.
+            await interaction.deferReply();
+
             const [, modCase] = await Promise.all([
                 target.kick(reason),
                 createCase({ guildId: interaction.guild.id, type: 'kick', userId: target.id, moderatorId: interaction.user.id, reason }),
             ]);
             await logModAction({ guild: interaction.guild, action: 'Kick', target: target.user, moderator: interaction.user, reason, caseId: modCase.caseId });
-            return interaction.reply({ content: `Kicked **${target.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
+            return interaction.editReply({ content: `Kicked **${target.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
         } catch (err) {
             logger.error('Error:', err);
             const method = interaction.replied || interaction.deferred ? 'editReply' : 'reply';
