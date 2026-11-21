@@ -64,7 +64,12 @@ module.exports = {
                 interaction.user
             );
 
-            if (!result || result.loadType === 'empty' || result.loadType === 'error') {
+            if (result?.loadType === 'error') {
+                logger.error(`Loading "${query}" failed in guild "${interaction.guild.id}" (${result.exception?.severity ?? 'unknown severity'}): ${result.exception?.message ?? 'no message'}${result.exception?.cause ? ` | cause: ${result.exception.cause}` : ''}`);
+                return interaction.editReply({ content: 'Could not load that track or playlist. The source may be blocking requests or the video may be unavailable. Try a different query.' });
+            }
+
+            if (!result || result.loadType === 'empty') {
                 return interaction.editReply({ content: 'No results found for that query.' });
             }
 

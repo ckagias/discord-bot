@@ -220,4 +220,56 @@ describe('lavalinkHandler', () => {
             expect(send).toHaveBeenCalled();
         });
     });
+
+    describe('trackStuck', () => {
+        const player = { guildId: 'g1', textChannelId: 'tc1' };
+
+        test('logs the stuck track and tells the text channel it was skipped, without pinging anyone', async () => {
+            const send = jest.fn().mockResolvedValue(undefined);
+            const client = makeClient();
+            client.channels.cache.set('tc1', { send });
+            const lavalinkHandler = require('../../handlers/lavalinkHandler');
+            await lavalinkHandler(client);
+
+            fakeManager.emit('trackStuck', player, { info: { title: 'Song @everyone' } }, { thresholdMs: 10000 });
+
+            expect(mockLogger.error).toHaveBeenCalledWith(
+                expect.stringContaining('Track "Song @everyone" got stuck in guild "g1" (no audio for 10000 ms)')
+            );
+            expect(send).toHaveBeenCalledTimes(1);
+            expect(send).toHaveBeenCalledWith({
+                content: '**Song @everyone** got stuck, so I skipped it.',
+                allowedMentions: { parse: [] },
+            });
+        });
+
+        test('falls back to the payload track when the player has no current track', async () => {
+            const send = jest.fn().mockResolvedValue(undefined);
+            const client = makeClient();
+            client.channels.cache.set('tc1', { send });
+            const lavalinkHandler = require('../../handlers/lavalinkHandler');
+            await lavalinkHandler(client);
+
+            fakeManager.emit('trackStuck', player, null, { track: { info: { title: 'From payload' } }, thresholdMs: 5000 });
+
+            expect(send).toHaveBeenCalledWith(expect.objectContaining({ content: '**From payload** got stuck, so I skipped it.' }));
+        });
+
+        test('does not throw when the text channel is gone or the send is rejected', async () => {
+            const lavalinkHandler = require('../../handlers/lavalinkHandler');
+
+            await lavalinkHandler(makeClient());
+            expect(() => fakeManager.emit('trackStuck', player, { info: { title: 'Song' } }, {})).not.toThrow();
+
+            const send = jest.fn().mockRejectedValue(new Error('Missing Access'));
+            const client = makeClient();
+            client.channels.cache.set('tc1', { send });
+            await lavalinkHandler(client);
+            fakeManager.emit('trackStuck', player, { info: { title: 'Song' } }, {});
+            await new Promise((resolve) => setImmediate(resolve));
+
+            expect(send).toHaveBeenCalled();
+            expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('Failed to send track stuck message'), expect.any(Error));
+        });
+    });
 });

@@ -1,3 +1,6 @@
+const mockLogger = { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() };
+jest.mock('../../../utils/log', () => ({ scope: () => mockLogger }));
+
 jest.mock('../../../utils/music', () => {
     const actual = jest.requireActual('../../../utils/music');
     return {
@@ -137,7 +140,7 @@ describe('play command', () => {
         expect(player.connect).not.toHaveBeenCalled();
     });
 
-    test('reports no results for empty/error load types', async () => {
+    test('reports no results for an empty load type', async () => {
         const interaction = makeInteraction();
         const player = makePlayer({ search: jest.fn().mockResolvedValue({ loadType: 'empty' }) });
         const client = makeClient(player);
@@ -146,6 +149,37 @@ describe('play command', () => {
 
         expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: 'No results found for that query.' })
+        );
+    });
+
+    test('says the load failed, and logs why, when Lavalink returns an error load type', async () => {
+        const interaction = makeInteraction({ query: 'https://www.youtube.com/watch?v=abc' });
+        const player = makePlayer({
+            search: jest.fn().mockResolvedValue({
+                loadType: 'error',
+                exception: { severity: 'suspicious', message: 'All clients failed to load the item.', cause: 'Sign in to confirm you\'re not a bot' },
+            }),
+        });
+        const client = makeClient(player);
+
+        await play.execute(interaction, client);
+
+        expect(interaction.editReply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('Could not load that track or playlist') })
+        );
+        expect(interaction.editReply).not.toHaveBeenCalledWith(expect.objectContaining({ content: 'No results found for that query.' }));
+        expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('All clients failed to load the item.'));
+        expect(player.play).not.toHaveBeenCalled();
+    });
+
+    test('does not throw on an error load type with no exception detail', async () => {
+        const interaction = makeInteraction();
+        const player = makePlayer({ search: jest.fn().mockResolvedValue({ loadType: 'error', exception: null }) });
+
+        await play.execute(interaction, makeClient(player));
+
+        expect(interaction.editReply).toHaveBeenCalledWith(
+            expect.objectContaining({ content: expect.stringContaining('Could not load') })
         );
     });
 

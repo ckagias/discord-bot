@@ -9,6 +9,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 
 - `/play` now says when a track fails to play. Lavalink announces the track as started before it resolves the stream, so a track that YouTube refused (bot-check, unavailable video) showed "Now playing" and then "Queue finished" with no explanation, and the bot logged nothing. The bot now handles the player's `trackError` event: it logs the track, severity, message and cause, and posts "Couldn't play **title**: reason" in the music text channel without pinging anyone.
+- `/play` now tells you when a link or search could not be loaded, and when a track gets stuck. A load that Lavalink reported as an error (for example a YouTube bot-check on the lookup) was shown as "No results found for that query.", which sent people looking for a typo, and the real reason was not logged. It now says "Could not load that track or playlist" and logs the severity, message and cause; "No results found" is kept for searches that really found nothing. A track that stalls with no audio (the player's `trackStuck` event) is now logged and announced in the music text channel as skipped, without pinging anyone, instead of the queue moving on silently.
 
 ## [1.4.2] - 2026-11-18
 
