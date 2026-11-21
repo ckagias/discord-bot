@@ -5,8 +5,8 @@ server:
 lavalink:
   # youtube-plugin is NOT downloaded from Maven. lavalink/plugins/ holds a jar built from
   # lavalink-devs/youtube-source main (e41dd95) with AndroidVr.CLIENT_VERSION 1.60.19 -> 1.65.10,
-  # because YouTube bot-checks 1.60.19 (upstream issue #255). Go back to a Maven
-  # `dev.lavalink.youtube:youtube-plugin:<version>` dependency once a release ships that fix.
+  # because YouTube bot-checks 1.60.19 (https://github.com/lavalink-devs/youtube-source/issues/255).
+  # Go back to a Maven `dev.lavalink.youtube:youtube-plugin:<version>` dependency once a release ships that fix.
   server:
     password: "${LAVALINK_PASSWORD}"
     sources:
