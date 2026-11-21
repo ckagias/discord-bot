@@ -60,6 +60,9 @@ module.exports = {
                 }
             }
 
+            // The DM, the ban, the database writes and the log post can together pass Discord's 3-second window for a first response.
+            await interaction.deferReply();
+
             await target.send(
                 durationMs
                     ? `You have been temporarily banned from **${interaction.guild.name}** for **${formatDuration(durationMs)}**. Reason: ${reason}`
@@ -80,14 +83,14 @@ module.exports = {
                 ]);
                 schedulePunishment(interaction.client, punishment);
                 await logModAction({ guild: interaction.guild, action: 'Ban', target: target.user, moderator: interaction.user, reason, caseId: modCase.caseId, duration: durationLabel });
-                return interaction.reply({
+                return interaction.editReply({
                     content: `Banned **${target.user.tag}** for **${durationLabel}** for \`${reason}\` | Case #${modCase.caseId}`,
                 });
             }
 
             const modCase = await createCase({ guildId: interaction.guild.id, type: 'ban', userId: target.id, moderatorId: interaction.user.id, reason });
             await logModAction({ guild: interaction.guild, action: 'Ban', target: target.user, moderator: interaction.user, reason, caseId: modCase.caseId });
-            return interaction.reply({ content: `Banned **${target.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
+            return interaction.editReply({ content: `Banned **${target.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
         } catch (err) {
             logger.error('Error:', err);
             const method = interaction.replied || interaction.deferred ? 'editReply' : 'reply';

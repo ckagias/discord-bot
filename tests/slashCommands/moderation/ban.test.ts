@@ -38,6 +38,8 @@ function makeInteraction({ target, duration = null, reason = null, deleteMessage
         replied: false,
         deferred: false,
         reply: jest.fn().mockResolvedValue({}),
+        // Like discord.js: a deferred interaction can no longer be answered with reply().
+        deferReply: jest.fn(function (this: any) { this.deferred = true; return Promise.resolve({}); }),
         editReply: jest.fn().mockResolvedValue({}),
     };
 }
@@ -138,7 +140,7 @@ describe('ban command', () => {
         );
         expect(PunishmentSchema.create).not.toHaveBeenCalled();
         expect(schedulePunishment).not.toHaveBeenCalled();
-        expect(interaction.reply).toHaveBeenCalledWith(
+        expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Case #7') })
         );
         expect(logModAction).toHaveBeenCalledWith(
@@ -161,12 +163,38 @@ describe('ban command', () => {
             expect.objectContaining({ type: 'ban', guildId: 'g1', userId: 'target1' })
         );
         expect(schedulePunishment).toHaveBeenCalledWith(interaction.client, { _id: 'p1', type: 'ban' });
-        expect(interaction.reply).toHaveBeenCalledWith(
+        expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Case #8') })
         );
         expect(logModAction).toHaveBeenCalledWith(
             expect.objectContaining({ guild: interaction.guild, action: 'Ban', reason: 'raiding', caseId: 8, duration: '1w' })
         );
+    });
+
+    test('defers before the slow work and answers through editReply, so the 3-second window is not at risk', async () => {
+        const order: string[] = [];
+        const target = makeTarget({
+            send: jest.fn().mockImplementation(async () => { order.push('dm'); }),
+            ban: jest.fn().mockImplementation(async () => { order.push('ban'); }),
+        });
+        const interaction = makeInteraction({ target });
+        interaction.deferReply.mockImplementation(async function (this: any) { order.push('defer'); this.deferred = true; return {}; });
+        createCase.mockResolvedValue({ caseId: 10 });
+
+        await ban.execute(interaction);
+
+        expect(order).toEqual(['defer', 'dm', 'ban']);
+        expect(interaction.reply).not.toHaveBeenCalled();
+        expect(interaction.editReply).toHaveBeenCalledWith(expect.objectContaining({ content: expect.stringContaining('Case #10') }));
+    });
+
+    test('does not defer when a check rejects the request, so the refusal stays ephemeral', async () => {
+        const interaction = makeInteraction({ target: null });
+
+        await ban.execute(interaction);
+
+        expect(interaction.deferReply).not.toHaveBeenCalled();
+        expect(interaction.reply).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.anything() }));
     });
 
     test('replies with a generic error and does not throw when banning fails', async () => {
@@ -175,7 +203,7 @@ describe('ban command', () => {
 
         await expect(ban.execute(interaction)).resolves.not.toThrow();
 
-        expect(interaction.reply).toHaveBeenCalledWith(
+        expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: 'An error occurred while trying to ban that user.' })
         );
     });

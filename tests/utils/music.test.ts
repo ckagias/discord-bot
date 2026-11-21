@@ -1,4 +1,4 @@
-import { voiceChannelError } from '../../utils/music';
+import { voiceChannelError, resolveSpotifyTrackQuery } from '../../utils/music';
 
 function interactionIn(channelId: string | null | undefined, member: any = { voice: { channelId } }): any {
     return { member };
@@ -26,5 +26,25 @@ describe('voiceChannelError', () => {
     test('rejects when the interaction has no member or no voice state', () => {
         expect(voiceChannelError(interactionIn(null, null), { voiceChannelId: 'vc1' })).toMatch(/voice channel/);
         expect(voiceChannelError(interactionIn(null, {}), { voiceChannelId: 'vc1' })).toMatch(/voice channel/);
+    });
+});
+
+describe('resolveSpotifyTrackQuery', () => {
+    const originalFetch = global.fetch;
+    afterEach(() => { global.fetch = originalFetch; });
+
+    test('gives the Spotify request a timeout signal, so a stalled request cannot hang /play', async () => {
+        const fetchMock = jest.fn().mockResolvedValue({ ok: false });
+        global.fetch = fetchMock as any;
+
+        await resolveSpotifyTrackQuery('https://open.spotify.com/track/abc123');
+
+        expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+    });
+
+    test('rejects when the Spotify request is aborted, which /play reports as an unresolvable link', async () => {
+        global.fetch = jest.fn().mockRejectedValue(new DOMException('The operation timed out.', 'TimeoutError')) as any;
+
+        await expect(resolveSpotifyTrackQuery('https://open.spotify.com/track/abc123')).rejects.toThrow('timed out');
     });
 });
