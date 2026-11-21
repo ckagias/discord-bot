@@ -88,6 +88,10 @@ module.exports = {
             }
 
             const duration = interaction.options.getInteger('duration');
+
+            // The timeout, the database write and the log post can together pass Discord's 3-second window for a first response.
+            await interaction.deferReply();
+
             const durationLabel = DURATION_CHOICES.find(c => c.value === duration)?.name ?? `${duration}s`;
             const untilTs = Math.floor((Date.now() + duration * 1000) / 1000);
 
@@ -98,7 +102,7 @@ module.exports = {
 
             const verb = sub === 'add' ? 'Timed out' : 'Updated timeout for';
             await logModAction({ guild: interaction.guild, action: verb, target: target.user, moderator: interaction.user, reason, caseId: modCase.caseId, duration: durationLabel });
-            return interaction.reply({ content: `${verb} **${target.user.tag}** until <t:${untilTs}:R> for \`${reason}\` | Case #${modCase.caseId}` });
+            return interaction.editReply({ content: `${verb} **${target.user.tag}** until <t:${untilTs}:R> for \`${reason}\` | Case #${modCase.caseId}` });
         }
 
         if (sub === 'remove') {
@@ -106,12 +110,14 @@ module.exports = {
                 return interaction.reply({ content: 'That user does not have an active timeout.', flags: MessageFlags.Ephemeral });
             }
 
+            await interaction.deferReply();
+
             const [, modCase] = await Promise.all([
                 target.timeout(null, reason),
                 createCase({ guildId: interaction.guild.id, type: 'timeout_remove', userId: target.id, moderatorId: interaction.user.id, reason }),
             ]);
             await logModAction({ guild: interaction.guild, action: 'Timeout removed', target: target.user, moderator: interaction.user, reason, caseId: modCase.caseId });
-            return interaction.reply({ content: `Removed timeout from **${target.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
+            return interaction.editReply({ content: `Removed timeout from **${target.user.tag}** for \`${reason}\` | Case #${modCase.caseId}` });
         }
     },
 };

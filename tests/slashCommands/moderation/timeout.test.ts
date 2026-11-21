@@ -26,7 +26,11 @@ function makeInteraction({ target, sub, duration = null, reason = null }: { targ
         member: { roles: { highest: { position: 10 } } },
         guild: { id: 'g1' },
         user: { id: 'mod1' },
+        deferred: false,
         reply: jest.fn().mockResolvedValue({}),
+        // Like discord.js: a deferred interaction can no longer be answered with reply().
+        deferReply: jest.fn(function (this: any) { this.deferred = true; return Promise.resolve({}); }),
+        editReply: jest.fn().mockResolvedValue({}),
     };
 }
 
@@ -108,7 +112,7 @@ describe('timeout command', () => {
         expect(createCase).toHaveBeenCalledWith(
             expect.objectContaining({ guildId: 'g1', type: 'timeout', userId: 'target1', reason: 'spam' })
         );
-        expect(interaction.reply).toHaveBeenCalledWith(
+        expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Timed out') })
         );
         expect(logModAction).toHaveBeenCalledWith(
@@ -136,7 +140,7 @@ describe('timeout command', () => {
         await timeout.execute(interaction);
 
         expect(target.timeout).toHaveBeenCalledWith(600000, 'still spamming');
-        expect(interaction.reply).toHaveBeenCalledWith(
+        expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Updated timeout for') })
         );
     });
@@ -164,11 +168,45 @@ describe('timeout command', () => {
         expect(createCase).toHaveBeenCalledWith(
             expect.objectContaining({ type: 'timeout_remove', userId: 'target1', reason: 'appealed' })
         );
-        expect(interaction.reply).toHaveBeenCalledWith(
+        expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Removed timeout from') })
         );
         expect(logModAction).toHaveBeenCalledWith(
             expect.objectContaining({ guild: interaction.guild, action: 'Timeout removed', reason: 'appealed', caseId: 4 })
         );
+    });
+
+    test.each([
+        ['add', false, 3600],
+        ['edit', true, 600],
+        ['remove', true, null],
+    ])('%s: defers before the slow work and answers through editReply, so the 3-second window is not at risk', async (sub, active, duration) => {
+        const order: string[] = [];
+        const target = makeTarget({
+            isCommunicationDisabled: jest.fn().mockReturnValue(active),
+            timeout: jest.fn().mockImplementation(async () => { order.push('timeout'); }),
+        });
+        const interaction = makeInteraction({ target, sub, duration });
+        interaction.deferReply.mockImplementation(async function (this: any) { order.push('defer'); this.deferred = true; return {}; });
+
+        await timeout.execute(interaction);
+
+        expect(order).toEqual(['defer', 'timeout']);
+        expect(interaction.reply).not.toHaveBeenCalled();
+        expect(interaction.editReply).toHaveBeenCalledWith(expect.objectContaining({ content: expect.stringContaining('Case #1') }));
+    });
+
+    test.each([
+        ['the target is not in the server', { target: null, sub: 'add' }],
+        ['the target is not moderatable', { target: makeTarget({ moderatable: false }), sub: 'add' }],
+        ['edit has no active timeout', { target: makeTarget(), sub: 'edit', duration: 600 }],
+        ['remove has no active timeout', { target: makeTarget(), sub: 'remove' }],
+    ])('does not defer when %s, so the refusal stays ephemeral', async (_name, args) => {
+        const interaction = makeInteraction(args as any);
+
+        await timeout.execute(interaction);
+
+        expect(interaction.deferReply).not.toHaveBeenCalled();
+        expect(interaction.reply).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.anything() }));
     });
 });

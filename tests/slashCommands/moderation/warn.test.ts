@@ -30,7 +30,11 @@ function makeInteraction({ target, reason = null, modId = 'mod1', ownerId = 'own
         member: { roles: { highest: { position: 10 } } },
         guild: { id: 'g1', name: 'Test Guild', ownerId },
         user: { id: modId },
+        deferred: false,
         reply: jest.fn().mockResolvedValue({}),
+        // Like discord.js: a deferred interaction can no longer be answered with reply().
+        deferReply: jest.fn(function (this: any) { this.deferred = true; return Promise.resolve({}); }),
+        editReply: jest.fn().mockResolvedValue({}),
     };
 }
 
@@ -119,7 +123,7 @@ describe('warn command', () => {
         );
         expect(target.user.send).toHaveBeenCalledWith(expect.stringContaining('Total warnings:** 3'));
         expect(checkWarnThresholds).toHaveBeenCalledWith(interaction.guild, target, 3, guildData);
-        expect(interaction.reply).toHaveBeenCalledWith(
+        expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Case #9') })
         );
         expect(logModAction).toHaveBeenCalledWith(
@@ -134,8 +138,37 @@ describe('warn command', () => {
 
         await expect(warn.execute(interaction)).resolves.not.toThrow();
 
-        expect(interaction.reply).toHaveBeenCalledWith(
+        expect(interaction.editReply).toHaveBeenCalledWith(
             expect.objectContaining({ content: expect.stringContaining('Warned') })
         );
+    });
+
+    test('defers before the slow work and answers through editReply, so the 3-second window is not at risk', async () => {
+        const order: string[] = [];
+        const target = makeTarget();
+        const interaction = makeInteraction({ target });
+        interaction.deferReply.mockImplementation(async function (this: any) { order.push('defer'); this.deferred = true; return {}; });
+        WarnSchema.create.mockImplementation(async () => { order.push('create'); });
+        checkWarnThresholds.mockImplementation(async () => { order.push('thresholds'); });
+        createCase.mockResolvedValue({ caseId: 5 });
+
+        await warn.execute(interaction);
+
+        expect(order).toEqual(['defer', 'create', 'thresholds']);
+        expect(interaction.reply).not.toHaveBeenCalled();
+        expect(interaction.editReply).toHaveBeenCalledWith(expect.objectContaining({ content: expect.stringContaining('Case #5') }));
+    });
+
+    test.each([
+        ['the target is not in the server', () => makeInteraction({ target: null })],
+        ['the moderator warns themselves', () => makeInteraction({ target: makeTarget({ id: 'mod1' }) })],
+        ['the target is the server owner', () => makeInteraction({ target: makeTarget({ id: 'owner1' }) })],
+    ])('does not defer when %s, so the refusal stays ephemeral', async (_name, build) => {
+        const interaction = build();
+
+        await warn.execute(interaction);
+
+        expect(interaction.deferReply).not.toHaveBeenCalled();
+        expect(interaction.reply).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.anything() }));
     });
 });

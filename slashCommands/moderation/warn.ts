@@ -41,6 +41,9 @@ module.exports = {
             return interaction.reply({ content: 'You cannot warn someone with an equal or higher role.', flags: MessageFlags.Ephemeral });
         }
 
+        // The database writes, the DM, a threshold punishment and the log post can together pass Discord's 3-second window for a first response.
+        await interaction.deferReply();
+
         await WarnSchema.create({
             guildId: interaction.guild.id,
             userId: target.id,
@@ -61,6 +64,6 @@ module.exports = {
         await checkWarnThresholds(interaction.guild, target, totalWarnings, guildData);
         await logModAction({ guild: interaction.guild, action: `Warn (#${totalWarnings})`, target: target.user, moderator: interaction.user, reason, caseId: modCase.caseId });
 
-        return interaction.reply({ content: `Warned **${target.user.tag}** (warning #${totalWarnings}) for \`${reason}\` | Case #${modCase.caseId}` });
+        return interaction.editReply({ content: `Warned **${target.user.tag}** (warning #${totalWarnings}) for \`${reason}\` | Case #${modCase.caseId}` });
     },
 };
