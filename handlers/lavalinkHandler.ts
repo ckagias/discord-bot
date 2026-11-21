@@ -138,6 +138,18 @@ export = async (client: Client) => {
         }
     });
 
+    // A stuck track never produces audio (stalled stream), so without this the queue skips on silently.
+    client.lavalink.on('trackStuck', (player, track, payload) => {
+        const title = track?.info?.title ?? payload?.track?.info?.title ?? 'Unknown track';
+        logger.error(`Track "${title}" got stuck in guild "${player.guildId}" (no audio for ${payload?.thresholdMs ?? 'unknown'} ms), skipping it.`);
+
+        const channel = client.channels.cache.get(player.textChannelId as string) as TextBasedChannel | undefined;
+        if (channel && 'send' in channel) {
+            channel.send({ content: `**${title}** got stuck, so I skipped it.`, allowedMentions: { parse: [] } })
+                .catch((err: unknown) => logger.error(`Failed to send track stuck message for guild "${player.guildId}":`, err));
+        }
+    });
+
     client.lavalink.on('queueEnd', (player) => {
         if (player.getData('manual_stop')) return;
         const channel = client.channels.cache.get(player.textChannelId as string) as TextBasedChannel | undefined;
